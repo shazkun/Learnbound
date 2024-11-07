@@ -6,7 +6,6 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart'; // Emoji suppor
 import '../drawing_canvas.dart'; // Drawing canvas import
 import '../server_list.dart'; // ServerList widget
 import 'package:Learnbound/database/database_helper.dart'; // Database helper to fetch profile picture
-import 'package:Learnbound/screen/host_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final String nickname;

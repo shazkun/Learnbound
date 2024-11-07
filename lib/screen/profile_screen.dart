@@ -117,18 +117,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         
         child: ListView(
           children: [
-            GestureDetector(
-              onTap: _changeProfilePicture,
-              child: CircleAvatar(
-                radius: 50,
-                backgroundImage: _profilePicturePath != null
-                    ? FileImage(File(_profilePicturePath!))
-                    : AssetImage('assets/defaultprofile.png'),
-                child: _profilePicturePath == null
-                    ? Icon(Icons.camera_alt, size: 30, color: Colors.grey)
-                    : null,
-              ),
-            ),
+            Padding(
+  padding: EdgeInsets.symmetric(vertical: 15.0), // Adjust the padding as needed
+  child: GestureDetector(
+    onTap: _changeProfilePicture,
+    child: CircleAvatar(
+      radius: 50,
+      backgroundImage: _profilePicturePath != null
+          ? FileImage(File(_profilePicturePath!))
+          : AssetImage('assets/defaultprofile.png') as ImageProvider,
+      child: _profilePicturePath == null
+          ? Icon(Icons.camera_alt, size: 30, color: Colors.grey)
+          : null,
+    ),
+  ),
+),
+
+
+
             SizedBox(height: 20),
             ListTile(
               leading: Icon(Icons.lock),

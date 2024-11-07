@@ -12,6 +12,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final bool isDesktop = defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.linux;

@@ -93,8 +93,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Center(
                       child: Image.asset(
                         'assets/applogo.png', // Path to your logo asset
-                        height: 150,
-                        width: 150,
+                        height: 300,
+                        width: 300,
                       ),
                     ),
                     SizedBox(height: 30),
