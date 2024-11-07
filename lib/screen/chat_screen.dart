@@ -29,6 +29,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? profilePicture; // Store profile picture
   final _picker = ImagePicker();
 
+  // Chat modes: 1 = Text, 2 = Image Upload, 3 = Drawing
+  int currentMode = 2;
+
   @override
   void initState() {
     super.initState();
@@ -114,43 +117,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // Function to send images in chat
-  Future<void> _sendImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
-      showDialog(
-        // ignore: use_build_context_synchronously
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Preview Image'),
-            content: Image.file(imageFile),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    messages.add({'image': imageFile, 'isImage': true});
-                  });
-                  Navigator.pop(context);
-                  clientSocket!.write(
-                      "Drawing:${pickedFile.path}"); // Send image metadata to the host
-                
-                },
-                child: Text('Send'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
   Future<void> _pickAndSendImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -340,45 +306,41 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
 
-              // Message input and actions
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.emoji_emotions),
-                    onPressed: () {
-                      setState(() {
-                        isEmojiVisible = !isEmojiVisible;
-                      });
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.image),
-                    onPressed: _pickAndSendImage,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.brush),
-                    onPressed: _openDrawingCanvas,
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: messageController,
-                      decoration: InputDecoration(
-                        labelText: "Type a message",
+              // Message input and actions based on mode
+              if (currentMode == 1)
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.emoji_emotions),
+                      onPressed: () {
+                        setState(() {
+                          isEmojiVisible = !isEmojiVisible;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: messageController,
+                        decoration: InputDecoration(
+                          labelText: "Type a message",
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.send),
-                    onPressed: () => _sendMessage(messageController.text),
-                  ),
-                ],
-              ),
-
-              if (isEmojiVisible)
-                EmojiPicker(
-                  onEmojiSelected: (category, emoji) {
-                    messageController.text += emoji.emoji;
-                  },
+                    IconButton(
+                      icon: Icon(Icons.send),
+                      onPressed: () => _sendMessage(messageController.text),
+                    ),
+                  ],
+                ),
+              if (currentMode == 2)
+                IconButton(
+                  icon: Icon(Icons.image),
+                  onPressed: _pickAndSendImage,
+                ),
+              if (currentMode == 3)
+                IconButton(
+                  icon: Icon(Icons.brush),
+                  onPressed: _openDrawingCanvas,
                 ),
             ],
           ),

@@ -5,36 +5,63 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
+// Custom class to represent a stroke
+class Stroke {
+  final List<Offset?> points;
+  final Color color;
+  final double strokeWidth;
+
+  Stroke({required this.points, required this.color, required this.strokeWidth});
+}
+
 class DrawingCanvas extends StatefulWidget {
   const DrawingCanvas({super.key});
 
- 
   @override
   _DrawingCanvasState createState() => _DrawingCanvasState();
 }
 
 class _DrawingCanvasState extends State<DrawingCanvas> {
-  List<Offset?> points = [];
+  List<Stroke> strokes = [];
+  List<Offset?> currentStrokePoints = [];
   final GlobalKey _globalKey = GlobalKey();
   Color selectedColor = Colors.black; // Default color
   double strokeWidth = 5.0;
 
+  // Start a new stroke (when drawing starts)
+  void _startNewStroke(Offset point) {
+    setState(() {
+      currentStrokePoints = [point]; // Start a new stroke
+    });
+  }
 
-  
- 
-
+  // Add points to the current stroke
   void _addPoint(Offset point) {
     setState(() {
-      points.add(point); // Only add valid points
+      currentStrokePoints.add(point);
     });
   }
 
+  // End the current stroke (when the user lifts their finger or pointer)
+  void _endStroke() {
+    setState(() {
+      strokes.add(Stroke(
+        points: List.from(currentStrokePoints),
+        color: selectedColor,
+        strokeWidth: strokeWidth,
+      ));
+      currentStrokePoints.clear(); // Reset current stroke points
+    });
+  }
+
+  // Clear the entire canvas
   void _clear() {
     setState(() {
-      points.clear(); // Clear all points
+      strokes.clear(); // Clear all strokes
     });
   }
 
+  // Save the drawing as an image
   Future<void> _saveDrawing() async {
     RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     ui.Image image = await boundary.toImage(pixelRatio: 3.0);
@@ -43,10 +70,8 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
     final directory = await getApplicationDocumentsDirectory();
     final imagePath = '${directory.path}/drawing_${DateTime.now().millisecondsSinceEpoch}.png';
-    // Send image metadata to the host
     File imgFile = File(imagePath);
     await imgFile.writeAsBytes(pngBytes);
-     
 
     Navigator.pop(context, imgFile); // Return the saved image
   }
@@ -85,13 +110,12 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
                 ],
                 onChanged: (Color? newValue) {
                   setState(() {
-                    selectedColor = newValue!;
+                    selectedColor = newValue!; // Update selected color
                   });
                 },
               ),
 
               // Stroke width slider
-            
               Slider(
                 value: strokeWidth,
                 min: 1.0,
@@ -110,16 +134,17 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
             child: RepaintBoundary(
               key: _globalKey,
               child: GestureDetector(
+                onPanStart: (details) {
+                  _startNewStroke(details.localPosition); // Start a new stroke
+                },
                 onPanUpdate: (details) {
-                  _addPoint(details.localPosition); // Capture the current position
+                  _addPoint(details.localPosition); // Add points to current stroke
                 },
                 onPanEnd: (details) {
-                  setState(() {
-                    points.add(null); // Separate strokes by adding a null marker
-                  });
+                  _endStroke(); // End the current stroke
                 },
                 child: CustomPaint(
-                  painter: DrawingPainter(points, selectedColor, strokeWidth),
+                  painter: DrawingPainter(strokes, currentStrokePoints, selectedColor, strokeWidth),
                   child: Container(),
                 ),
               ),
@@ -131,23 +156,37 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
   }
 }
 
+// Custom painter to draw each stroke with its own color and width
 class DrawingPainter extends CustomPainter {
-  final List<Offset?> points;
+  final List<Stroke> strokes;
+  final List<Offset?> currentStrokePoints;
   final Color color;
   final double strokeWidth;
 
-  DrawingPainter(this.points, this.color, this.strokeWidth);
+  DrawingPainter(this.strokes, this.currentStrokePoints, this.color, this.strokeWidth);
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = color
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = strokeWidth;
+      ..strokeCap = StrokeCap.round;
 
-    for (int i = 0; i < points.length - 1; i++) {
-      if (points[i] != null && points[i + 1] != null) {
-        canvas.drawLine(points[i]!, points[i + 1]!, paint); // Draw between valid points
+    // Paint the finished strokes
+    for (var stroke in strokes) {
+      paint.color = stroke.color;
+      paint.strokeWidth = stroke.strokeWidth;
+      for (int i = 0; i < stroke.points.length - 1; i++) {
+        if (stroke.points[i] != null && stroke.points[i + 1] != null) {
+          canvas.drawLine(stroke.points[i]!, stroke.points[i + 1]!, paint); // Draw between points
+        }
+      }
+    }
+
+    // Paint the current stroke with the selected color and width
+    paint.color = color;
+    paint.strokeWidth = strokeWidth;
+    for (int i = 0; i < currentStrokePoints.length - 1; i++) {
+      if (currentStrokePoints[i] != null && currentStrokePoints[i + 1] != null) {
+        canvas.drawLine(currentStrokePoints[i]!, currentStrokePoints[i + 1]!, paint); // Draw current stroke
       }
     }
   }
