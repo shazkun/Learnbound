@@ -4,6 +4,8 @@ import 'host_screen.dart';
 import 'profile_screen.dart'; // Import the new screen
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Define constant padding values

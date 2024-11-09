@@ -4,6 +4,8 @@ import 'auth_screen.dart'; // Import your AuthScreen here
 import 'dart:io'; // Ensure you import this for File usage
 
 class ProfileSettingsScreen extends StatefulWidget {
+  const ProfileSettingsScreen({super.key});
+
 
   @override
   _ProfileSettingsScreenState createState() => _ProfileSettingsScreenState();
@@ -34,8 +36,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _showChangePasswordDialog(BuildContext context) {
-    final TextEditingController _currentPasswordController = TextEditingController();
-    final TextEditingController _newPasswordController = TextEditingController();
+    final TextEditingController currentPasswordController = TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
      
     
     showDialog(
@@ -47,12 +49,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: _currentPasswordController,
+                controller: currentPasswordController,
                 decoration: InputDecoration(labelText: 'Current Password'),
                 obscureText: true,
               ),
               TextField(
-                controller: _newPasswordController,
+                controller: newPasswordController,
                 decoration: InputDecoration(labelText: 'New Password'),
                 obscureText: true,
               ),
@@ -63,8 +65,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               onPressed: () async {
                 try {
                   await _authService.changePassword(
-                    _currentPasswordController.text,
-                    _newPasswordController.text,
+                    currentPasswordController.text,
+                    newPasswordController.text,
                   );
                   Navigator.of(context).pop(); // Close the dialog
                   ScaffoldMessenger.of(context).showSnackBar(

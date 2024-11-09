@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'auth_screen.dart';
 
 class StartScreen extends StatefulWidget {
+  const StartScreen({super.key});
+
   @override
   _StartScreenState createState() => _StartScreenState();
 }

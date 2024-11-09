@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:Learnbound/participants_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -24,6 +25,7 @@ class _HostScreenState extends State<HostScreen> {
   Map<Socket, String> clientNicknames = {}; // Socket to nickname mapping
   List<Socket> connectedClients = [];
   String? selectedMode;
+  Map<String, int> participants = {};
 
   @override
   void initState() {
@@ -61,20 +63,16 @@ class _HostScreenState extends State<HostScreen> {
 
       // Set up a timer to send the broadcast message every second
       Timer.periodic(Duration(seconds: 1), (timer) {
-        if (socket != null) {
-          try {
-            socket.send(
-              message, 
-              InternetAddress('255.255.255.255'), 
-              4040,
-            );
-          } catch (e) {
-            print('Error sending message: $e');
-          }
-        } else {
-          print('Socket is closed or unavailable.');
+        try {
+          socket.send(
+            message, 
+            InternetAddress('255.255.255.255'), 
+            4040,
+          );
+        } catch (e) {
+          print('Error sending message: $e');
         }
-      });
+            });
       // socket.close();
     } catch (error) {
       print('Error occurred while running server: $error');
@@ -238,135 +236,140 @@ class _HostScreenState extends State<HostScreen> {
     return shouldPop ?? false; // Return false if the user cancels, true if they confirm
   }
 
+  void _openParticipantsList() {
+    // Navigate to the ParticipantsList screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ParticipantsList(participants: participants),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-       return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text('Host Screen'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () async {
-            // Handling custom back press
             bool shouldExit = await _onBackPressed();
-            if (shouldExit) {
-              Navigator.of(context).pop(); // Proceed with navigation pop
-            }
+            if (shouldExit) Navigator.of(context).pop();
           },
         ),
-
-          actions: [
-            IconButton(
-              icon: Icon(Icons.settings,
-                  color: Colors.black), // Settings icon for mode selector
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Select Mode'),
-                      content: DropdownButton<String>(
-                        value: selectedMode,
-                        isExpanded: true,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedMode = newValue!;
-                            for (var client in connectedClients) {
-                              client.write("Mode:$selectedMode");
-                            }
-                          });
-                          Navigator.of(context)
-                              .pop(); // Close dialog on selection
-                        },
-                        items: <String>['Chat', 'Picture', 'Drawing']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                      ),
-                    );
+        actions: [
+          IconButton(
+            icon: Icon(Icons.person), // Participants list icon
+            onPressed: _openParticipantsList, // Open participants list
+          ),
+          IconButton(
+            icon: Icon(Icons.settings, color: Colors.black),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Select Mode'),
+                    content: DropdownButton<String>(
+                      value: selectedMode,
+                      isExpanded: true,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedMode = newValue!;
+                          for (var client in connectedClients) {
+                            client.write("Mode:$selectedMode");
+                          }
+                        });
+                        Navigator.of(context).pop();
+                      },
+                      items: <String>['Chat', 'Picture', 'Drawing']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFD3A97D).withOpacity(1),
+              Color(0xFFEBE1C8).withOpacity(1),
+            ],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final messageData = messages[index];
+                  return ListTile(
+                    leading: Icon(Icons.account_circle),
+                    title: messageData['isImage'] && messageData['image'] != null
+                        ? Image.file(
+                            messageData['image'],
+                            errorBuilder: (context, error, stackTrace) => Text(
+                              'Image not found',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          )
+                        : Text(messageData['text'] ?? 'Message not available'),
+                  );
+                },
+              ),
+            ),
+            if (stickyQuestions.isNotEmpty)
+              Container(
+                padding: EdgeInsets.all(8),
+                child: Column(
+                  children: stickyQuestions
+                      .map((question) => ListTile(
+                            title: Text(question),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () => _removeStickyQuestion(question),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _questionController,
+                    decoration: InputDecoration(
+                      labelText: "Type a question",
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    if (_questionController.text.isNotEmpty) {
+                      _sendStickyQuestion(_questionController.text);
+                      _questionController.clear();
+                    }
                   },
-                );
-              },
+                ),
+              ],
             ),
           ],
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFFD3A97D).withOpacity(1),
-                Color(0xFFEBE1C8).withOpacity(1),
-              ],
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-            ),
-          ),
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final messageData = messages[index];
-
-                    // Conditional rendering based on message type (text/image)
-                    return ListTile(
-                      leading: Icon(Icons.account_circle),
-                      title: messageData['isImage'] &&
-                              messageData['image'] != null
-                          ? Image.file(
-                              messageData['image'],
-                              errorBuilder: (context, error, stackTrace) => Text(
-                                'Image not found',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            )
-                          : Text(messageData['text'] ?? 'Message not available'),
-                    );
-                  },
-                ),
-              ),
-              if (stickyQuestions.isNotEmpty)
-                Container(
-                  padding: EdgeInsets.all(8),
-                  child: Column(
-                    children: stickyQuestions
-                        .map((question) => ListTile(
-                              title: Text(question),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => _removeStickyQuestion(question),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _questionController,
-                      decoration: InputDecoration(
-                        labelText: "Type a question",
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.send),
-                    onPressed: () {
-                      if (_questionController.text.isNotEmpty) {
-                        _sendStickyQuestion(_questionController.text);
-                        _questionController.clear();
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+      ),
     );
   }
 }
