@@ -264,7 +264,7 @@ class _HostScreenState extends State<HostScreen> {
             onPressed: _openParticipantsList, // Open participants list
           ),
           IconButton(
-            icon: Icon(Icons.settings, color: Colors.black),
+            icon: Icon(Icons.settings_accessibility_sharp, color: Colors.black),
             onPressed: () {
               showDialog(
                 context: context,
