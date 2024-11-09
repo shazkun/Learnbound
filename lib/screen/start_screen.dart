@@ -52,7 +52,7 @@ class _StartScreenState extends State<StartScreen> {
                   minimumSize: Size(screenWidth * 0.10, screenWidth * 0.10), // Adjust size based on screen width
                   padding: EdgeInsets.zero,
                 ),
-                child: Icon(Icons.arrow_forward, size: screenWidth * 0.04), // Icon size responsive
+                child: Icon(Icons.arrow_forward, size: 20), // Icon size responsive
               ),
               SizedBox(height: screenHeight * 0.02), // Space below button
               Spacer(), // Push content to center vertically

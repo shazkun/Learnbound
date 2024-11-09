@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -21,9 +20,10 @@ class _HostScreenState extends State<HostScreen> {
   ServerSocket? serverSocket;
   final TextEditingController _questionController =
       TextEditingController(); // Controller for TextField
-  bool _isEmojiPickerVisible = false; // To track emoji picker visibility
+// To track emoji picker visibility
   Map<Socket, String> clientNicknames = {}; // Socket to nickname mapping
   List<Socket> connectedClients = [];
+  String? selectedMode;
 
   @override
   void initState() {
@@ -61,23 +61,29 @@ class _HostScreenState extends State<HostScreen> {
 
       // Set up a timer to send the broadcast message every second
       Timer.periodic(Duration(seconds: 1), (timer) {
-        socket.send(
-          message,
-          InternetAddress('255.255.255.255'),
-          4040,
-        );
+        if (socket != null) {
+          try {
+            socket.send(
+              message, 
+              InternetAddress('255.255.255.255'), 
+              4040,
+            );
+          } catch (e) {
+            print('Error sending message: $e');
+          }
+        } else {
+          print('Socket is closed or unavailable.');
+        }
       });
-    // socket.close();
+      // socket.close();
     } catch (error) {
       print('Error occurred while running server: $error');
     }
-    serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 4040); 
+    serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 4040);
     final localIp = await getLocalIp();
     setState(() {
-     
       messages.add({
-        'text':
-            'Server started at $localIp:${serverSocket!.port}',
+        'text': 'Server started at $localIp:${serverSocket!.port}',
         'nickname': 'System',
         'isImage': false
       });
@@ -109,13 +115,10 @@ class _HostScreenState extends State<HostScreen> {
           print('Drawing Path: $drawingPath');
           if (drawingFile.existsSync()) {
             setState(() {
-           
-
               drawings.add(drawingFile);
               messages.add({
                 'text': 'Drawing received',
-                'nickname':
-                    clientNicknames[client],
+                'nickname': clientNicknames[client],
                 'isImage': true,
                 'image': drawingFile // Add drawing file to message map
               });
@@ -124,8 +127,7 @@ class _HostScreenState extends State<HostScreen> {
             setState(() {
               messages.add({
                 'text': 'Failed to load drawing: file not found',
-                'nickname':
-                    clientNicknames[client] ,
+                'nickname': clientNicknames[client],
                 'isImage': false
               });
             });
@@ -135,8 +137,7 @@ class _HostScreenState extends State<HostScreen> {
           setState(() {
             messages.add({
               'text': question,
-              'nickname':
-                  clientNicknames[client] ,
+              'nickname': clientNicknames[client],
               'isImage': false
             });
           });
@@ -144,24 +145,25 @@ class _HostScreenState extends State<HostScreen> {
           setState(() {
             messages.add({
               'text': message,
-              'nickname':
-                  clientNicknames[client] ,
+              'nickname': clientNicknames[client],
               'isImage': false
             });
           });
         }
-          if (message.startsWith("Image:")) {
+        if (message.startsWith("Image:")) {
           // Extract base64 data from the message
-          String base64Image = message.substring(6).trim(); // <-- Remove "Image:" prefix
-          base64Image = addBase64Padding(base64Image); // <-- Add padding if needed
-          Uint8List imageBytes = base64Decode(base64Image); // <--
+          String base64Image =
+              message.substring(6).trim(); // <-- Remove "Image:" prefix
+          base64Image =
+              addBase64Padding(base64Image); // <-- Add padding if needed
+          Uint8List imageBytes = base64Decode(base64Image); // <-- 
           setState(() {
             messages.add({
               'isImage': true,
               'imageBytes': imageBytes,
             });
           });
-        } 
+        }
       }, onDone: () {
         setState(() {
           String nickname =
@@ -178,14 +180,14 @@ class _HostScreenState extends State<HostScreen> {
       });
     });
   }
-  String addBase64Padding(String base64String) {
-  int mod = base64String.length % 4;
-  if (mod > 0) {
-    return base64String + '=' * (4 - mod); // Adds '=' padding if necessary
-  }
-  return base64String;
-}
 
+  String addBase64Padding(String base64String) {
+    int mod = base64String.length % 4;
+    if (mod > 0) {
+      return base64String + '=' * (4 - mod); // Adds '=' padding if necessary
+    }
+    return base64String;
+  }
 
   void _sendStickyQuestion(String question) {
     for (var client in connectedClients) {
@@ -207,8 +209,6 @@ class _HostScreenState extends State<HostScreen> {
     });
   }
 
-
-
   @override
   void dispose() {
     serverSocket?.close();
@@ -216,115 +216,157 @@ class _HostScreenState extends State<HostScreen> {
     super.dispose();
   }
 
-  void _onEmojiSelected(Emoji emoji) {
-    _questionController.text += emoji.emoji; // Append emoji to the text field
+ Future<bool> _onBackPressed() async {
+    // Show a confirmation dialog when the user tries to leave the screen
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Are you sure you want to exit?'),
+        content: Text('Any ongoing connections will be lost.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Exit'),
+          ),
+        ],
+      ),
+    );
+    return shouldPop ?? false; // Return false if the user cancels, true if they confirm
   }
 
-  void _toggleEmojiPicker() {
-    setState(() {
-      _isEmojiPickerVisible = !_isEmojiPickerVisible;
-    });
-  }
-
- @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('Host Screen'),
-       leading: IconButton(
+  @override
+  Widget build(BuildContext context) {
+       return Scaffold(
+      appBar: AppBar(
+        title: Text('Host Screen'),
+        leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            // Navigate back to the previous screen by popping the current route
-            serverSocket?.close();
-            Navigator.of(context).pop();
+          onPressed: () async {
+            // Handling custom back press
+            bool shouldExit = await _onBackPressed();
+            if (shouldExit) {
+              Navigator.of(context).pop(); // Proceed with navigation pop
+            }
           },
         ),
-    ),
-    
-    body: Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFFD3A97D).withOpacity(1),
-            Color(0xFFEBE1C8).withOpacity(1),
-          ],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final messageData = messages[index];
-                
-                // Conditional rendering based on message type (text/image)
-                return ListTile(
-                  leading: Icon(Icons.account_circle),
-                  title: messageData['isImage'] && messageData['image'] != null
-                      ? Image.file(
-                          messageData['image'],
-                          errorBuilder: (context, error, stackTrace) => Text(
-                            'Image not found',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        )
-                      : Text(messageData['text'] ?? 'Message not available'),
+
+          actions: [
+            IconButton(
+              icon: Icon(Icons.settings,
+                  color: Colors.black), // Settings icon for mode selector
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Select Mode'),
+                      content: DropdownButton<String>(
+                        value: selectedMode,
+                        isExpanded: true,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedMode = newValue!;
+                            for (var client in connectedClients) {
+                              client.write("Mode:$selectedMode");
+                            }
+                          });
+                          Navigator.of(context)
+                              .pop(); // Close dialog on selection
+                        },
+                        items: <String>['Chat', 'Picture', 'Drawing']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  },
                 );
               },
             ),
-          ),
-          if (stickyQuestions.isNotEmpty)
-            Container(
-              padding: EdgeInsets.all(8),
-              child: Column(
-                children: stickyQuestions
-                    .map((question) => ListTile(
-                          title: Text(question),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () => _removeStickyQuestion(question),
-                          ),
-                        ))
-                    .toList(),
-              ),
+          ],
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFD3A97D).withOpacity(1),
+                Color(0xFFEBE1C8).withOpacity(1),
+              ],
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
             ),
-          Row(
+          ),
+          child: Column(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _questionController,
-                  decoration: InputDecoration(
-                    labelText: "Type a question",
-                  ),
+                child: ListView.builder(
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final messageData = messages[index];
+
+                    // Conditional rendering based on message type (text/image)
+                    return ListTile(
+                      leading: Icon(Icons.account_circle),
+                      title: messageData['isImage'] &&
+                              messageData['image'] != null
+                          ? Image.file(
+                              messageData['image'],
+                              errorBuilder: (context, error, stackTrace) => Text(
+                                'Image not found',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            )
+                          : Text(messageData['text'] ?? 'Message not available'),
+                    );
+                  },
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.emoji_emotions),
-                onPressed: _toggleEmojiPicker, // Toggle emoji picker visibility
-              ),
-              IconButton(
-                icon: Icon(Icons.send),
-                onPressed: () {
-                  if (_questionController.text.isNotEmpty) {
-                    _sendStickyQuestion(_questionController.text);
-                    _questionController.clear();
-                  }
-                },
+              if (stickyQuestions.isNotEmpty)
+                Container(
+                  padding: EdgeInsets.all(8),
+                  child: Column(
+                    children: stickyQuestions
+                        .map((question) => ListTile(
+                              title: Text(question),
+                              trailing: IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () => _removeStickyQuestion(question),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _questionController,
+                      decoration: InputDecoration(
+                        labelText: "Type a question",
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.send),
+                    onPressed: () {
+                      if (_questionController.text.isNotEmpty) {
+                        _sendStickyQuestion(_questionController.text);
+                        _questionController.clear();
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-          if (_isEmojiPickerVisible)
-            EmojiPicker(
-              onEmojiSelected: (category, emoji) {
-                _onEmojiSelected(emoji);
-              },
-            ),
-        ],
-      ),
-    ),
-  );
-}
+        ),
+    );
+  }
 }

@@ -106,12 +106,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text('Register'),
-    
-      //   centerTitle: true,
-      //   elevation: 0,
-      // ),
+      appBar: AppBar(
+      
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: Container(decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [

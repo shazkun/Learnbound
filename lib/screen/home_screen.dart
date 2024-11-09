@@ -9,7 +9,7 @@ class HomeScreen extends StatelessWidget {
     // Define constant padding values
     const double imagePaddingBottom = 20.0; // Fixed padding below the image
     const double buttonSpacing = 10.0; // Fixed spacing between buttons
-    const double buttonHeight = 50.0; // Fixed button height
+    // const double buttonHeight = 50.0; // Fixed button height
 
     return Scaffold(
       body: Container(
@@ -33,8 +33,8 @@ class HomeScreen extends StatelessWidget {
                     padding: EdgeInsets.only(bottom: imagePaddingBottom),
                     child: Image.asset(
                       'assets/applogo.png',
-                      height: 150.0, // Fixed height for the image
-                      width: 150.0, // Fixed width for the image
+                      height: 300, // Fixed height for the image
+                      width: 300, // Fixed width for the image
                       errorBuilder: (context, error, stackTrace) {
                         return Icon(Icons.error); // Placeholder for image error
                       },
@@ -115,7 +115,10 @@ class HomeScreen extends StatelessWidget {
               usernameOrNickname = value;
             },
           ),
-          actions: [
+          actions: [ TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
             TextButton(
               onPressed: () {
                 if (usernameOrNickname.isNotEmpty) {
@@ -131,10 +134,7 @@ class HomeScreen extends StatelessWidget {
               },
               child: Text('Join'),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
+           
           ],
         );
       },

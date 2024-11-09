@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart'; // Emoji support
+// Emoji support
 import '../drawing_canvas.dart'; // Drawing canvas import
 import '../server_list.dart'; // ServerList widget
 import 'package:Learnbound/database/database_helper.dart'; // Database helper to fetch profile picture
@@ -30,7 +30,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final _picker = ImagePicker();
 
   // Chat modes: 1 = Text, 2 = Image Upload, 3 = Drawing
-  int currentMode = 2;
+  String currentMode = "";
+
 
   @override
   void initState() {
@@ -69,7 +70,12 @@ class _ChatScreenState extends State<ChatScreen> {
       // Listen for incoming messages
       clientSocket!.listen((data) {
         final message = String.fromCharCodes(data).trim();
-
+          if (message.startsWith("Mode:")) {
+          final mode = message.substring(5);
+          setState(() {
+            currentMode = mode;
+          });
+        }
         if (message.startsWith("Question:")) {
           final question = message.substring(9);
           setState(() {
@@ -169,7 +175,27 @@ class _ChatScreenState extends State<ChatScreen> {
     int port = 4040;
     _connectToServer('$ip:$port');
   }
-
+ Future<bool> _onBackPressed() async {
+    // Show a confirmation dialog when the user tries to leave the screen
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Are you sure you want to exit?'),
+        content: Text('Any ongoing connections will be lost.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Exit'),
+          ),
+        ],
+      ),
+    );
+    return shouldPop ?? false; // Return false if the user cancels, true if they confirm
+  }
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -178,7 +204,18 @@ class _ChatScreenState extends State<ChatScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
+           leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () async {
+            // Handling custom back press
+            bool shouldExit = await _onBackPressed();
+            if (shouldExit) {
+              Navigator.of(context).pop(); // Proceed with navigation pop
+            }
+          },
+        ),
           title: Row(
+            
             children: [
               profilePicture != null
                   ? CircleAvatar(
@@ -187,6 +224,8 @@ class _ChatScreenState extends State<ChatScreen> {
               SizedBox(width: 10),
               Text(widget.nickname),
             ],
+           
+            
           ),
           actions: [
             IconButton(
@@ -243,49 +282,48 @@ class _ChatScreenState extends State<ChatScreen> {
               end: Alignment.bottomLeft,
             ),
           ),
+          
           child: Column(
+            
             children: [
               // Show sticky questions if any
-              if (questions.isNotEmpty)
-                SizedBox(
-                  height: 10,
-                ),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 16.0), // Add padding to left and right
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent, // Set background color to white
-                    borderRadius:
-                        BorderRadius.circular(12), // Round the corners
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.3),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: Offset(0, 3), // Add a shadow for depth
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: questions.map((question) {
-                      return ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(8), // Rounds each ListTile
-                        ),
-                        tileColor:
-                            Colors.white, // Keep each ListTile background white
-                        title: Text(
-                          question,
-                          style: TextStyle(color: Colors.blue),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+              SizedBox(height: 20),
+             questions.isNotEmpty
+    ? Padding(
+
+        padding: EdgeInsets.symmetric(horizontal: 16.0), // Padding on left and right
+        child: Container(
+          padding: EdgeInsets.all(8), // Padding inside the container
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 129, 109, 109), // Transparent background
+            borderRadius: BorderRadius.circular(12), // Rounded corners
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.3), // Soft shadow color
+                spreadRadius: 2, // Shadow spread
+                blurRadius: 5, // Shadow blur
+                offset: Offset(0, 3), // Shadow offset
               ),
+            ],
+          ),
+          child: Column(
+            children: questions.map((question) {
+              return ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Rounded corners for ListTile
+                ),
+                tileColor: Colors.white, // White background for each ListTile
+                title: Text(
+                  question,
+                  style: TextStyle(color: Colors.blue), // Blue text color
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      )
+    : Container(), // Empty container for when `questions` is empty, effectively showing nothing
+
 
               // List of messages
               Expanded(
@@ -307,7 +345,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
 
               // Message input and actions based on mode
-              if (currentMode == 1)
+              if (currentMode == "Chat")
                 Row(
                   children: [
                     IconButton(
@@ -332,12 +370,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
-              if (currentMode == 2)
+              if (currentMode == "Picture")
                 IconButton(
                   icon: Icon(Icons.image),
                   onPressed: _pickAndSendImage,
                 ),
-              if (currentMode == 3)
+              if (currentMode == "Drawing")
                 IconButton(
                   icon: Icon(Icons.brush),
                   onPressed: _openDrawingCanvas,
