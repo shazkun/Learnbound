@@ -51,66 +51,74 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _connectToServer(String serverInfo) async {
-    try {
-      final parts = serverInfo.split(':');
-      final ip = parts[0];
-      final port = int.parse(parts[1]);
+ bool isConnected = false; // Flag to track connection status
 
-      clientSocket = await Socket.connect(ip, port);
+void _connectToServer(String serverInfo) async {
+  // if (isConnected) {
+  //   setState(() {
+  //     messages.add({'text': 'Already connected to a server.', 'isImage': false});
+  //   });
+  //   return; // Exit early if already connected
+  // }
 
-      // Send nickname as the first message to the server
-      clientSocket!.write("Nickname:${widget.nickname}");
+  try {
+    final parts = serverInfo.split(':');
+    final ip = parts[0];
+    final port = int.parse(parts[1]);
 
-      setState(() {
-        messages
-            .add({'text': 'Connected to server $ip:$port', 'isImage': false});
-      });
+    clientSocket = await Socket.connect(ip, port);
 
-      // Listen for incoming messages
-      clientSocket!.listen((data) {
-        final message = String.fromCharCodes(data).trim();
-          if (message.startsWith("Mode:")) {
-          final mode = message.substring(5);
-          setState(() {
-            currentMode = mode;
-          });
-        }
-        if (message.startsWith("Question:")) {
-          final question = message.substring(9);
-          setState(() {
-            questions.add(question);
-          });
-        } else {
-          setState(() {
-            messages.add({'text': message, 'isImage': false});
-          });
-        }
-        if (message.startsWith("Removed:")) {
-          final question = message.substring(8);
-          setState(() {
-            questions.remove(question);
-          });
-        } else {
-          setState(() {
-            messages.remove({'text': message, 'isImage': false});
-          });
-        }
-      }, onError: (error) {
+    // Set connection status to true
+    isConnected = true;
+
+    // Send nickname as the first message to the server
+    clientSocket!.write("Nickname:${widget.nickname}");
+
+    setState(() {
+      messages.add({'text': 'Connected to server $ip:$port', 'isImage': false});
+    });
+
+    // Listen for incoming messages
+    clientSocket!.listen((data) {
+      final message = String.fromCharCodes(data).trim();
+
+      if (message.startsWith("Mode:")) {
+        final mode = message.substring(5);
         setState(() {
-          messages.add({'text': 'Connection error: $error', 'isImage': false});
+          currentMode = mode;
         });
-      }, onDone: () {
+      } else if (message.startsWith("Question:")) {
+        final question = message.substring(9);
         setState(() {
-          messages.add({'text': 'Connection closed', 'isImage': false});
+          questions.add(question);
         });
-      });
-    } catch (e) {
+      } else if (message.startsWith("Removed:")) {
+        final question = message.substring(8);
+        setState(() {
+          questions.remove(question);
+        });
+      } else {
+        setState(() {
+          messages.add({'text': message, 'isImage': false});
+        });
+      }
+    }, onError: (error) {
       setState(() {
-        messages.add({'text': 'Connection failed: $e', 'isImage': false});
+        messages.add({'text': 'Connection error: $error', 'isImage': false});
       });
-    }
+    }, onDone: () {
+      // Reset connection status when the connection is closed
+      setState(() {
+        messages.add({'text': 'Connection closed', 'isImage': false});
+        isConnected = false;
+      });
+    });
+  } catch (e) {
+    setState(() {
+      messages.add({'text': 'Connection failed: $e', 'isImage': false});
+    });
   }
+}
 
   void _sendMessage(String message) {
     if (clientSocket != null) {
@@ -123,19 +131,29 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // Function to send images in chat
-  Future<void> _pickAndSendImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
-      List<int> imageBytes = imageFile.readAsBytesSync();
-      String base64Image = base64UrlEncode(imageBytes);
+ Future<void> _pickAndSendImage() async {
+  // Pick an image from the gallery
+  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    final imageBytes = await File(pickedFile.path).readAsBytes();
+    File imageFile = File(pickedFile.path);
 
-      clientSocket?.write("Image:$base64Image");
-      setState(() {
-        messages.add({'text': 'Image sent', 'isImage': true, 'image': imageFile});
+    // Convert the image bytes to base64
+    String base64Image = base64Encode(imageBytes);
+
+    // Send the base64 image string with an end marker (newline)
+    clientSocket!.add(utf8.encode(base64Image + '\n'));
+    clientSocket!.flush();
+
+    setState(() {
+      messages.add({
+        'text': 'Image sent',
+        'isImage': true,
+        'image': imageFile
       });
-    }
+    });
   }
+}
 
   // Function to open the drawing canvas
   Future<void> _openDrawingCanvas() async {
@@ -143,10 +161,20 @@ class _ChatScreenState extends State<ChatScreen> {
       context,
       MaterialPageRoute(builder: (context) => DrawingCanvas()),
     );
+
     if (drawing != null) {
+        File imgFile = File(drawing);
+        final imageBytes = await File(drawing).readAsBytes();
+
+        // Convert the image bytes to base64
+        String base64Image = base64Encode(imageBytes);
+
+        // Send the base64 image string with an end marker (newline)
+        clientSocket!.add(utf8.encode(base64Image + '\n'));
+        clientSocket!.flush();
       setState(() {
         messages
-            .add({'image': drawing, 'isImage': true}); // Add drawing as image
+            .add({'image': imgFile, 'isImage': true}); // Add drawing as image
       });
       // Send image metadata to the host
     }

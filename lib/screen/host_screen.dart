@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:Learnbound/participants_list.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class HostScreen extends StatefulWidget {
   const HostScreen({super.key});
@@ -26,6 +24,9 @@ class _HostScreenState extends State<HostScreen> {
   List<Socket> connectedClients = [];
   String? selectedMode;
   Map<String, int> participants = {};
+  String? receivedImageBase64;
+  final StringBuffer dataBuffer =
+      StringBuffer(); // Buffer to accumulate incoming data
 
   @override
   void initState() {
@@ -63,21 +64,19 @@ class _HostScreenState extends State<HostScreen> {
 
       // Set up a timer to send the broadcast message every second
       Timer.periodic(Duration(seconds: 1), (timer) {
-        try {
-          socket.send(
-            message, 
-            InternetAddress('255.255.255.255'), 
-            4040,
-          );
-        } catch (e) {
-          print('Error sending message: $e');
-        }
-            });
+        socket.send(
+          message,
+          InternetAddress('255.255.255.255'),
+          4040,
+        );
+      });
       // socket.close();
     } catch (error) {
       print('Error occurred while running server: $error');
     }
-    serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 4040);
+
+    serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
+
     final localIp = await getLocalIp();
     setState(() {
       messages.add({
@@ -92,14 +91,14 @@ class _HostScreenState extends State<HostScreen> {
         clients.add('${client.remoteAddress.address}:${client.remotePort}');
         connectedClients.add(client); // Add to the list of connected clients
       });
-      client.listen((data) {
+      client.listen((data) async {
         String message = String.fromCharCodes(data).trim();
 
-        // Check if this is the initial Nickname message
         if (message.startsWith("Nickname:")) {
           String nickname =
               message.substring(9); // Extract nickname after "Nickname:"
           clientNicknames[client] = nickname; // Store nickname for this client
+          participants[nickname] = 0;
           setState(() {
             messages.add({
               'text': '$nickname connected.',
@@ -107,29 +106,6 @@ class _HostScreenState extends State<HostScreen> {
               'isImage': false
             });
           });
-        } else if (message.startsWith("Drawing:")) {
-          String drawingPath = message.substring(8);
-          File drawingFile = File(drawingPath);
-          print('Drawing Path: $drawingPath');
-          if (drawingFile.existsSync()) {
-            setState(() {
-              drawings.add(drawingFile);
-              messages.add({
-                'text': 'Drawing received',
-                'nickname': clientNicknames[client],
-                'isImage': true,
-                'image': drawingFile // Add drawing file to message map
-              });
-            });
-          } else {
-            setState(() {
-              messages.add({
-                'text': 'Failed to load drawing: file not found',
-                'nickname': clientNicknames[client],
-                'isImage': false
-              });
-            });
-          }
         } else if (message.startsWith("Question:")) {
           String question = message.substring(9);
           setState(() {
@@ -140,27 +116,31 @@ class _HostScreenState extends State<HostScreen> {
             });
           });
         } else {
-          setState(() {
-            messages.add({
-              'text': message,
-              'nickname': clientNicknames[client],
-              'isImage': false
+          if (selectedMode == "Picture" || selectedMode == "Drawing") {
+            dataBuffer.write(utf8.decode(data));
+
+          if (dataBuffer.toString().endsWith('\n')) {
+            // Remove the end marker
+            String completeData = dataBuffer.toString().trim();
+
+            // Update the UI with the received image
+            setState(() {
+              receivedImageBase64 = completeData;
+              messages.add(
+                  {'image': '', 'isImage': true});
             });
-          });
-        }
-        if (message.startsWith("Image:")) {
-          // Extract base64 data from the message
-          String base64Image =
-              message.substring(6).trim(); // <-- Remove "Image:" prefix
-          base64Image =
-              addBase64Padding(base64Image); // <-- Add padding if needed
-          Uint8List imageBytes = base64Decode(base64Image); // <-- 
-          setState(() {
-            messages.add({
-              'isImage': true,
-              'imageBytes': imageBytes,
+
+            // Clear the buffer for future data
+            dataBuffer.clear();
+          }}
+          if (selectedMode == "Chat") {
+            setState(() {
+              String nickname =
+                  clientNicknames[client] ?? client.remoteAddress.address;
+              messages.add(
+                  {'text': '$nickname : $message', 'nickname': nickname, 'isImage': false});
             });
-          });
+          }
         }
       }, onDone: () {
         setState(() {
@@ -177,14 +157,6 @@ class _HostScreenState extends State<HostScreen> {
         });
       });
     });
-  }
-
-  String addBase64Padding(String base64String) {
-    int mod = base64String.length % 4;
-    if (mod > 0) {
-      return base64String + '=' * (4 - mod); // Adds '=' padding if necessary
-    }
-    return base64String;
   }
 
   void _sendStickyQuestion(String question) {
@@ -214,7 +186,7 @@ class _HostScreenState extends State<HostScreen> {
     super.dispose();
   }
 
- Future<bool> _onBackPressed() async {
+  Future<bool> _onBackPressed() async {
     // Show a confirmation dialog when the user tries to leave the screen
     final shouldPop = await showDialog<bool>(
       context: context,
@@ -233,15 +205,90 @@ class _HostScreenState extends State<HostScreen> {
         ],
       ),
     );
-    return shouldPop ?? false; // Return false if the user cancels, true if they confirm
+    return shouldPop ??
+        false; // Return false if the user cancels, true if they confirm
   }
 
+  void _addPoints(String participant, int points) {
+    setState(() {
+      participants[participant] = (participants[participant] ?? 0) + points;
+      messages.add({
+        'text': '$participant received $points points!',
+        'nickname': 'System',
+        'isImage': false
+      });
+    });
+  }
+
+  // Decrement points for a participant
+  void _removePoints(String participant, int points) {
+    setState(() {
+      participants[participant] = (participants[participant] ?? 0) - points;
+      if (participants[participant]! < 0) participants[participant] = 0;
+      messages.add({
+        'text': '$participant lost $points points!',
+        'nickname': 'System',
+        'isImage': false
+      });
+    });
+  }
+
+  // Reset points for all participants
+  void _resetPoints() {
+    setState(() {
+      participants.updateAll((key, value) => 0);
+      messages.add({
+        'text': 'All points have been reset.',
+        'nickname': 'System',
+        'isImage': false
+      });
+    });
+  }
+
+  // Method to show a dialog with point management options
+  void _showPointManagementDialog(String participant) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Manage Points for $participant'),
+          actions: [
+            TextButton(
+              child: Text('Add 10 Points'),
+              onPressed: () {
+                _addPoints(participant, 10);
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Remove 10 Points'),
+              onPressed: () {
+                _removePoints(participant, 10);
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Reset Points'),
+              onPressed: () {
+                _resetPoints();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Button to open the ParticipantsList with points
   void _openParticipantsList() {
-    // Navigate to the ParticipantsList screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ParticipantsList(participants: participants),
+        builder: (context) => ParticipantsList(
+          participants: participants,
+          onManagePoints: _showPointManagementDialog, // Pass the callback
+        ),
       ),
     );
   }
@@ -254,6 +301,7 @@ class _HostScreenState extends State<HostScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () async {
+            serverSocket?.close();
             bool shouldExit = await _onBackPressed();
             if (shouldExit) Navigator.of(context).pop();
           },
@@ -318,9 +366,9 @@ class _HostScreenState extends State<HostScreen> {
                   final messageData = messages[index];
                   return ListTile(
                     leading: Icon(Icons.account_circle),
-                    title: messageData['isImage'] && messageData['image'] != null
-                        ? Image.file(
-                            messageData['image'],
+                    title: receivedImageBase64 != null
+                        ? Image.memory(
+                            base64Decode(receivedImageBase64!),
                             errorBuilder: (context, error, stackTrace) => Text(
                               'Image not found',
                               style: TextStyle(color: Colors.red),

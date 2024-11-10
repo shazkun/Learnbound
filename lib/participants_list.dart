@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-
 class ParticipantsList extends StatelessWidget {
   final Map<String, int> participants;
+  final Function(String) onManagePoints; // Callback to manage points
 
-  const ParticipantsList({super.key, required this.participants});
+  const ParticipantsList({
+    super.key,
+    required this.participants,
+    required this.onManagePoints,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +24,7 @@ class ParticipantsList extends StatelessWidget {
           return ListTile(
             title: Text(participant),
             trailing: Text('$points pts'),
+            onTap: () => onManagePoints(participant), // Manage points on tap
           );
         },
       ),

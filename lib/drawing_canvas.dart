@@ -63,18 +63,17 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
   // Save the drawing as an image
   Future<void> _saveDrawing() async {
-    RenderRepaintBoundary boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-    ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final Uint8List pngBytes = byteData!.buffer.asUint8List();
+    final boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: 3.0);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final pngBytes = byteData!.buffer.asUint8List();
 
-    final directory = await getApplicationDocumentsDirectory();
-    final imagePath = '${directory.path}/drawing_${DateTime.now().millisecondsSinceEpoch}.png';
-    File imgFile = File(imagePath);
-    await imgFile.writeAsBytes(pngBytes);
+    final imagePath = '${(await getApplicationDocumentsDirectory()).path}/drawing_${DateTime.now().millisecondsSinceEpoch}.png';
+    await File(imagePath).writeAsBytes(pngBytes); // Save the file
 
-    Navigator.pop(context, imgFile); // Return the saved image
+    Navigator.pop(context, imagePath); // Return the saved image
   }
+
 
   @override
   Widget build(BuildContext context) {
