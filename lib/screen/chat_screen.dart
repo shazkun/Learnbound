@@ -29,8 +29,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String? profilePicture; // Store profile picture
   final _picker = ImagePicker();
 
-  // Chat modes: 1 = Text, 2 = Image Upload, 3 = Drawing
-  String currentMode = "";
+  
+  String currentMode = "Chat"; // Default mode
 
 
   @override
@@ -42,7 +42,6 @@ class _ChatScreenState extends State<ChatScreen> {
   // Function to load profile picture from the database
   Future<void> _loadProfilePicture() async {
     var db = DatabaseHelper();
-
     var user = await db.getUser(widget.nickname);
     if (user != null && user['profile_picture'] != null) {
       setState(() {
@@ -60,7 +59,6 @@ void _connectToServer(String serverInfo) async {
   //   });
   //   return; // Exit early if already connected
   // }
-
   try {
     final parts = serverInfo.split(':');
     final ip = parts[0];
@@ -110,6 +108,7 @@ void _connectToServer(String serverInfo) async {
       // Reset connection status when the connection is closed
       setState(() {
         messages.add({'text': 'Connection closed', 'isImage': false});
+        questions.clear();
         isConnected = false;
       });
     });
@@ -142,8 +141,8 @@ void _connectToServer(String serverInfo) async {
     String base64Image = base64Encode(imageBytes);
 
     // Send the base64 image string with an end marker (newline)
-    clientSocket!.add(utf8.encode(base64Image + '\n'));
-    clientSocket!.flush();
+    clientSocket?.add(utf8.encode('$base64Image\n'));
+    clientSocket?.flush();
 
     setState(() {
       messages.add({
@@ -170,11 +169,11 @@ void _connectToServer(String serverInfo) async {
         String base64Image = base64Encode(imageBytes);
 
         // Send the base64 image string with an end marker (newline)
-        clientSocket!.add(utf8.encode(base64Image + '\n'));
+        clientSocket!.add(utf8.encode('$base64Image\n'));
         clientSocket!.flush();
       setState(() {
         messages
-            .add({'image': imgFile, 'isImage': true}); // Add drawing as image
+            .add({'nickname': widget.nickname,'image': imgFile, 'isImage': true}); // Add drawing as image
       });
       // Send image metadata to the host
     }
@@ -199,7 +198,6 @@ void _connectToServer(String serverInfo) async {
   // Manual connection to the server
   void _manualConnect() {
     String ip = manualIpController.text;
-    // int port = int.tryParse(manualPortController.text) ?? 0;
     int port = 4040;
     _connectToServer('$ip:$port');
   }
@@ -376,14 +374,7 @@ void _connectToServer(String serverInfo) async {
               if (currentMode == "Chat")
                 Row(
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.emoji_emotions),
-                      onPressed: () {
-                        setState(() {
-                          isEmojiVisible = !isEmojiVisible;
-                        });
-                      },
-                    ),
+                   
                     Expanded(
                       child: TextField(
                         controller: messageController,

@@ -6,7 +6,6 @@ import 'dart:io'; // Ensure you import this for File usage
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
 
-
   @override
   _ProfileSettingsScreenState createState() => _ProfileSettingsScreenState();
 }
@@ -14,9 +13,7 @@ class ProfileSettingsScreen extends StatefulWidget {
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final AuthService _authService = AuthService();
   String? _profilePicturePath;
-  
 
- 
   @override
   void initState() {
     super.initState();
@@ -30,16 +27,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _changeProfilePicture() async {
-  
-    await _authService.changeProfilePicture(1);//test
+    await _authService.changeProfilePicture(1); //test
     _loadProfilePicture();
   }
 
   void _showChangePasswordDialog(BuildContext context) {
-    final TextEditingController currentPasswordController = TextEditingController();
+    final TextEditingController currentPasswordController =
+        TextEditingController();
     final TextEditingController newPasswordController = TextEditingController();
-     
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -105,7 +101,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         title: Text('Profile Settings'),
       ),
       body: Container(
-         decoration: BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
               Color(0xFFD3A97D).withOpacity(1), // Start color
@@ -116,27 +112,25 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
         ),
         padding: const EdgeInsets.all(16.0),
-        
         child: ListView(
           children: [
             Padding(
-  padding: EdgeInsets.symmetric(vertical: 15.0), // Adjust the padding as needed
-  child: GestureDetector(
-    onTap: _changeProfilePicture,
-    child: CircleAvatar(
-      radius: 50,
-      backgroundImage: _profilePicturePath != null
-          ? FileImage(File(_profilePicturePath!))
-          : AssetImage('assets/defaultprofile.png') as ImageProvider,
-      child: _profilePicturePath == null
-          ? Icon(Icons.camera_alt, size: 30, color: Colors.grey)
-          : null,
-    ),
-  ),
-),
-
-
-
+              padding: EdgeInsets.symmetric(
+                  vertical: 15.0), // Adjust the padding as needed
+              child: GestureDetector(
+                onTap: _changeProfilePicture,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundImage: _profilePicturePath != null
+                      ? FileImage(File(_profilePicturePath!))
+                      : AssetImage('assets/defaultprofile.png')
+                          as ImageProvider,
+                  child: _profilePicturePath == null
+                      ? Icon(Icons.camera_alt, size: 30, color: Colors.grey)
+                      : null,
+                ),
+              ),
+            ),
             SizedBox(height: 20),
             ListTile(
               leading: Icon(Icons.lock),
@@ -145,8 +139,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 _showChangePasswordDialog(context);
               },
             ),
-           
-             ListTile(
+            ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),
               onTap: _logout,

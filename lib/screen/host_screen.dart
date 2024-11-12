@@ -19,14 +19,14 @@ class _HostScreenState extends State<HostScreen> {
   ServerSocket? serverSocket;
   final TextEditingController _questionController =
       TextEditingController(); // Controller for TextField
-// To track emoji picker visibility
   Map<Socket, String> clientNicknames = {}; // Socket to nickname mapping
   List<Socket> connectedClients = [];
-  String? selectedMode;
+  String? selectedMode = "Chat";
   Map<String, int> participants = {};
   String? receivedImageBase64;
   final StringBuffer dataBuffer =
       StringBuffer(); // Buffer to accumulate incoming data
+  String? username;
 
   @override
   void initState() {
@@ -63,7 +63,7 @@ class _HostScreenState extends State<HostScreen> {
       final message = utf8.encode('$localIp');
 
       // Set up a timer to send the broadcast message every second
-      Timer.periodic(Duration(seconds: 1), (timer) {
+      Timer.periodic(Duration(seconds: 3), (timer) {
         socket.send(
           message,
           InternetAddress('255.255.255.255'),
@@ -99,6 +99,7 @@ class _HostScreenState extends State<HostScreen> {
               message.substring(9); // Extract nickname after "Nickname:"
           clientNicknames[client] = nickname; // Store nickname for this client
           participants[nickname] = 0;
+          username = nickname;
           setState(() {
             messages.add({
               'text': '$nickname connected.',
@@ -119,26 +120,29 @@ class _HostScreenState extends State<HostScreen> {
           if (selectedMode == "Picture" || selectedMode == "Drawing") {
             dataBuffer.write(utf8.decode(data));
 
-          if (dataBuffer.toString().endsWith('\n')) {
-            // Remove the end marker
-            String completeData = dataBuffer.toString().trim();
+            if (dataBuffer.toString().endsWith('\n')) {
+              // Remove the end marker
+              String completeData = dataBuffer.toString().trim();
 
-            // Update the UI with the received image
-            setState(() {
-              receivedImageBase64 = completeData;
-              messages.add(
-                  {'image': '', 'isImage': true});
-            });
+              // Update the UI with the received image
+              setState(() {
+                receivedImageBase64 = completeData;
+                messages.add({'image': receivedImageBase64, 'isImage': true});
+              });
 
-            // Clear the buffer for future data
-            dataBuffer.clear();
-          }}
+              // Clear the buffer for future data
+              dataBuffer.clear();
+            }
+          }
           if (selectedMode == "Chat") {
             setState(() {
               String nickname =
                   clientNicknames[client] ?? client.remoteAddress.address;
-              messages.add(
-                  {'text': '$nickname : $message', 'nickname': nickname, 'isImage': false});
+              messages.add({
+                'text': '$nickname : $message',
+                'nickname': nickname,
+                'isImage': false
+              });
             });
           }
         }
@@ -160,13 +164,17 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   void _sendStickyQuestion(String question) {
-    for (var client in connectedClients) {
-      // Iterate over connected clients
-      client.write("Question:$question"); // Send the sticky question message
-    }
-    setState(() {
-      stickyQuestions.add(question); // Add sticky question to the list
-    });
+  
+      for (var client in connectedClients) {
+        // Iterate over connected clients
+      
+        client.write("Question:$question"); // Send the sticky question message
+        
+      }
+      setState(() {
+        stickyQuestions.add(question); // Add sticky question to the list
+      });
+    
   }
 
   void _removeStickyQuestion(String question) {
@@ -183,6 +191,7 @@ class _HostScreenState extends State<HostScreen> {
   void dispose() {
     serverSocket?.close();
     _questionController.dispose();
+    stickyQuestions.clear();
     super.dispose();
   }
 
@@ -199,7 +208,9 @@ class _HostScreenState extends State<HostScreen> {
             child: Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
             child: Text('Exit'),
           ),
         ],
@@ -208,6 +219,8 @@ class _HostScreenState extends State<HostScreen> {
     return shouldPop ??
         false; // Return false if the user cancels, true if they confirm
   }
+
+
 
   void _addPoints(String participant, int points) {
     setState(() {
@@ -293,11 +306,122 @@ class _HostScreenState extends State<HostScreen> {
     );
   }
 
+ Widget _buildImageThumbnail(String base64Image) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            content: Image.memory(
+              base64Decode(base64Image),
+              errorBuilder: (context, error, stackTrace) =>
+                  Text('Image not found', style: TextStyle(color: Colors.red)),
+            ),
+          ),
+        );
+      },
+      child: Image.memory(
+        base64Decode(base64Image),
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  // Build messages view based on mode
+  // Build messages view with border and username display
+Widget _buildMessagesView() {
+  if (selectedMode == "Chat") {
+    return ListView.builder(
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final messageData = messages[index];
+        return Container(
+          margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+          padding: EdgeInsets.all(8.0),
+         
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                messageData['nickname'] ?? 'Unknown User',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueGrey,
+                ),
+              ),
+              if (messageData['text'] != null) Text(messageData['text']),
+              if (messageData['isImage'] == true && messageData['image'] != null)
+                _buildImageThumbnail(messageData['image']),
+            ],
+          ),
+        );
+      },
+    );
+  } else {
+  
+
+   return SingleChildScrollView(
+  child: LayoutBuilder(
+    builder: (context, constraints) {
+      // Adjust the number of columns based on screen width
+      int crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 4);
+
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 4.0,
+          mainAxisSpacing: 4.0,
+          childAspectRatio: 0.75,
+        ),
+        itemCount: messages.where((msg) => msg['isImage'] == true && msg['image'] != null).length,
+        itemBuilder: (context, index) {
+          final messageData = messages
+              .where((msg) => msg['isImage'] == true && msg['image'] != null)
+              .toList()[index];
+
+          return Container(
+            margin: EdgeInsets.all(4.0),
+            padding: EdgeInsets.all(4.0),
+            child: Column(
+              children: [
+                Text(
+                  username ?? 'Unknown User',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
+                  ),
+                ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0), // Rounded corners
+                  child: _buildImageThumbnail(messageData['image']),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  ),
+);
+
+  }
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Host Screen'),
+        title: Text('Mode $selectedMode'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () async {
@@ -308,8 +432,8 @@ class _HostScreenState extends State<HostScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.person), // Participants list icon
-            onPressed: _openParticipantsList, // Open participants list
+            icon: Icon(Icons.person),
+            onPressed: _openParticipantsList,
           ),
           IconButton(
             icon: Icon(Icons.settings_accessibility_sharp, color: Colors.black),
@@ -359,26 +483,9 @@ class _HostScreenState extends State<HostScreen> {
         ),
         child: Column(
           children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final messageData = messages[index];
-                  return ListTile(
-                    leading: Icon(Icons.account_circle),
-                    title: receivedImageBase64 != null
-                        ? Image.memory(
-                            base64Decode(receivedImageBase64!),
-                            errorBuilder: (context, error, stackTrace) => Text(
-                              'Image not found',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          )
-                        : Text(messageData['text'] ?? 'Message not available'),
-                  );
-                },
-              ),
-            ),
+            Expanded(child: _buildMessagesView()),
+
+            // Sticky questions section
             if (stickyQuestions.isNotEmpty)
               Container(
                 padding: EdgeInsets.all(8),
@@ -407,9 +514,13 @@ class _HostScreenState extends State<HostScreen> {
                 IconButton(
                   icon: Icon(Icons.send),
                   onPressed: () {
-                    if (_questionController.text.isNotEmpty) {
+                    if (_questionController.text.isNotEmpty &&
+                        participants.isNotEmpty) {
                       _sendStickyQuestion(_questionController.text);
                       _questionController.clear();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Participants list is empty')));
                     }
                   },
                 ),

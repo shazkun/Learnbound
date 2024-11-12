@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 class ServerList extends StatefulWidget {
@@ -17,11 +18,34 @@ class _ServerListState extends State<ServerList> {
   bool isListening = false; // Flag to prevent multiple listeners
   static const int debounceDuration = 300; // Duration in milliseconds
   DateTime? lastUpdateTime; // Track the last update time
+  String? localIp; // Store the local IP address
 
   @override
   void initState() {
     super.initState();
+    _initializeLocalIp();
     _startListeningForServers();
+  }
+
+  Future<void> _initializeLocalIp() async {
+    localIp = await getLocalIp();
+    print('Local IP: $localIp');
+  }
+
+  Future<String?> getLocalIp() async {
+    try {
+      final interfaces = await NetworkInterface.list();
+      for (var interface in interfaces) {
+        for (var addr in interface.addresses) {
+          if (addr.type == InternetAddressType.IPv4 && !addr.isLoopback) {
+            return addr.address; // Return the first non-loopback IPv4 address
+          }
+        }
+      }
+    } catch (e) {
+      print('Error getting local IP: $e');
+    }
+    return null; // Return null if no valid address is found
   }
 
   void _startListeningForServers() async {
@@ -37,14 +61,17 @@ class _ServerListState extends State<ServerList> {
           Datagram? datagram = udpSocket!.receive();
           if (datagram != null) {
             String serverInfo = String.fromCharCodes(datagram.data).trim();
-            print('Server info: $serverInfo');
 
-            // Check the time since the last update
-            if (lastUpdateTime == null || DateTime.now().difference(lastUpdateTime!).inMilliseconds > debounceDuration) {
-              setState(() {
-                serverList.add(serverInfo); // Add new server info
-                lastUpdateTime = DateTime.now(); // Update the last update time
-              });
+            // Check if the received server info matches the local IP and filter it out
+            if (serverInfo != localIp) {
+              // Check the time since the last update
+              if (lastUpdateTime == null ||
+                  DateTime.now().difference(lastUpdateTime!).inMilliseconds > debounceDuration) {
+                setState(() {
+                  serverList.add(serverInfo); // Add new server info
+                  lastUpdateTime = DateTime.now(); // Update the last update time
+                });
+              }
             }
           }
         }
@@ -55,6 +82,7 @@ class _ServerListState extends State<ServerList> {
       print('Error binding to UDP socket: $e');
     }
   }
+
   @override
   void dispose() {
     udpSocket?.close();
@@ -67,17 +95,17 @@ class _ServerListState extends State<ServerList> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Available Servers'),
-         actions: [
-        IconButton(
-          icon: Icon(Icons.refresh),
-          onPressed: () {
-            setState(() {
-              serverList.clear();
-            });
-            _startListeningForServers(); // Restart the listening process
-          },
-        ),
-      ],
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                serverList.clear();
+              });
+              _startListeningForServers(); // Restart the listening process
+            },
+          ),
+        ],
       ),
       body: serverList.isEmpty
           ? Center(child: Text('No servers found'))
