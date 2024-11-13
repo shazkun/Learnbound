@@ -26,7 +26,6 @@ class _HostScreenState extends State<HostScreen> {
   String? receivedImageBase64;
   final StringBuffer dataBuffer =
       StringBuffer(); // Buffer to accumulate incoming data
-  String? username;
 
   @override
   void initState() {
@@ -99,7 +98,6 @@ class _HostScreenState extends State<HostScreen> {
               message.substring(9); // Extract nickname after "Nickname:"
           clientNicknames[client] = nickname; // Store nickname for this client
           participants[nickname] = 0;
-          username = nickname;
           setState(() {
             messages.add({
               'text': '$nickname connected.',
@@ -121,13 +119,16 @@ class _HostScreenState extends State<HostScreen> {
             dataBuffer.write(utf8.decode(data));
 
             if (dataBuffer.toString().endsWith('\n')) {
-              // Remove the end marker
               String completeData = dataBuffer.toString().trim();
 
               // Update the UI with the received image
               setState(() {
                 receivedImageBase64 = completeData;
-                messages.add({'image': receivedImageBase64, 'isImage': true});
+                messages.add({
+                  'nickname': clientNicknames[client],
+                  'image': receivedImageBase64,
+                  'isImage': true
+                });
               });
 
               // Clear the buffer for future data
@@ -164,17 +165,14 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   void _sendStickyQuestion(String question) {
-  
-      for (var client in connectedClients) {
-        // Iterate over connected clients
-      
-        client.write("Question:$question"); // Send the sticky question message
-        
-      }
-      setState(() {
-        stickyQuestions.add(question); // Add sticky question to the list
-      });
-    
+    for (var client in connectedClients) {
+      // Iterate over connected clients
+
+      client.write("Question:$question"); // Send the sticky question message
+    }
+    setState(() {
+      stickyQuestions.add(question); // Add sticky question to the list
+    });
   }
 
   void _removeStickyQuestion(String question) {
@@ -219,8 +217,6 @@ class _HostScreenState extends State<HostScreen> {
     return shouldPop ??
         false; // Return false if the user cancels, true if they confirm
   }
-
-
 
   void _addPoints(String participant, int points) {
     setState(() {
@@ -306,7 +302,7 @@ class _HostScreenState extends State<HostScreen> {
     );
   }
 
- Widget _buildImageThumbnail(String base64Image) {
+  Widget _buildImageThumbnail(String base64Image) {
     return GestureDetector(
       onTap: () {
         showDialog(
@@ -329,93 +325,92 @@ class _HostScreenState extends State<HostScreen> {
     );
   }
 
-  // Build messages view based on mode
-  // Build messages view with border and username display
-Widget _buildMessagesView() {
-  if (selectedMode == "Chat") {
-    return ListView.builder(
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        final messageData = messages[index];
-        return Container(
-          margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-          padding: EdgeInsets.all(8.0),
-         
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                messageData['nickname'] ?? 'Unknown User',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey,
-                ),
-              ),
-              if (messageData['text'] != null) Text(messageData['text']),
-              if (messageData['isImage'] == true && messageData['image'] != null)
-                _buildImageThumbnail(messageData['image']),
-            ],
-          ),
-        );
-      },
-    );
-  } else {
-  
-
-   return SingleChildScrollView(
-  child: LayoutBuilder(
-    builder: (context, constraints) {
-      // Adjust the number of columns based on screen width
-      int crossAxisCount = (constraints.maxWidth / 150).floor().clamp(2, 4);
-
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 4.0,
-          mainAxisSpacing: 4.0,
-          childAspectRatio: 0.75,
-        ),
-        itemCount: messages.where((msg) => msg['isImage'] == true && msg['image'] != null).length,
+  Widget _buildMessagesView() {
+    if (selectedMode == "Chat") {
+      return ListView.builder(
+        itemCount: messages.length,
         itemBuilder: (context, index) {
-          final messageData = messages
-              .where((msg) => msg['isImage'] == true && msg['image'] != null)
-              .toList()[index];
-
+          final messageData = messages[index];
           return Container(
-            margin: EdgeInsets.all(4.0),
-            padding: EdgeInsets.all(4.0),
+            margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  username ?? 'Unknown User',
+                  messageData['nickname'] ?? 'Unknown User',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.blueGrey,
                   ),
                 ),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  child: _buildImageThumbnail(messageData['image']),
-                ),
+                if (messageData['text'] != null) Text(messageData['text']),
+                if (messageData['isImage'] == true &&
+                    messageData['image'] != null)
+                  _buildImageThumbnail(messageData['image']),
               ],
             ),
           );
         },
       );
-    },
-  ),
-);
+    } else {
+      return SingleChildScrollView(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Adjust the number of columns based on screen width
+            int crossAxisCount =
+                (constraints.maxWidth / 150).floor().clamp(2, 4);
 
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 4.0,
+                mainAxisSpacing: 4.0,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: messages
+                  .where(
+                      (msg) => msg['isImage'] == true && msg['image'] != null)
+                  .length,
+              itemBuilder: (context, index) {
+                final messageData = messages
+                    .where(
+                        (msg) => msg['isImage'] == true && msg['image'] != null)
+                    .toList()[index];
+
+                return Container(
+                  margin: EdgeInsets.all(4.0),
+                  padding: EdgeInsets.all(4.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        messageData['nickname'] ?? 'Unknown User',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
+                      ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(12.0), // Rounded corners
+                        child: _buildImageThumbnail(messageData['image']),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      );
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {

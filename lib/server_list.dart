@@ -53,7 +53,8 @@ class _ServerListState extends State<ServerList> {
     isListening = true;
 
     try {
-      udpSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, udpPort);
+      udpSocket =
+          await RawDatagramSocket.bind(InternetAddress.anyIPv4, udpPort);
       print('Listening for UDP packets on port $udpPort');
 
       udpSocket!.listen((RawSocketEvent event) {
@@ -66,10 +67,12 @@ class _ServerListState extends State<ServerList> {
             if (serverInfo != localIp) {
               // Check the time since the last update
               if (lastUpdateTime == null ||
-                  DateTime.now().difference(lastUpdateTime!).inMilliseconds > debounceDuration) {
+                  DateTime.now().difference(lastUpdateTime!).inMilliseconds >
+                      debounceDuration) {
                 setState(() {
                   serverList.add(serverInfo); // Add new server info
-                  lastUpdateTime = DateTime.now(); // Update the last update time
+                  lastUpdateTime =
+                      DateTime.now(); // Update the last update time
                 });
               }
             }
@@ -113,8 +116,10 @@ class _ServerListState extends State<ServerList> {
               itemCount: serverList.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(serverList.elementAt(index)), // Use elementAt for Set
-                  onTap: () => widget.onSelectServer(serverList.elementAt(index)),
+                  title: Text(
+                      serverList.elementAt(index)), // Use elementAt for Set
+                  onTap: () =>
+                      widget.onSelectServer(serverList.elementAt(index)),
                 );
               },
             ),

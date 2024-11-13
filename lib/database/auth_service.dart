@@ -71,7 +71,6 @@ class AuthService {
       // Here, you would typically upload the image to your backend
       // and update the user's profile picture URL in your database
     }
-    
   }
 
   String? get profilePicturePath => _profilePicturePath;

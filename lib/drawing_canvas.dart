@@ -10,7 +10,8 @@ class Stroke {
   final Color color;
   final double strokeWidth;
 
-  Stroke({required this.points, required this.color, required this.strokeWidth});
+  Stroke(
+      {required this.points, required this.color, required this.strokeWidth});
 }
 
 class DrawingCanvas extends StatefulWidget {
@@ -62,17 +63,18 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
 
   // Save the drawing as an image
   Future<void> _saveDrawing() async {
-    final boundary = _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    final boundary =
+        _globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     final image = await boundary.toImage(pixelRatio: 3.0);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final pngBytes = byteData!.buffer.asUint8List();
 
-    final imagePath = '${(await getApplicationDocumentsDirectory()).path}/drawing_${DateTime.now().millisecondsSinceEpoch}.png';
+    final imagePath =
+        '${(await getApplicationDocumentsDirectory()).path}/drawing_${DateTime.now().millisecondsSinceEpoch}.png';
     await File(imagePath).writeAsBytes(pngBytes); // Save the file
 
     Navigator.pop(context, imagePath); // Return the saved image
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -136,13 +138,15 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
                   _startNewStroke(details.localPosition); // Start a new stroke
                 },
                 onPanUpdate: (details) {
-                  _addPoint(details.localPosition); // Add points to current stroke
+                  _addPoint(
+                      details.localPosition); // Add points to current stroke
                 },
                 onPanEnd: (details) {
                   _endStroke(); // End the current stroke
                 },
                 child: CustomPaint(
-                  painter: DrawingPainter(strokes, currentStrokePoints, selectedColor, strokeWidth),
+                  painter: DrawingPainter(
+                      strokes, currentStrokePoints, selectedColor, strokeWidth),
                   child: Container(),
                 ),
               ),
@@ -161,12 +165,12 @@ class DrawingPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
 
-  DrawingPainter(this.strokes, this.currentStrokePoints, this.color, this.strokeWidth);
+  DrawingPainter(
+      this.strokes, this.currentStrokePoints, this.color, this.strokeWidth);
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..strokeCap = StrokeCap.round;
+    Paint paint = Paint()..strokeCap = StrokeCap.round;
 
     // Paint the finished strokes
     for (var stroke in strokes) {
@@ -174,7 +178,8 @@ class DrawingPainter extends CustomPainter {
       paint.strokeWidth = stroke.strokeWidth;
       for (int i = 0; i < stroke.points.length - 1; i++) {
         if (stroke.points[i] != null && stroke.points[i + 1] != null) {
-          canvas.drawLine(stroke.points[i]!, stroke.points[i + 1]!, paint); // Draw between points
+          canvas.drawLine(stroke.points[i]!, stroke.points[i + 1]!,
+              paint); // Draw between points
         }
       }
     }
@@ -183,8 +188,10 @@ class DrawingPainter extends CustomPainter {
     paint.color = color;
     paint.strokeWidth = strokeWidth;
     for (int i = 0; i < currentStrokePoints.length - 1; i++) {
-      if (currentStrokePoints[i] != null && currentStrokePoints[i + 1] != null) {
-        canvas.drawLine(currentStrokePoints[i]!, currentStrokePoints[i + 1]!, paint); // Draw current stroke
+      if (currentStrokePoints[i] != null &&
+          currentStrokePoints[i + 1] != null) {
+        canvas.drawLine(currentStrokePoints[i]!, currentStrokePoints[i + 1]!,
+            paint); // Draw current stroke
       }
     }
   }

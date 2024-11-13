@@ -38,10 +38,11 @@ class _StartScreenState extends State<StartScreen> {
                 child: Image.asset(
                   'assets/applogo.png', // Path to your logo asset
                   height: screenHeight * 0.3, // Responsive height
-                  width: screenWidth * 0.6,  // Responsive width
+                  width: screenWidth * 0.6, // Responsive width
                 ),
               ),
-              SizedBox(height: screenHeight * 0.05), // Space between logo and button
+              SizedBox(
+                  height: screenHeight * 0.05), // Space between logo and button
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -51,10 +52,12 @@ class _StartScreenState extends State<StartScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   shape: CircleBorder(),
-                  minimumSize: Size(screenWidth * 0.10, screenWidth * 0.10), // Adjust size based on screen width
+                  minimumSize: Size(screenWidth * 0.10,
+                      screenWidth * 0.10), // Adjust size based on screen width
                   padding: EdgeInsets.zero,
                 ),
-                child: Icon(Icons.arrow_forward, size: 20), // Icon size responsive
+                child:
+                    Icon(Icons.arrow_forward, size: 20), // Icon size responsive
               ),
               SizedBox(height: screenHeight * 0.02), // Space below button
               Spacer(), // Push content to center vertically

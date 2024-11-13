@@ -46,19 +46,16 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Learnbound',
       theme: ThemeData(
-       
-      
-
         // Define a custom color scheme to control button colors
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: Colors.black, // Color for ElevatedButton background
-          secondary: Colors.red, // Accent color for FloatingActionButton or toggles
+          secondary:
+              Colors.red, // Accent color for FloatingActionButton or toggles
           onPrimary: Colors.white, // Text color on ElevatedButton
           onSecondary: Colors.red, // Text color for secondary (TextButton)
         ),
       ),
       home: _isLoading ? LoadingScreen() : StartScreen(),
-      
     );
   }
 }

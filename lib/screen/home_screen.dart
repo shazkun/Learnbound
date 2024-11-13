@@ -56,28 +56,28 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-           Positioned(
-          top: 50.0,
-          right: 20.0,
-          child: Material(
-            color: Colors.transparent, // Make the background transparent
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfileSettingsScreen(),
+            Positioned(
+              top: 50.0,
+              right: 20.0,
+              child: Material(
+                color: Colors.transparent, // Make the background transparent
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfileSettingsScreen(),
+                      ),
+                    );
+                  },
+                  child: Icon(
+                    Icons.settings,
+                    size: 40.0, // Adjust the size as needed
+                    color: Colors.black, // Change the icon color
                   ),
-                );
-              },
-              child: Icon(
-                Icons.settings,
-                size: 40.0, // Adjust the size as needed
-                color: Colors.black, // Change the icon color
+                ),
               ),
             ),
-          ),
-        ),
           ],
         ),
       ),
@@ -117,7 +117,8 @@ class HomeScreen extends StatelessWidget {
               usernameOrNickname = value;
             },
           ),
-          actions: [ TextButton(
+          actions: [
+            TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text('Cancel'),
             ),
@@ -136,7 +137,6 @@ class HomeScreen extends StatelessWidget {
               },
               child: Text('Join'),
             ),
-           
           ],
         );
       },

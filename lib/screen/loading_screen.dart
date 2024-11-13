@@ -9,7 +9,7 @@ class LoadingScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Color(0xFFD3A97D), // Match your app’s primary color
       body: Container(
-         decoration: BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
               Color(0xFFD3A97D).withOpacity(1), // Start color

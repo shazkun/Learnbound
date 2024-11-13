@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 class ParticipantsList extends StatelessWidget {
   final Map<String, int> participants;
   final Function(String) onManagePoints; // Callback to manage points

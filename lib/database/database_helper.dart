@@ -22,12 +22,12 @@ class DatabaseHelper {
     // Get the path to the database file
     final directory = await getApplicationDocumentsDirectory();
     String path = join(directory.path, 'user_database.db');
-    
+
     return await openDatabase(
       path,
       version: 2, // Increment version number
       onCreate: (db, version) async {
-        await db.execute(''' 
+        await db.execute('''
           CREATE TABLE users(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE,
@@ -38,20 +38,21 @@ class DatabaseHelper {
       },
     );
   }
-  Future<int?> getUserIdByEmailAndPassword(String email, String password) async {
-  final db = await database;
-  final result = await db.query(
-    'users',
-    columns: ['id'], // Specify the columns to return
-    where: 'email = ? AND password = ?',
-    whereArgs: [email, password],
-  );
-  if (result.isNotEmpty) {
-    return result.first['id'] as int; // Return the user ID
-  }
-  return null; // Return null if no user found
-}
 
+  Future<int?> getUserIdByEmailAndPassword(
+      String email, String password) async {
+    final db = await database;
+    final result = await db.query(
+      'users',
+      columns: ['id'], // Specify the columns to return
+      where: 'email = ? AND password = ?',
+      whereArgs: [email, password],
+    );
+    if (result.isNotEmpty) {
+      return result.first['id'] as int; // Return the user ID
+    }
+    return null; // Return null if no user found
+  }
 
   Future<void> insertUser(Map<String, dynamic> user) async {
     final db = await database;

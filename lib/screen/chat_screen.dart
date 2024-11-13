@@ -29,9 +29,7 @@ class _ChatScreenState extends State<ChatScreen> {
   String? profilePicture; // Store profile picture
   final _picker = ImagePicker();
 
-  
   String currentMode = "Chat"; // Default mode
-
 
   @override
   void initState() {
@@ -50,74 +48,75 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
- bool isConnected = false; // Flag to track connection status
+  bool isConnected = false; // Flag to track connection status
 
-void _connectToServer(String serverInfo) async {
-  // if (isConnected) {
-  //   setState(() {
-  //     messages.add({'text': 'Already connected to a server.', 'isImage': false});
-  //   });
-  //   return; // Exit early if already connected
-  // }
-  try {
-    final parts = serverInfo.split(':');
-    final ip = parts[0];
-    final port = int.parse(parts[1]);
+  void _connectToServer(String serverInfo) async {
+    // if (isConnected) {
+    //   setState(() {
+    //     messages.add({'text': 'Already connected to a server.', 'isImage': false});
+    //   });
+    //   return; // Exit early if already connected
+    // }
+    try {
+      final parts = serverInfo.split(':');
+      final ip = parts[0];
+      final port = int.parse(parts[1]);
 
-    clientSocket = await Socket.connect(ip, port);
+      clientSocket = await Socket.connect(ip, port);
 
-    // Set connection status to true
-    isConnected = true;
+      // Set connection status to true
+      isConnected = true;
 
-    // Send nickname as the first message to the server
-    clientSocket!.write("Nickname:${widget.nickname}");
+      // Send nickname as the first message to the server
+      clientSocket!.write("Nickname:${widget.nickname}");
 
-    setState(() {
-      messages.add({'text': 'Connected to server $ip:$port', 'isImage': false});
-    });
-
-    // Listen for incoming messages
-    clientSocket!.listen((data) {
-      final message = String.fromCharCodes(data).trim();
-
-      if (message.startsWith("Mode:")) {
-        final mode = message.substring(5);
-        setState(() {
-          currentMode = mode;
-        });
-      } else if (message.startsWith("Question:")) {
-        final question = message.substring(9);
-        setState(() {
-          questions.add(question);
-        });
-      } else if (message.startsWith("Removed:")) {
-        final question = message.substring(8);
-        setState(() {
-          questions.remove(question);
-        });
-      } else {
-        setState(() {
-          messages.add({'text': message, 'isImage': false});
-        });
-      }
-    }, onError: (error) {
       setState(() {
-        messages.add({'text': 'Connection error: $error', 'isImage': false});
+        messages
+            .add({'text': 'Connected to server $ip:$port', 'isImage': false});
       });
-    }, onDone: () {
-      // Reset connection status when the connection is closed
+
+      // Listen for incoming messages
+      clientSocket!.listen((data) {
+        final message = String.fromCharCodes(data).trim();
+
+        if (message.startsWith("Mode:")) {
+          final mode = message.substring(5);
+          setState(() {
+            currentMode = mode;
+          });
+        } else if (message.startsWith("Question:")) {
+          final question = message.substring(9);
+          setState(() {
+            questions.add(question);
+          });
+        } else if (message.startsWith("Removed:")) {
+          final question = message.substring(8);
+          setState(() {
+            questions.remove(question);
+          });
+        } else {
+          setState(() {
+            messages.add({'text': message, 'isImage': false});
+          });
+        }
+      }, onError: (error) {
+        setState(() {
+          messages.add({'text': 'Connection error: $error', 'isImage': false});
+        });
+      }, onDone: () {
+        // Reset connection status when the connection is closed
+        setState(() {
+          messages.add({'text': 'Connection closed', 'isImage': false});
+          questions.clear();
+          isConnected = false;
+        });
+      });
+    } catch (e) {
       setState(() {
-        messages.add({'text': 'Connection closed', 'isImage': false});
-        questions.clear();
-        isConnected = false;
+        messages.add({'text': 'Connection failed: $e', 'isImage': false});
       });
-    });
-  } catch (e) {
-    setState(() {
-      messages.add({'text': 'Connection failed: $e', 'isImage': false});
-    });
+    }
   }
-}
 
   void _sendMessage(String message) {
     if (clientSocket != null) {
@@ -130,29 +129,27 @@ void _connectToServer(String serverInfo) async {
   }
 
   // Function to send images in chat
- Future<void> _pickAndSendImage() async {
-  // Pick an image from the gallery
-  final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  if (pickedFile != null) {
-    final imageBytes = await File(pickedFile.path).readAsBytes();
-    File imageFile = File(pickedFile.path);
+  Future<void> _pickAndSendImage() async {
+    // Pick an image from the gallery
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final imageBytes = await File(pickedFile.path).readAsBytes();
+      File imageFile = File(pickedFile.path);
 
-    // Convert the image bytes to base64
-    String base64Image = base64Encode(imageBytes);
+      // Convert the image bytes to base64
+      String base64Image = base64Encode(imageBytes);
 
-    // Send the base64 image string with an end marker (newline)
-    clientSocket?.add(utf8.encode('$base64Image\n'));
-    clientSocket?.flush();
+      // Send the base64 image string with an end marker (newline)
 
-    setState(() {
-      messages.add({
-        'text': 'Image sent',
-        'isImage': true,
-        'image': imageFile
+      clientSocket?.add(utf8.encode('$base64Image\n'));
+      clientSocket?.flush();
+
+      setState(() {
+        messages
+            .add({'text': 'Image sent', 'isImage': true, 'image': imageFile});
       });
-    });
+    }
   }
-}
 
   // Function to open the drawing canvas
   Future<void> _openDrawingCanvas() async {
@@ -162,18 +159,21 @@ void _connectToServer(String serverInfo) async {
     );
 
     if (drawing != null) {
-        File imgFile = File(drawing);
-        final imageBytes = await File(drawing).readAsBytes();
+      File imgFile = File(drawing);
+      final imageBytes = await File(drawing).readAsBytes();
 
-        // Convert the image bytes to base64
-        String base64Image = base64Encode(imageBytes);
+      // Convert the image bytes to base64
+      String base64Image = base64Encode(imageBytes);
 
-        // Send the base64 image string with an end marker (newline)
-        clientSocket!.add(utf8.encode('$base64Image\n'));
-        clientSocket!.flush();
+      // Send the base64 image string with an end marker (newline)
+      clientSocket!.add(utf8.encode('$base64Image\n'));
+      clientSocket!.flush();
       setState(() {
-        messages
-            .add({'nickname': widget.nickname,'image': imgFile, 'isImage': true}); // Add drawing as image
+        messages.add({
+          'nickname': widget.nickname,
+          'image': imgFile,
+          'isImage': true
+        }); // Add drawing as image
       });
       // Send image metadata to the host
     }
@@ -201,7 +201,8 @@ void _connectToServer(String serverInfo) async {
     int port = 4040;
     _connectToServer('$ip:$port');
   }
- Future<bool> _onBackPressed() async {
+
+  Future<bool> _onBackPressed() async {
     // Show a confirmation dialog when the user tries to leave the screen
     final shouldPop = await showDialog<bool>(
       context: context,
@@ -220,8 +221,10 @@ void _connectToServer(String serverInfo) async {
         ],
       ),
     );
-    return shouldPop ?? false; // Return false if the user cancels, true if they confirm
+    return shouldPop ??
+        false; // Return false if the user cancels, true if they confirm
   }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -230,18 +233,17 @@ void _connectToServer(String serverInfo) async {
       },
       child: Scaffold(
         appBar: AppBar(
-           leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () async {
-            // Handling custom back press
-            bool shouldExit = await _onBackPressed();
-            if (shouldExit) {
-              Navigator.of(context).pop(); // Proceed with navigation pop
-            }
-          },
-        ),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () async {
+              // Handling custom back press
+              bool shouldExit = await _onBackPressed();
+              if (shouldExit) {
+                Navigator.of(context).pop(); // Proceed with navigation pop
+              }
+            },
+          ),
           title: Row(
-            
             children: [
               profilePicture != null
                   ? CircleAvatar(
@@ -250,8 +252,6 @@ void _connectToServer(String serverInfo) async {
               SizedBox(width: 10),
               Text(widget.nickname),
             ],
-           
-            
           ),
           actions: [
             IconButton(
@@ -308,48 +308,52 @@ void _connectToServer(String serverInfo) async {
               end: Alignment.bottomLeft,
             ),
           ),
-          
           child: Column(
-            
             children: [
               // Show sticky questions if any
               SizedBox(height: 20),
-             questions.isNotEmpty
-    ? Padding(
-
-        padding: EdgeInsets.symmetric(horizontal: 16.0), // Padding on left and right
-        child: Container(
-          padding: EdgeInsets.all(8), // Padding inside the container
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 129, 109, 109), // Transparent background
-            borderRadius: BorderRadius.circular(12), // Rounded corners
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.3), // Soft shadow color
-                spreadRadius: 2, // Shadow spread
-                blurRadius: 5, // Shadow blur
-                offset: Offset(0, 3), // Shadow offset
-              ),
-            ],
-          ),
-          child: Column(
-            children: questions.map((question) {
-              return ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8), // Rounded corners for ListTile
-                ),
-                tileColor: Colors.white, // White background for each ListTile
-                title: Text(
-                  question,
-                  style: TextStyle(color: Colors.blue), // Blue text color
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      )
-    : Container(), // Empty container for when `questions` is empty, effectively showing nothing
-
+              questions.isNotEmpty
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 16.0), // Padding on left and right
+                      child: Container(
+                        padding:
+                            EdgeInsets.all(8), // Padding inside the container
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(
+                              255, 129, 109, 109), // Transparent background
+                          borderRadius:
+                              BorderRadius.circular(12), // Rounded corners
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey
+                                  .withOpacity(0.3), // Soft shadow color
+                              spreadRadius: 2, // Shadow spread
+                              blurRadius: 5, // Shadow blur
+                              offset: Offset(0, 3), // Shadow offset
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: questions.map((question) {
+                            return ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    8), // Rounded corners for ListTile
+                              ),
+                              tileColor: Colors
+                                  .white, // White background for each ListTile
+                              title: Text(
+                                question,
+                                style: TextStyle(
+                                    color: Colors.blue), // Blue text color
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    )
+                  : Container(), // Empty container for when `questions` is empty, effectively showing nothing
 
               // List of messages
               Expanded(
@@ -374,7 +378,6 @@ void _connectToServer(String serverInfo) async {
               if (currentMode == "Chat")
                 Row(
                   children: [
-                   
                     Expanded(
                       child: TextField(
                         controller: messageController,
