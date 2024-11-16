@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:Learnbound/database/settings_db.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 // Emoji support
@@ -31,12 +30,8 @@ class _ChatScreenState extends State<ChatScreen> {
   String? profilePicture; // Store profile picture
   final _picker = ImagePicker();
   final db = DatabaseHelper();
-  final sdb = SettingsDb();
 
-
-  Future<String> currentModes() async {
-    return await sdb.getMode() ?? "Chat"; // Default mode
-  }
+  String currentMode = "Chat"; // Default mode
 
   @override
   void initState() {
@@ -81,14 +76,13 @@ class _ChatScreenState extends State<ChatScreen> {
       });
 
       // Listen for incoming messages
-      clientSocket!.listen((data)  {
+      clientSocket!.listen((data) {
         final message = String.fromCharCodes(data).trim();
 
         if (message.startsWith("Mode:")) {
           final mode = message.substring(5);
-          setState(() async {
-            // await sdb.setMode(mode);
-            // currentMode = mode;
+          setState(() {
+            currentMode = mode;
           });
         } else if (message.startsWith("Question:")) {
           final question = message.substring(9);
@@ -381,7 +375,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
 
               // Message input and actions based on mode
-              if (currentModes() == "Chat")
+              if (currentMode == "Chat")
                 Row(
                   children: [
                     Expanded(
@@ -398,12 +392,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
-              if (currentModes() == "Picture")
+              if (currentMode == "Picture")
                 IconButton(
                   icon: Icon(Icons.image),
                   onPressed: _pickAndSendImage,
                 ),
-              if (currentModes() == "Drawing")
+              if (currentMode == "Drawing")
                 IconButton(
                   icon: Icon(Icons.brush),
                   onPressed: _openDrawingCanvas,
