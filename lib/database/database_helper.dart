@@ -19,22 +19,24 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    // Get the path to the database file
+    // Get the path to the phone's Downloads folder
     final directory = await getApplicationDocumentsDirectory();
-    String path = join(directory.path, 'user_database.db');
+    String path = join(directory.path,
+        'user_database.db'); // Appending 'Download' subdirectory
 
     return await openDatabase(
       path,
       version: 2, // Increment version number
       onCreate: (db, version) async {
         await db.execute('''
-          CREATE TABLE users(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE,
-            password TEXT,
-            profile_picture TEXT
-          )
-        ''');
+        CREATE TABLE users(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT,
+          email TEXT UNIQUE,
+          password TEXT,
+          profile_picture TEXT
+        )
+      ''');
       },
     );
   }
@@ -72,16 +74,44 @@ class DatabaseHelper {
     return null;
   }
 
-  Future<String?> getProfilePicture(String email) async {
+  Future<String?> getProfilePicture(int uid) async {
     final db = await database;
     final result = await db.query(
       'users',
       columns: ['profile_picture'],
-      where: 'email = ?',
-      whereArgs: [email],
+      where: 'id = ?',
+      whereArgs: [uid],
     );
     if (result.isNotEmpty) {
-      return result.first['profile_picture'] as String?;
+      return result.first['profile_picture'] as String;
+    }
+    return null;
+  }
+
+  Future<String?> getUsername(int uid) async {
+    final db = await database;
+    final result = await db.query(
+      'users',
+      columns: ['username'],
+      where: 'id = ?',
+      whereArgs: [uid],
+    );
+    if (result.isNotEmpty) {
+      return result.first['username'] as String;
+    }
+    return null;
+  }
+
+  Future<String?> getPassword(int uid) async {
+    final db = await database;
+    final result = await db.query(
+      'users',
+      columns: ['password'],
+      where: 'id = ?',
+      whereArgs: [uid],
+    );
+    if (result.isNotEmpty) {
+      return result.first['password'] as String;
     }
     return null;
   }
@@ -94,6 +124,22 @@ class DatabaseHelper {
       where: 'email = ?',
       whereArgs: [email],
     );
+  }
+
+  Future<void> changePasswordDb(
+      int uid, String currentPassword, String newPassword) async {
+    final db = await database;
+    final pass = await getPassword(uid);
+    if (currentPassword == pass) {
+      await db.update(
+        'users',
+        {'password': newPassword},
+        where: 'id = ?',
+        whereArgs: [uid],
+      );
+    } else {
+      print('password does not match');
+    }
   }
 
   void updateProfilePicture(int uid, String imagePath) async {

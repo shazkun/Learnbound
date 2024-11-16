@@ -13,7 +13,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
@@ -46,11 +46,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (_formKey.currentState?.validate() ?? false) {
-      if (_profilePicture != null) {
-        // await _authService.updateProfilePicture(
-        //     _emailController.text, _profilePicture.toString());
-      }
-      final success = await _authService.register(
+      // if (_profilePicture != null) {
+      //   await _authService.updateProfilePicture(
+      //    _emailController.text, _profilePicture.toString());
+      // }
+      final success = await _authService.register(_usernameController.text,
         _emailController.text,
         _passwordController.text,
         _profilePicture.toString(),
@@ -142,6 +142,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(height: 30),
 
                     // Email input with modern styling
+                     TextFormField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        prefixIcon: Icon(Icons.person_2),
+                      ),
+                     
+                    ),
+                    SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
                       decoration: InputDecoration(

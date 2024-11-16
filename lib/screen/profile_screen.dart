@@ -1,10 +1,13 @@
+import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:Learnbound/database/auth_service.dart';
 import 'auth_screen.dart'; // Import your AuthScreen here
 import 'dart:io'; // Ensure you import this for File usage
 
 class ProfileSettingsScreen extends StatefulWidget {
-  const ProfileSettingsScreen({super.key});
+  final int? uid;
+
+  const ProfileSettingsScreen({super.key, required this.uid});
 
   @override
   _ProfileSettingsScreenState createState() => _ProfileSettingsScreenState();
@@ -12,6 +15,7 @@ class ProfileSettingsScreen extends StatefulWidget {
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final AuthService _authService = AuthService();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
   String? _profilePicturePath;
 
   @override
@@ -20,14 +24,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     _loadProfilePicture();
   }
 
-  void _loadProfilePicture() {
+  void _loadProfilePicture() async {
+    String? profilePicture = await _dbHelper.getProfilePicture(widget.uid ?? 0);
     setState(() {
-      _profilePicturePath = _authService.profilePicturePath;
+      _profilePicturePath = profilePicture;
     });
   }
 
   void _changeProfilePicture() async {
-    await _authService.changeProfilePicture(1); //test
+    await _authService.changeProfilePicture(widget.uid ?? 0);
     _loadProfilePicture();
   }
 
@@ -60,17 +65,56 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             TextButton(
               onPressed: () async {
                 try {
-                  await _authService.changePassword(
-                    currentPasswordController.text,
-                    newPasswordController.text,
-                  );
-                  Navigator.of(context).pop(); // Close the dialog
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Password changed successfully!')),
-                  );
+                  final currentp = await _dbHelper.getPassword(widget.uid ?? 0);
+
+                  if (currentPasswordController.text.isEmpty ||
+                      newPasswordController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Please fill in all fields.')),
+                    );
+                    return;
+                  }
+
+                  if (currentp == currentPasswordController.text) {
+                    if (newPasswordController.text.length >= 6) {
+                      if (newPasswordController.text !=
+                          currentPasswordController.text) {
+                        // Change password
+                        await _authService.changePassword(
+                          widget.uid ?? 0,
+                          currentPasswordController.text,
+                          newPasswordController.text,
+                        );
+
+                        Navigator.of(context).pop(); // Close the dialog
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Password changed successfully!')),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'New password must be different from the old password.')),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                'Password must be at least 6 characters long.')),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Current password does not match.')),
+                    );
+                  }
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString())),
+                    SnackBar(
+                        content: Text('An error occurred: ${e.runtimeType}')),
                   );
                 }
               },
@@ -87,12 +131,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 
   void _logout() async {
-    await _authService.logout();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => AuthScreen()),
+    // Show a confirmation dialog
+    bool? shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Are you sure?'),
+          content: Text('Do you really want to log out?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false); // User pressed Cancel
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true); // User pressed Confirm
+              },
+              child: Text('Logout'),
+            ),
+          ],
+        );
+      },
     );
+
+    // If user confirmed logout, proceed with the logout process
+    if (shouldLogout == true) {
+      await _authService.logout();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AuthScreen()),
+      );
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -121,13 +194,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 onTap: _changeProfilePicture,
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: _profilePicturePath != null
-                      ? FileImage(File(_profilePicturePath!))
-                      : AssetImage('assets/defaultprofile.png')
-                          as ImageProvider,
-                  child: _profilePicturePath == null
-                      ? Icon(Icons.camera_alt, size: 30, color: Colors.grey)
-                      : null,
+                  backgroundColor: Colors.grey[
+                      200], // Optional: Add a background color for when there’s no image
+                  child: ClipOval(
+                    child: _profilePicturePath != null
+                        ? Image.file(
+                            File(_profilePicturePath!),
+                            width: 100, // Diameter of the CircleAvatar
+                            height: 100,
+                            fit: BoxFit
+                                .cover, // Ensures the image fits within the circle
+                          )
+                        : Image.asset(
+                            'assets/defaultprofile.png',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
                 ),
               ),
             ),

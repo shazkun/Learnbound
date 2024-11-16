@@ -51,14 +51,18 @@ class _StartScreenState extends State<StartScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  shape: CircleBorder(),
-                  minimumSize: Size(screenWidth * 0.10,
-                      screenWidth * 0.10), // Adjust size based on screen width
-                  padding: EdgeInsets.zero,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15), // Adjust horizontal padding
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  backgroundColor: Colors.white,
                 ),
-                child:
-                    Icon(Icons.arrow_forward, size: 20), // Icon size responsive
+                child: Text(
+                  'Start Learning!',
+                  style: TextStyle(fontSize: 18),
+                ),
               ),
+
               SizedBox(height: screenHeight * 0.02), // Space below button
               Spacer(), // Push content to center vertically
             ],

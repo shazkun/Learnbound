@@ -3,13 +3,13 @@
 import 'package:image_picker/image_picker.dart';
 
 import 'database_helper.dart';
-
+final DatabaseHelper _dbHelper = DatabaseHelper();
 class AuthService {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
+ 
   String? _profilePicturePath;
 
-  Future<bool> register(
-      String email, String password, String profilepath) async {
+  Future<bool> register(String username, String email, String password,
+      String profilepath) async {
     try {
       // Check if the email is already registered
       final existingUser = await _dbHelper.getUser(email);
@@ -18,6 +18,7 @@ class AuthService {
       }
 
       await _dbHelper.insertUser({
+        'username': username,
         'email': email,
         'password': password,
         'profile_picture': profilepath
@@ -79,20 +80,15 @@ class AuthService {
     return await _dbHelper.getUser(email);
   }
 
-  Future<void> changePassword(
+  Future<void> changePassword(int id,
       String currentPassword, String newPassword) async {
-    // Placeholder for actual password change logic
-    // Here, you would typically call your backend to change the password.
-    // For demonstration, we'll just print the new password.
-
     if (currentPassword.isNotEmpty && newPassword.isNotEmpty) {
-      print("Changing password from $currentPassword to $newPassword");
-      // Simulate successful password change
-      await Future.delayed(Duration(seconds: 1)); // Simulate network delay
-      // You may want to add error handling based on the response from your backend.
+      _dbHelper.changePasswordDb(id, currentPassword, newPassword);
+      
     } else {
       throw Exception("Passwords cannot be empty");
     }
+  
   }
 
   Future<void> logout() async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:Learnbound/database/settings_db.dart';
 import 'package:Learnbound/participants_list.dart';
 import 'package:flutter/material.dart';
 
@@ -17,20 +18,28 @@ class _HostScreenState extends State<HostScreen> {
   List<String> stickyQuestions = [];
   List<File> drawings = [];
   ServerSocket? serverSocket;
+  final SettingsDb sdb = SettingsDb();
   final TextEditingController _questionController =
       TextEditingController(); // Controller for TextField
   Map<Socket, String> clientNicknames = {}; // Socket to nickname mapping
   List<Socket> connectedClients = [];
-  String? selectedMode = "Chat";
+
   Map<String, int> participants = {};
   String? receivedImageBase64;
   final StringBuffer dataBuffer =
       StringBuffer(); // Buffer to accumulate incoming data
+  String selectedMode="";
+
+
+  Future<void> setMode() async{
+      selectedMode = await sdb.getMode() ?? "Chat";
+  }
 
   @override
   void initState() {
     super.initState();
     _startServer();
+    setMode();
   }
 
   Future<String?> getLocalIp() async {
@@ -115,7 +124,8 @@ class _HostScreenState extends State<HostScreen> {
             });
           });
         } else {
-          if (selectedMode == "Picture" || selectedMode == "Drawing") {
+
+          if (selectedMode == "Picture" || selectedMode== "Drawing") {
             dataBuffer.write(utf8.decode(data));
 
             if (dataBuffer.toString().endsWith('\n')) {
@@ -325,7 +335,8 @@ class _HostScreenState extends State<HostScreen> {
     );
   }
 
-  Widget _buildMessagesView() {
+  Widget _buildMessagesView()  {
+
     if (selectedMode == "Chat") {
       return ListView.builder(
         itemCount: messages.length,
@@ -413,8 +424,10 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context)  {
+
     return Scaffold(
+
       appBar: AppBar(
         title: Text('Mode $selectedMode'),
         leading: IconButton(
@@ -445,7 +458,7 @@ class _HostScreenState extends State<HostScreen> {
                         setState(() {
                           selectedMode = newValue!;
                           for (var client in connectedClients) {
-                            client.write("Mode:$selectedMode");
+                            // client.write("Mode:$selectedMode");
                           }
                         });
                         Navigator.of(context).pop();

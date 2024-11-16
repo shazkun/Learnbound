@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:Learnbound/database/settings_db.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 // Emoji support
@@ -9,8 +10,9 @@ import 'package:Learnbound/database/database_helper.dart'; // Database helper to
 
 class ChatScreen extends StatefulWidget {
   final String nickname;
+  final int? uid;
 
-  const ChatScreen({super.key, required this.nickname});
+  const ChatScreen({super.key, required this.nickname, required this.uid});
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -28,8 +30,13 @@ class _ChatScreenState extends State<ChatScreen> {
   bool isAutoJoinEnabled = false; // Auto join toggle
   String? profilePicture; // Store profile picture
   final _picker = ImagePicker();
+  final db = DatabaseHelper();
+  final sdb = SettingsDb();
 
-  String currentMode = "Chat"; // Default mode
+
+  Future<String> currentModes() async {
+    return await sdb.getMode() ?? "Chat"; // Default mode
+  }
 
   @override
   void initState() {
@@ -40,12 +47,10 @@ class _ChatScreenState extends State<ChatScreen> {
   // Function to load profile picture from the database
   Future<void> _loadProfilePicture() async {
     var db = DatabaseHelper();
-    var user = await db.getUser(widget.nickname);
-    if (user != null && user['profile_picture'] != null) {
-      setState(() {
-        profilePicture = user['profile_picture']; // Set the profile picture URL
-      });
-    }
+    String? userpf = await db.getProfilePicture(widget.uid ?? 0);
+    setState(() {
+      profilePicture = userpf; // Set the profile picture URL
+    });
   }
 
   bool isConnected = false; // Flag to track connection status
@@ -76,13 +81,14 @@ class _ChatScreenState extends State<ChatScreen> {
       });
 
       // Listen for incoming messages
-      clientSocket!.listen((data) {
+      clientSocket!.listen((data)  {
         final message = String.fromCharCodes(data).trim();
 
         if (message.startsWith("Mode:")) {
           final mode = message.substring(5);
-          setState(() {
-            currentMode = mode;
+          setState(() async {
+            // await sdb.setMode(mode);
+            // currentMode = mode;
           });
         } else if (message.startsWith("Question:")) {
           final question = message.substring(9);
@@ -375,7 +381,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
 
               // Message input and actions based on mode
-              if (currentMode == "Chat")
+              if (currentModes() == "Chat")
                 Row(
                   children: [
                     Expanded(
@@ -392,12 +398,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
-              if (currentMode == "Picture")
+              if (currentModes() == "Picture")
                 IconButton(
                   icon: Icon(Icons.image),
                   onPressed: _pickAndSendImage,
                 ),
-              if (currentMode == "Drawing")
+              if (currentModes() == "Drawing")
                 IconButton(
                   icon: Icon(Icons.brush),
                   onPressed: _openDrawingCanvas,

@@ -38,13 +38,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (success) {
         // ignore: unused_local_variable
-        final uid = db.getUserIdByEmailAndPassword(
+        final uid = await db.getUserIdByEmailAndPassword(
             _emailController.text, _passwordController.text);
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Login successful')));
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(builder: (context) => HomeScreen(uid: uid)),
         );
       } else {
         ScaffoldMessenger.of(context)
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),

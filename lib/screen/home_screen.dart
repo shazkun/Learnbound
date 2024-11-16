@@ -1,10 +1,13 @@
+import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'chat_screen.dart';
 import 'host_screen.dart';
 import 'profile_screen.dart'; // Import the new screen
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final int? uid;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  HomeScreen( {super.key,required this.uid});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +54,7 @@ class HomeScreen extends StatelessWidget {
                   }),
                   SizedBox(height: buttonSpacing),
                   _buildButton('Join', () {
-                    _showJoinDialog(context);
+                    _joinChat(context);
                   }),
                 ],
               ),
@@ -66,7 +69,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ProfileSettingsScreen(),
+                        builder: (context) => ProfileSettingsScreen(uid: uid),
                       ),
                     );
                   },
@@ -102,44 +105,16 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _showJoinDialog(BuildContext context) {
-    String usernameOrNickname = '';
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Join Chat'),
-          content: TextField(
-            decoration:
-                InputDecoration(labelText: 'Enter Username or Nickname'),
-            onChanged: (value) {
-              usernameOrNickname = value;
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (usernameOrNickname.isNotEmpty) {
-                  Navigator.of(context).pop();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ChatScreen(nickname: usernameOrNickname),
-                    ),
-                  );
-                }
-              },
-              child: Text('Join'),
-            ),
-          ],
-        );
-      },
+void _joinChat(BuildContext context) async {
+  String? profilePicture = await _dbHelper.getUsername(uid ?? 0);
+ 
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(nickname: profilePicture ?? '', uid: uid),
+      ),
     );
-  }
+  } 
 }
+
+
