@@ -89,6 +89,13 @@ class _ChatScreenState extends State<ChatScreen> {
           setState(() {
             questions.add(question);
           });
+        } else if (message.startsWith("Host Disconnected")) {
+          setState(() {
+            messages.add({
+              'system': true,
+              'text': 'Host disconnected.',
+            });
+          });
         } else if (message.startsWith("Removed:")) {
           final question = message.substring(8);
           setState(() {
@@ -116,6 +123,14 @@ class _ChatScreenState extends State<ChatScreen> {
         messages.add({'text': 'Connection failed: $e', 'isImage': false});
       });
     }
+  }
+
+  @override
+  void dispose() {
+    if (clientSocket != null) {
+      clientSocket!.close();
+    }
+    super.dispose();
   }
 
   void _sendMessage(String message) {
@@ -361,14 +376,44 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final messageData = messages[index];
-                    return ListTile(
-                      leading: profilePicture != null
-                          ? CircleAvatar(
-                              backgroundImage: FileImage(File(profilePicture!)))
-                          : Icon(Icons.account_circle),
-                      title: messageData['isImage']
-                          ? Image.file(messageData['image'])
-                          : Text(messageData['text']),
+
+                    // Check if the message is a system message safely
+                    bool isSystemMessage = messageData['system'] ?? false;
+
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                          vertical: 8.0,
+                          horizontal:
+                              12.0), // Optional: Adds space between the list items
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(12.0), // Rounded corners
+                        border: Border.all(
+                          color: isSystemMessage
+                              ? Colors.blue
+                              : Colors
+                                  .grey, // Different border color for system messages
+                          width: 2.0,
+                        ),
+                      ),
+                      child: ListTile(
+                        leading: isSystemMessage
+                            ? Icon(Icons
+                                .info_rounded) // Show system icon for system messages
+                            : (profilePicture != null
+                                ? CircleAvatar(
+                                    backgroundImage:
+                                        FileImage(File(profilePicture!)))
+                                : Icon(Icons
+                                    .account_circle)), // Show default icon if no profile picture
+                        title: messageData['isImage'] == true
+                            ? (messageData['image'] != null
+                                ? Image.file(messageData[
+                                    'image']) // Show image if it's not null
+                                : SizedBox()) // Empty widget if image is null
+                            : Text(messageData['text'] ??
+                                ''), // Show text, default to empty string if null
+                      ),
                     );
                   },
                 ),

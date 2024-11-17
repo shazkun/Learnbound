@@ -130,6 +130,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+
+
   void _logout() async {
     // Show a confirmation dialog
     bool? shouldLogout = await showDialog<bool>(
@@ -165,6 +167,46 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       );
     }
   }
+  void _showChangeUsername(BuildContext context)  {
+  final TextEditingController usernameController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Change Username'),
+        content: TextField(
+          controller: usernameController,
+          decoration: InputDecoration(
+            hintText: 'Enter new username',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              
+              Navigator.of(context).pop();
+            },
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newUsername = usernameController.text.trim();
+              if (newUsername.isNotEmpty) {
+                await _dbHelper.changeUsername(widget.uid??0,newUsername );
+                print('Username changed to: $newUsername');
+              }
+              // Close the dialog
+              Navigator.of(context).pop();
+            },
+            child: Text('Save'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
 
   @override
@@ -224,6 +266,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               },
             ),
             ListTile(
+              leading: Icon(Icons.person),
+              title: Text('Change Username'),
+              onTap: () {
+                _showChangeUsername(context);
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),
               onTap: _logout,
@@ -234,3 +283,4 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 }
+

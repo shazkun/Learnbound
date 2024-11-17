@@ -34,7 +34,8 @@ class DatabaseHelper {
           username TEXT,
           email TEXT UNIQUE,
           password TEXT,
-          profile_picture TEXT
+          profile_picture TEXT,
+          points INTEGER DEFAULT 0
         )
       ''');
       },
@@ -140,6 +141,18 @@ class DatabaseHelper {
     } else {
       print('password does not match');
     }
+  }
+
+  Future<void> changeUsername(
+      int uid, String newUsername) async {
+    final db = await database;
+  
+      await db.update(
+        'users',
+        {'username': newUsername},
+        where: 'id = ?',
+        whereArgs: [uid],
+      );
   }
 
   void updateProfilePicture(int uid, String imagePath) async {

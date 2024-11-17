@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:Learnbound/database/settings_db.dart';
 import 'package:Learnbound/participants_list.dart';
+import 'package:Learnbound/server.dart';
 import 'package:flutter/material.dart';
 
 class HostScreen extends StatefulWidget {
@@ -28,13 +29,16 @@ class _HostScreenState extends State<HostScreen> {
   String? receivedImageBase64;
   final StringBuffer dataBuffer =
       StringBuffer(); // Buffer to accumulate incoming data
+  final BroadcastServer broadcast = BroadcastServer();
 
+ 
 
  String selectedMode = "Chat";
   @override
   void initState() {
     super.initState();
     _startServer();
+    broadcast.startBroadcast();
   }
 
   Future<String?> getLocalIp() async {
@@ -54,30 +58,7 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   void _startServer() async {
-    try {
-      // Bind the RawDatagramSocket to any IPv4 address on port 4040
-      final socket =
-          await RawDatagramSocket.bind(InternetAddress.anyIPv4, 4040);
-      socket.broadcastEnabled = true;
-
-      final localIp = await getLocalIp();
-
-      // Create the broadcast message with the local IP address
-      final message = utf8.encode('$localIp');
-
-      // Set up a timer to send the broadcast message every second
-      Timer.periodic(Duration(seconds: 3), (timer) {
-        socket.send(
-          message,
-          InternetAddress('255.255.255.255'),
-          4040,
-        );
-      });
-      // socket.close();
-    } catch (error) {
-      print('Error occurred while running server: $error');
-    }
-
+    
     serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
 
     final localIp = await getLocalIp();
@@ -163,6 +144,7 @@ class _HostScreenState extends State<HostScreen> {
           clients
               .remove('${client.remoteAddress.address}:${client.remotePort}');
           clientNicknames.remove(client);
+          participants.remove(nickname);
         });
       });
     });
@@ -191,8 +173,13 @@ class _HostScreenState extends State<HostScreen> {
 
   @override
   void dispose() {
+    for (var client in connectedClients) {
+      // Iterate over connected clients
+      client.write("Host Disconnected"); // Send the sticky question message
+    }
+    broadcast.stopBroadcast();
     serverSocket?.close();
-    _questionController.dispose();
+    _questionController.clear();
     stickyQuestions.clear();
     super.dispose();
   }
@@ -430,43 +417,54 @@ class _HostScreenState extends State<HostScreen> {
           },
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.person),
-            onPressed: _openParticipantsList,
-          ),
-          IconButton(
-            icon: Icon(Icons.settings_accessibility_sharp, color: Colors.black),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Select Mode'),
-                    content: DropdownButton<String>(
-                      value: selectedMode,
-                      isExpanded: true,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedMode = newValue!;
-                          for (var client in connectedClients) {
-                            client.write("Mode:$selectedMode");
-                          }
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      items: <String>['Chat', 'Picture', 'Drawing']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+          // IconButton(
+          //   icon: Icon(Icons.person),
+          //   onPressed: _openParticipantsList,
+          // ),
+         IconButton(
+  icon: Icon(Icons.settings_accessibility_sharp, color: Colors.black),
+  onPressed: () {
+    // Add your condition here
+     print(participants.length);
+    if (participants.length <= 0) {
+      // Placeholder logic
+      print(participants.length);
+      print("please others to join");
+      // You can replace this with a widget or other logic
+    } else {
+      // Show the dialog if the condition is not met
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Select Mode'),
+            content: DropdownButton<String>(
+              value: selectedMode,
+              isExpanded: true,
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedMode = newValue!;
+                  for (var client in connectedClients) {
+                    client.write("Mode:$selectedMode");
+                  }
+                });
+                Navigator.of(context).pop();
+              },
+              items: <String>['Chat', 'Picture', 'Drawing']
+                  .map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+          );
+        },
+      );
+    }
+  },
+)
+
         ],
       ),
       body: Container(

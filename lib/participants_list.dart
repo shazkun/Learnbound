@@ -22,10 +22,29 @@ class ParticipantsList extends StatelessWidget {
           String participant = participants.keys.elementAt(index);
           int points = participants[participant] ?? 0;
 
-          return ListTile(
-            title: Text(participant),
-            trailing: Text('$points pts'),
-            onTap: () => onManagePoints(participant), // Manage points on tap
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50, // Background color
+                border: Border.all(
+                  color: Colors.blue, // Border color
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(10), // Rounded corners
+              ),
+              child: ListTile(
+                title: Text(
+                  participant,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                trailing: Text(
+                  '$points pts',
+                  style: TextStyle(color: Colors.blue.shade700),
+                ),
+                onTap: () => onManagePoints(participant), // Manage points on tap
+              ),
+            ),
           );
         },
       ),
