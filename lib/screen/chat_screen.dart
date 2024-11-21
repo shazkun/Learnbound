@@ -50,7 +50,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool isConnected = false; // Flag to track connection status
 
-  void _connectToServer(String serverInfo) async {
+  void connectToServer(String serverInfo) async {
     // if (isConnected) {
     //   setState(() {
     //     messages.add({'text': 'Already connected to a server.', 'isImage': false});
@@ -90,12 +90,17 @@ class _ChatScreenState extends State<ChatScreen> {
             questions.add(question);
           });
         } else if (message.startsWith("Host Disconnected")) {
-          setState(() {
-            messages.add({
-              'system': true,
-              'text': 'Host disconnected.',
+          if (mounted) {
+            setState(() {
+              if (questions.isNotEmpty) {
+                questions.clear();
+              }
+              messages.add({
+                'system': true,
+                'text': 'Host disconnected.',
+              });
             });
-          });
+          }
         } else if (message.startsWith("Removed:")) {
           final question = message.substring(8);
           setState(() {
@@ -112,25 +117,19 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }, onDone: () {
         // Reset connection status when the connection is closed
-        setState(() {
-          messages.add({'text': 'Connection closed', 'isImage': false});
-          questions.clear();
-          isConnected = false;
-        });
+        if (mounted) {
+          setState(() {
+            messages.add({'text': 'Connection closed', 'isImage': false});
+            questions.clear();
+            isConnected = false;
+          });
+        }
       });
     } catch (e) {
       setState(() {
         messages.add({'text': 'Connection failed: $e', 'isImage': false});
       });
     }
-  }
-
-  @override
-  void dispose() {
-    if (clientSocket != null) {
-      clientSocket!.close();
-    }
-    super.dispose();
   }
 
   void _sendMessage(String message) {
@@ -203,7 +202,7 @@ class _ChatScreenState extends State<ChatScreen> {
           onSelectServer: (serverInfo) {
             Navigator.pop(context); // Close the dialog
             int port = 4040;
-            _connectToServer('$serverInfo:$port'); // Auto-join selected server
+            connectToServer('$serverInfo:$port'); // Auto-join selected server
           },
         );
       },
@@ -214,7 +213,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _manualConnect() {
     String ip = manualIpController.text;
     int port = 4040;
-    _connectToServer('$ip:$port');
+    connectToServer('$ip:$port');
   }
 
   Future<bool> _onBackPressed() async {
@@ -238,6 +237,12 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     return shouldPop ??
         false; // Return false if the user cancels, true if they confirm
+  }
+
+  @override
+  void dispose() {
+    clientSocket!.close();
+    super.dispose();
   }
 
   @override
@@ -427,7 +432,28 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: TextField(
                         controller: messageController,
                         decoration: InputDecoration(
-                          labelText: "Type a message",
+                          labelText: "Type a question",
+                          hintText: "Ask something...",
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                            borderSide:
+                                BorderSide(color: Colors.black, width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                            borderSide:
+                                BorderSide(color: Colors.grey[400]!, width: 1),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 20.0, vertical: 15.0),
+                          labelStyle: TextStyle(color: Colors.grey[600]),
+                          hintStyle: TextStyle(color: Colors.grey[500]),
                         ),
                       ),
                     ),
@@ -437,6 +463,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ],
                 ),
+              SizedBox(
+                height: 10,
+              ),
               if (currentMode == "Picture")
                 IconButton(
                   icon: Icon(Icons.image),

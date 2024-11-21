@@ -1,5 +1,6 @@
-import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:Learnbound/database/database_helper.dart';
 import 'package:Learnbound/database/auth_service.dart';
 import 'home_screen.dart';
 
@@ -16,8 +17,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
   var db = DatabaseHelper();
-  // Declare a variable to track visibility state
   bool _isPasswordVisible = true;
+  bool _rememberMe = false;  // Variable to track the "Remember Me" state
 
   // Function to toggle password visibility
   void _togglePasswordVisibility() {
@@ -29,6 +30,37 @@ class _LoginScreenState extends State<LoginScreen> {
   // Regex for email validation
   final RegExp emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // Function to load the saved user data (if any)
+  void _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = prefs.getBool('rememberMe') ?? false;
+      if (_rememberMe) {
+        _emailController.text = prefs.getString('email') ?? '';
+        _passwordController.text = prefs.getString('password') ?? '';
+      }
+    });
+  }
+
+  // Function to save the user data for "Remember Me"
+  void _saveUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool('rememberMe', _rememberMe);
+    if (_rememberMe) {
+      prefs.setString('email', _emailController.text);
+      prefs.setString('password', _passwordController.text);
+    } else {
+      prefs.remove('email');
+      prefs.remove('password');
+    }
+  }
+
   Future<void> _login() async {
     if (_formKey.currentState?.validate() ?? false) {
       final success = await _authService.login(
@@ -37,7 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (success) {
-        // ignore: unused_local_variable
         final uid = await db.getUserIdByEmailAndPassword(
             _emailController.text, _passwordController.text);
         ScaffoldMessenger.of(context)
@@ -55,17 +86,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the screen width and height
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
-
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            // Navigate back to the previous screen by popping the current route
             Navigator.of(context).pop();
           },
         ),
@@ -74,8 +102,8 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFD3A97D).withOpacity(1), // Start color
-              Color(0xFFEBE1C8).withOpacity(1), // End color
+              Color(0xFFD3A97D).withOpacity(1),
+              Color(0xFFEBE1C8).withOpacity(1),
             ],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
@@ -91,17 +119,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Application logo
                     Center(
                       child: Image.asset(
-                        'assets/applogo.png', // Path to your logo asset
+                        'assets/applogo.png',
                         height: 300,
                         width: 300,
                       ),
                     ),
                     SizedBox(height: 30),
 
-                    // Email input field with modern styling
+                    // Email input field
                     TextFormField(
                       controller: _emailController,
                       decoration: InputDecoration(
@@ -123,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     SizedBox(height: 20),
 
-                    // Password input field with modern styling
+                    // Password input field
                     TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
@@ -149,12 +176,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
+                    SizedBox(height: 20),
+
+                    // "Remember Me" Checkbox
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
+                        ),
+                        Text('Remember Me'),
+                      ],
+                    ),
                     SizedBox(height: 30),
 
-                    // Login button with gradient background
+                    // Login Button
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
+                          _saveUserData();  // Save user data if "Remember Me" is checked
                           _login();
                         }
                       },

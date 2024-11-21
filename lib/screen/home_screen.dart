@@ -1,13 +1,19 @@
+import 'dart:io';
+
 import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'chat_screen.dart';
 import 'host_screen.dart';
-import 'profile_screen.dart'; // Import the new screen
+import 'profile_screen.dart';
+import 'testscreen.dart'; // Import the new screen
 
 class HomeScreen extends StatelessWidget {
   final int? uid;
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  HomeScreen( {super.key,required this.uid});
+ 
+  
+
+  HomeScreen({super.key, required this.uid});
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +61,9 @@ class HomeScreen extends StatelessWidget {
                   SizedBox(height: buttonSpacing),
                   _buildButton('Join', () {
                     _joinChat(context);
+
                   }),
+                  
                 ],
               ),
             ),
@@ -105,16 +113,17 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-void _joinChat(BuildContext context) async {
-  String? profilePicture = await _dbHelper.getUsername(uid ?? 0);
- 
+  void _joinChat(BuildContext context) async {
+    String? profilePicture = await _dbHelper.getUsername(uid ?? 0);
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChatScreen(nickname: profilePicture ?? '', uid: uid),
+        builder: (context) =>
+            ChatScreen(nickname: profilePicture ?? '', uid: uid,),
       ),
     );
-  } 
-}
+  }
 
+}
 

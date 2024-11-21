@@ -30,10 +30,9 @@ class _HostScreenState extends State<HostScreen> {
   final StringBuffer dataBuffer =
       StringBuffer(); // Buffer to accumulate incoming data
   final BroadcastServer broadcast = BroadcastServer();
+  String lobby = "lobby";
 
- 
-
- String selectedMode = "Chat";
+  String selectedMode = "Chat";
   @override
   void initState() {
     super.initState();
@@ -58,17 +57,18 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   void _startServer() async {
-    
     serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
 
     final localIp = await getLocalIp();
-    setState(() {
-      messages.add({
-        'text': 'Server started at $localIp:${serverSocket!.port}',
-        'nickname': 'System',
-        'isImage': false
+    if (mounted) {
+      setState(() {
+        messages.add({
+          'text': 'Server started at $localIp:${serverSocket!.port}',
+          'nickname': 'System',
+          'isImage': false
+        });
       });
-    });
+    }
 
     serverSocket!.listen((Socket client) {
       setState(() {
@@ -125,7 +125,7 @@ class _HostScreenState extends State<HostScreen> {
               String nickname =
                   clientNicknames[client] ?? client.remoteAddress.address;
               messages.add({
-                'text': '$nickname : $message',
+                'text': ' $message',
                 'nickname': nickname,
                 'isImage': false
               });
@@ -133,19 +133,21 @@ class _HostScreenState extends State<HostScreen> {
           }
         }
       }, onDone: () {
-        setState(() {
-          String nickname =
-              clientNicknames[client] ?? client.remoteAddress.address;
-          messages.add({
-            'text': '$nickname disconnected.',
-            'nickname': 'System',
-            'isImage': false
+        if (mounted) {
+          setState(() {
+            String nickname =
+                clientNicknames[client] ?? client.remoteAddress.address;
+            messages.add({
+              'text': '$nickname disconnected.',
+              'nickname': 'System',
+              'isImage': false
+            });
+            clients
+                .remove('${client.remoteAddress.address}:${client.remotePort}');
+            clientNicknames.remove(client);
+            participants.remove(nickname);
           });
-          clients
-              .remove('${client.remoteAddress.address}:${client.remotePort}');
-          clientNicknames.remove(client);
-          participants.remove(nickname);
-        });
+        }
       });
     });
   }
@@ -209,89 +211,89 @@ class _HostScreenState extends State<HostScreen> {
         false; // Return false if the user cancels, true if they confirm
   }
 
-  void _addPoints(String participant, int points) {
-    setState(() {
-      participants[participant] = (participants[participant] ?? 0) + points;
-      messages.add({
-        'text': '$participant received $points points!',
-        'nickname': 'System',
-        'isImage': false
-      });
-    });
-  }
+  // void _addPoints(String participant, int points) {
+  //   setState(() {
+  //     participants[participant] = (participants[participant] ?? 0) + points;
+  //     messages.add({
+  //       'text': '$participant received $points points!',
+  //       'nickname': 'System',
+  //       'isImage': false
+  //     });
+  //   });
+  // }
 
-  // Decrement points for a participant
-  void _removePoints(String participant, int points) {
-    setState(() {
-      participants[participant] = (participants[participant] ?? 0) - points;
-      if (participants[participant]! < 0) participants[participant] = 0;
-      messages.add({
-        'text': '$participant lost $points points!',
-        'nickname': 'System',
-        'isImage': false
-      });
-    });
-  }
+  // // Decrement points for a participant
+  // void _removePoints(String participant, int points) {
+  //   setState(() {
+  //     participants[participant] = (participants[participant] ?? 0) - points;
+  //     if (participants[participant]! < 0) participants[participant] = 0;
+  //     messages.add({
+  //       'text': '$participant lost $points points!',
+  //       'nickname': 'System',
+  //       'isImage': false
+  //     });
+  //   });
+  // }
 
-  // Reset points for all participants
-  void _resetPoints() {
-    setState(() {
-      participants.updateAll((key, value) => 0);
-      messages.add({
-        'text': 'All points have been reset.',
-        'nickname': 'System',
-        'isImage': false
-      });
-    });
-  }
+  // // Reset points for all participants
+  // void _resetPoints() {
+  //   setState(() {
+  //     participants.updateAll((key, value) => 0);
+  //     messages.add({
+  //       'text': 'All points have been reset.',
+  //       'nickname': 'System',
+  //       'isImage': false
+  //     });
+  //   });
+  // }
 
-  // Method to show a dialog with point management options
-  void _showPointManagementDialog(String participant) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Manage Points for $participant'),
-          actions: [
-            TextButton(
-              child: Text('Add 10 Points'),
-              onPressed: () {
-                _addPoints(participant, 10);
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Remove 10 Points'),
-              onPressed: () {
-                _removePoints(participant, 10);
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Reset Points'),
-              onPressed: () {
-                _resetPoints();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // // Method to show a dialog with point management options
+  // void _showPointManagementDialog(String participant) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('Manage Points for $participant'),
+  //         actions: [
+  //           TextButton(
+  //             child: Text('Add 10 Points'),
+  //             onPressed: () {
+  //               _addPoints(participant, 10);
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //           TextButton(
+  //             child: Text('Remove 10 Points'),
+  //             onPressed: () {
+  //               _removePoints(participant, 10);
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //           TextButton(
+  //             child: Text('Reset Points'),
+  //             onPressed: () {
+  //               _resetPoints();
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
-  // Button to open the ParticipantsList with points
-  void _openParticipantsList() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ParticipantsList(
-          participants: participants,
-          onManagePoints: _showPointManagementDialog, // Pass the callback
-        ),
-      ),
-    );
-  }
+  // // Button to open the ParticipantsList with points
+  // void _openParticipantsList() {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => ParticipantsList(
+  //         participants: participants,
+  //         onManagePoints: _showPointManagementDialog, // Pass the callback
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildImageThumbnail(String base64Image) {
     return GestureDetector(
@@ -405,127 +407,276 @@ class _HostScreenState extends State<HostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Mode $selectedMode'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () async {
-            serverSocket?.close();
-            bool shouldExit = await _onBackPressed();
-            if (shouldExit) Navigator.of(context).pop();
-          },
-        ),
-        actions: [
-          // IconButton(
-          //   icon: Icon(Icons.person),
-          //   onPressed: _openParticipantsList,
-          // ),
-         IconButton(
-  icon: Icon(Icons.settings_accessibility_sharp, color: Colors.black),
-  onPressed: () {
-    // Add your condition here
-     print(participants.length);
-    if (participants.length <= 0) {
-      // Placeholder logic
-      print(participants.length);
-      print("please others to join");
-      // You can replace this with a widget or other logic
-    } else {
-      // Show the dialog if the condition is not met
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Select Mode'),
-            content: DropdownButton<String>(
-              value: selectedMode,
-              isExpanded: true,
-              onChanged: (String? newValue) {
-                setState(() {
-                  selectedMode = newValue!;
-                  for (var client in connectedClients) {
-                    client.write("Mode:$selectedMode");
-                  }
-                });
-                Navigator.of(context).pop();
-              },
-              items: <String>['Chat', 'Picture', 'Drawing']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          );
-        },
-      );
-    }
-  },
-)
+    if (lobby == "start") {
+      return Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text('Mode $selectedMode'),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () async {
+              serverSocket?.close();
+              broadcast.stopBroadcast();
+              bool shouldExit = await _onBackPressed();
+              if (shouldExit) Navigator.of(context).pop();
+            },
+          ),
+          actions: [
+            // IconButton(
+            //   icon: Icon(Icons.person),
+            //   onPressed: _openParticipantsList,
+            // ),
+            IconButton(
+              icon:
+                  Icon(Icons.settings_accessibility_sharp, color: Colors.black),
+              onPressed: () {
+                // Add your condition here
 
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFD3A97D).withOpacity(1),
-              Color(0xFFEBE1C8).withOpacity(1),
+                if (participants.length == 0) {
+                  // Placeholder logic
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("please wait others to join...")),
+                  );
+
+                  // You can replace this with a widget or other logic
+                } else {
+                  // Show the dialog if the condition is not met
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Select Mode'),
+                        content: DropdownButton<String>(
+                          value: selectedMode,
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              messages.clear();
+                              selectedMode = newValue!;
+                              for (var client in connectedClients) {
+                                client.write("Mode:$selectedMode");
+                              }
+                            });
+                            Navigator.of(context).pop();
+                          },
+                          items: <String>['Chat', 'Picture', 'Drawing']
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    },
+                  );
+                }
+              },
+            )
+          ],
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFD3A97D).withOpacity(1),
+                Color(0xFFEBE1C8).withOpacity(1),
+              ],
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+            ),
+          ),
+          child: Column(
+            children: [
+              Expanded(child: _buildMessagesView()),
+
+              // Sticky questions section
+              if (stickyQuestions.isNotEmpty)
+                Container(
+                  padding: EdgeInsets.all(8),
+                  child: Column(
+                    children: stickyQuestions
+                        .map((question) => ListTile(
+                              title: Text(question),
+                              trailing: IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () =>
+                                    _removeStickyQuestion(question),
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _questionController,
+                      decoration: InputDecoration(
+                        labelText: "Type a question",
+                        hintText: "Ask something...",
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide(color: Colors.black, width: 2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide:
+                              BorderSide(color: Colors.grey[400]!, width: 1),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 20.0, vertical: 15.0),
+                        labelStyle: TextStyle(color: Colors.grey[600]),
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.send),
+                    onPressed: () {
+                      if (_questionController.text.isNotEmpty &&
+                          participants.isNotEmpty) {
+                        _sendStickyQuestion(_questionController.text);
+                        _questionController.clear();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('Participants list is empty')));
+                      }
+                    },
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 10,
+              ),
             ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
           ),
         ),
-        child: Column(
-          children: [
-            Expanded(child: _buildMessagesView()),
+      );
+    } else if (lobby == "lobby") {
+      return Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text('Participants'),
+          backgroundColor: Colors.transparent,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () async {
+              serverSocket?.close();
+              broadcast.stopBroadcast();
+              bool shouldExit = await _onBackPressed();
+              if (shouldExit) Navigator.of(context).pop();
+            },
+          ),
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFD3A97D).withOpacity(1),
+                Color(0xFFEBE1C8).withOpacity(1),
+              ],
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+            ),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: participants.length,
+                  itemBuilder: (context, index) {
+                    String participant = participants.keys.elementAt(index);
 
-            // Sticky questions section
-            if (stickyQuestions.isNotEmpty)
-              Container(
-                padding: EdgeInsets.all(8),
-                child: Column(
-                  children: stickyQuestions
-                      .map((question) => ListTile(
-                            title: Text(question),
-                            trailing: IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () => _removeStickyQuestion(question),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white, // Card background color
+                          borderRadius:
+                              BorderRadius.circular(12), // Rounded corners
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  Colors.grey.withOpacity(0.2), // Subtle shadow
+                              spreadRadius: 1,
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
-                          ))
-                      .toList(),
+                          ],
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.blue.shade100,
+                            child: Text(
+                              '${index + 1}', // Counter as leading icon
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            participant,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          onTap: () {}, // Handle participant tap
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _questionController,
-                    decoration: InputDecoration(
-                      labelText: "Type a question",
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: ElevatedButton(
+                  onPressed: () {
+                    int minParticipants = 0;
+                    if (participants.length >= minParticipants) {
+                      setState(() {
+                        broadcast.stopBroadcast();
+                        lobby = "start";
+                      });
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text("minimum participants to join : $minParticipants")),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12), // Rounded corners
+                    ),
+                    padding: EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 24), // Button padding
+                  ),
+                  child: Text(
+                    'START', // Button label
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.send),
-                  onPressed: () {
-                    if (_questionController.text.isNotEmpty &&
-                        participants.isNotEmpty) {
-                      _sendStickyQuestion(_questionController.text);
-                      _questionController.clear();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Participants list is empty')));
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    return Scaffold();
   }
 }
