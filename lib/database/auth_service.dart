@@ -3,9 +3,10 @@
 import 'package:image_picker/image_picker.dart';
 
 import 'database_helper.dart';
+
 final DatabaseHelper _dbHelper = DatabaseHelper();
+
 class AuthService {
- 
   String? _profilePicturePath;
 
   Future<bool> register(String username, String email, String password,
@@ -69,10 +70,19 @@ class AuthService {
     if (pickedFile != null) {
       _profilePicturePath = pickedFile.path;
       _dbHelper.updateProfilePicture(uid, pickedFile.path);
-      // Here, you would typically upload the image to your backend
-      // and update the user's profile picture URL in your database
+
     }
   }
+
+  Future<void> delProfilePicture(int uid) async {
+   
+
+      _dbHelper.removeProfilePicture(uid);
+    
+
+  }
+
+  
 
   String? get profilePicturePath => _profilePicturePath;
 
@@ -80,15 +90,13 @@ class AuthService {
     return await _dbHelper.getUser(email);
   }
 
-  Future<void> changePassword(int id,
-      String currentPassword, String newPassword) async {
+  Future<void> changePassword(
+      int id, String currentPassword, String newPassword) async {
     if (currentPassword.isNotEmpty && newPassword.isNotEmpty) {
       _dbHelper.changePasswordDb(id, currentPassword, newPassword);
-      
     } else {
       throw Exception("Passwords cannot be empty");
     }
-  
   }
 
   Future<void> logout() async {

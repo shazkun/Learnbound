@@ -44,6 +44,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     _loadProfilePicture();
   }
 
+  void _deleteProfilePicture() async {
+    await _authService.delProfilePicture(widget.uid ?? 0);
+    _loadProfilePicture();
+  }
+
   void _showChangePasswordDialog(BuildContext context) {
     final TextEditingController currentPasswordController =
         TextEditingController();
@@ -172,10 +177,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     // If user confirmed logout, proceed with the logout process
     if (shouldLogout == true) {
       await _authService.logout();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AuthScreen()),
-      );
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AuthScreen()),
+        );
+      }
     }
   }
 
@@ -265,12 +272,41 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 0.0),
                     child: GestureDetector(
-                      onTap: _changeProfilePicture,
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Profile Options'),
+                              content: Text(
+                                  'Choose an action for your profile picture:'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Close the dialog
+                                    _changeProfilePicture(); // Change profile picture
+                                  },
+                                  child: Text('Change Profile'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Close the dialog
+                                    _deleteProfilePicture(); // Delete profile picture
+                                  },
+                                  child: Text('Delete Profile'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
                       child: CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.grey[200],
                         child: ClipOval(
-                          child: _profilePicturePath != null
+                          child: _profilePicturePath != null &&
+                                      _profilePicturePath!.isNotEmpty ||
+                                  _profilePicturePath == " "
                               ? Image.file(
                                   File(_profilePicturePath!),
                                   width: 100,

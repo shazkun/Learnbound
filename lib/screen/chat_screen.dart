@@ -282,7 +282,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             title: Row(
               children: [
-                profilePicture != null
+                profilePicture != null && profilePicture!.isNotEmpty ||
+                        profilePicture == " "
                     ? CircleAvatar(
                         backgroundImage: FileImage(File(profilePicture!)))
                     : Icon(Icons.account_circle),
@@ -379,7 +380,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           leading: isSystemMessage
                               ? Icon(Icons
                                   .info_rounded) // Show system icon for system messages
-                              : (profilePicture != null
+                              : (profilePicture != null &&
+                                          profilePicture!.isNotEmpty ||
+                                      profilePicture == " "
                                   ? CircleAvatar(
                                       backgroundImage:
                                           FileImage(File(profilePicture!)))

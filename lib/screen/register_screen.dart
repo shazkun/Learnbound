@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:Learnbound/database/auth_service.dart';
 import 'package:Learnbound/screen/auth_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:Learnbound/database/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -50,10 +50,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       //   await _authService.updateProfilePicture(
       //    _emailController.text, _profilePicture.toString());
       // }
-      final success = await _authService.register(_usernameController.text,
+      final success = await _authService.register(
+        _usernameController.text,
         _emailController.text,
         _passwordController.text,
-        _profilePicture.toString(),
+        _profilePicture ?? '',
       );
       // Handle success or failure (as before)
       if (success) {
@@ -142,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(height: 30),
 
                     // Email input with modern styling
-                     TextFormField(
+                    TextFormField(
                       controller: _usernameController,
                       decoration: InputDecoration(
                         labelText: 'Username',
@@ -151,7 +152,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         prefixIcon: Icon(Icons.person_2),
                       ),
-                     
                     ),
                     SizedBox(height: 20),
                     TextFormField(

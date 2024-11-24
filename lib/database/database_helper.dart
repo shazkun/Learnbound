@@ -213,4 +213,14 @@ class DatabaseHelper {
       whereArgs: [uid],
     );
   }
+
+  void removeProfilePicture(int uid) async {
+    final db = await database;
+    await db.update(
+      'users',
+      {'profile_picture': ""},
+      where: 'id = ?',
+      whereArgs: [uid],
+    );
+  }
 }
