@@ -1,4 +1,6 @@
+import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
+
 import 'auth_screen.dart';
 
 class StartScreen extends StatefulWidget {
@@ -9,6 +11,7 @@ class StartScreen extends StatefulWidget {
 }
 
 class _StartScreenState extends State<StartScreen> {
+  final DatabaseHelper db = DatabaseHelper();
   @override
   Widget build(BuildContext context) {
     // Get the width and height of the screen
@@ -45,13 +48,16 @@ class _StartScreenState extends State<StartScreen> {
                   height: screenHeight * 0.05), // Space between logo and button
               ElevatedButton(
                 onPressed: () {
+                  db.updateFlagStatus('first_time', 1);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AuthScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15), // Adjust horizontal padding
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15), // Adjust horizontal padding
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),

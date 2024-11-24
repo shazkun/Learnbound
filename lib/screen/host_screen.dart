@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:Learnbound/database/settings_db.dart';
-import 'package:Learnbound/participants_list.dart';
 import 'package:Learnbound/server.dart';
 import 'package:flutter/material.dart';
 
@@ -154,31 +154,38 @@ class _HostScreenState extends State<HostScreen> {
 
   void _sendStickyQuestion(String question) {
     for (var client in connectedClients) {
-      // Iterate over connected clients
-
-      client.write("Question:$question"); // Send the sticky question message
+      client.write("Question:$question");
     }
     setState(() {
-      stickyQuestions.add(question); // Add sticky question to the list
+      stickyQuestions.add(question);
     });
   }
 
   void _removeStickyQuestion(String question) {
     for (var client in connectedClients) {
-      // Iterate over connected clients
-      client.write("Removed:$question"); // Send the sticky question message
+      client.write("Removed:$question");
     }
     setState(() {
       stickyQuestions.remove(question);
     });
   }
 
+  void startSession() {
+    for (var client in connectedClients) {
+      client.write("Session started:"); // Send the sticky question message
+    }
+  }
+
   @override
   void dispose() {
-    for (var client in connectedClients) {
-      // Iterate over connected clients
-      client.write("Host Disconnected"); // Send the sticky question message
+    if (connectedClients.isNotEmpty) {
+      for (var client in connectedClients) {
+        // Send the message to each connected client
+        client.write(
+            "Host Disconnected"); // Notify the client about the host disconnection
+      }
     }
+
     broadcast.stopBroadcast();
     serverSocket?.close();
     _questionController.clear();
@@ -430,10 +437,7 @@ class _HostScreenState extends State<HostScreen> {
               icon:
                   Icon(Icons.settings_accessibility_sharp, color: Colors.black),
               onPressed: () {
-                // Add your condition here
-
-                if (participants.length == 0) {
-                  // Placeholder logic
+                if (participants.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("please wait others to join...")),
                   );
@@ -638,39 +642,37 @@ class _HostScreenState extends State<HostScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(10),
-                child: ElevatedButton(
-                  onPressed: () {
-                    int minParticipants = 0;
-                    if (participants.length >= minParticipants) {
-                      setState(() {
-                        broadcast.stopBroadcast();
-                        lobby = "start";
-                      });
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text("minimum participants to join : $minParticipants")),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(12), // Rounded corners
+                  padding: const EdgeInsets.all(10),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      int minParticipants = 1;
+                      if (participants.length >= minParticipants && mounted) {
+                        setState(() {
+                          broadcast.stopBroadcast();
+                          startSession();
+                          lobby = "start";
+                        });
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  "Minimum number of participants required to join: $minParticipants.")),
+                        );
+                      }
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'START',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
                     ),
-                    padding: EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 24), // Button padding
-                  ),
-                  child: Text(
-                    'START', // Button label
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+                  )),
             ],
           ),
         ),

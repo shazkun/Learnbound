@@ -1,8 +1,11 @@
+import 'dart:io'; // Ensure you import this for File usage
+
+import 'package:Learnbound/database/auth_service.dart';
 import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:Learnbound/database/auth_service.dart';
-import 'auth_screen.dart'; // Import your AuthScreen here
-import 'dart:io'; // Ensure you import this for File usage
+
+import 'auth_screen.dart';
+import 'login_screen.dart'; // Import your AuthScreen here
 
 class ProfileSettingsScreen extends StatefulWidget {
   final int? uid;
@@ -22,6 +25,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   void initState() {
     super.initState();
     _loadProfilePicture();
+  }
+
+  Future<String?> displayUsername() async {
+    String? username = await _dbHelper.getUsername(widget.uid ?? 0);
+    return username;
   }
 
   void _loadProfilePicture() async {
@@ -130,8 +138,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
-
-
   void _logout() async {
     // Show a confirmation dialog
     bool? shouldLogout = await showDialog<bool>(
@@ -150,6 +156,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(true); // User pressed Confirm
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  (Route<dynamic> route) => false, // Clears all previous routes
+                );
               },
               child: Text('Logout'),
             ),
@@ -167,50 +178,52 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       );
     }
   }
-  void _showChangeUsername(BuildContext context)  {
-  final TextEditingController usernameController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Change Username'),
-        content: TextField(
-          controller: usernameController,
-          decoration: InputDecoration(
-            hintText: 'Enter new username',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              
-              Navigator.of(context).pop();
-            },
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newUsername = usernameController.text.trim();
-              if (newUsername.isNotEmpty) {
-                await _dbHelper.changeUsername(widget.uid??0,newUsername );
-                print('Username changed to: $newUsername');
-              }
-              // Close the dialog
-              Navigator.of(context).pop();
-            },
-            child: Text('Save'),
-          ),
-        ],
-      );
-    },
-  );
-}
+  void _showChangeUsername(BuildContext context) {
+    final TextEditingController usernameController = TextEditingController();
 
-
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Change Username'),
+          content: TextField(
+            controller: usernameController,
+            decoration: InputDecoration(
+              hintText: 'Enter new username',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final newUsername = usernameController.text.trim();
+                if (newUsername.isNotEmpty) {
+                  await _dbHelper.changeUsername(widget.uid ?? 0, newUsername);
+                  print('Username changed to: $newUsername');
+                }
+                // Close the dialog
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Get screen size for responsiveness
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -228,60 +241,104 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
         ),
         padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                  vertical: 15.0), // Adjust the padding as needed
-              child: GestureDetector(
-                onTap: _changeProfilePicture,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey[
-                      200], // Optional: Add a background color for when there’s no image
-                  child: ClipOval(
-                    child: _profilePicturePath != null
-                        ? Image.file(
-                            File(_profilePicturePath!),
-                            width: 100, // Diameter of the CircleAvatar
-                            height: 100,
-                            fit: BoxFit
-                                .cover, // Ensures the image fits within the circle
-                          )
-                        : Image.asset(
-                            'assets/defaultprofile.png',
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                          ),
-                  ),
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth *
+                  0.05, // 5% horizontal padding based on screen width
+              vertical: screenHeight *
+                  0.05, // 5% vertical padding based on screen height
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white, // Background color for the list
+                border: Border.all(
+                  color: Colors.grey.shade400, // Border color
+                  width: 2.0, // Border width
                 ),
+                borderRadius: BorderRadius.circular(12.0), // Rounded corners
+              ),
+              padding: const EdgeInsets.all(12.0),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 0.0),
+                    child: GestureDetector(
+                      onTap: _changeProfilePicture,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey[200],
+                        child: ClipOval(
+                          child: _profilePicturePath != null
+                              ? Image.file(
+                                  File(_profilePicturePath!),
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.asset(
+                                  'assets/defaultprofile.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10.0),
+                      child: FutureBuilder<String?>(
+                        future:
+                            displayUsername(), // Call the displayUsername function
+                        builder: (BuildContext context,
+                            AsyncSnapshot<String?> snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            // While waiting for the data, show a loading indicator
+                            return CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            // If there is an error, show an error message
+                            return Text('Error: ${snapshot.error}');
+                          } else if (!snapshot.hasData ||
+                              snapshot.data == null) {
+                            // If there is no data, show a default message
+                            return Text('No username available');
+                          } else {
+                            return Text('${snapshot.data}');
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ListTile(
+                    leading: Icon(Icons.lock),
+                    title: Text('Change Password'),
+                    onTap: () {
+                      _showChangePasswordDialog(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.person),
+                    title: Text('Change Username'),
+                    onTap: () {
+                      _showChangeUsername(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.logout),
+                    title: Text('Logout'),
+                    onTap: _logout,
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 20),
-            ListTile(
-              leading: Icon(Icons.lock),
-              title: Text('Change Password'),
-              onTap: () {
-                _showChangePasswordDialog(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Change Username'),
-              onTap: () {
-                _showChangeUsername(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Logout'),
-              onTap: _logout,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-

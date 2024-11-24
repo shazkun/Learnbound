@@ -1,20 +1,20 @@
-import 'dart:io';
-
 import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
+
 import 'chat_screen.dart';
 import 'host_screen.dart';
 import 'profile_screen.dart';
-import 'testscreen.dart'; // Import the new screen
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final int? uid;
-  final DatabaseHelper _dbHelper = DatabaseHelper();
- 
-  
 
   HomeScreen({super.key, required this.uid});
+  @override
+  _HomeScreenWidget createState() => _HomeScreenWidget();
+}
 
+class _HomeScreenWidget extends State<HomeScreen> {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
   @override
   Widget build(BuildContext context) {
     // Define constant padding values
@@ -61,9 +61,7 @@ class HomeScreen extends StatelessWidget {
                   SizedBox(height: buttonSpacing),
                   _buildButton('Join', () {
                     _joinChat(context);
-
                   }),
-                  
                 ],
               ),
             ),
@@ -77,7 +75,8 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ProfileSettingsScreen(uid: uid),
+                        builder: (context) =>
+                            ProfileSettingsScreen(uid: widget.uid),
                       ),
                     );
                   },
@@ -114,16 +113,22 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _joinChat(BuildContext context) async {
-    String? profilePicture = await _dbHelper.getUsername(uid ?? 0);
+    String? profilePicture = await _dbHelper.getUsername(widget.uid ?? 0);
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            ChatScreen(nickname: profilePicture ?? '', uid: uid,),
+        builder: (context) => ChatScreen(
+          nickname: profilePicture ?? '',
+          uid: widget.uid,
+        ),
       ),
     );
   }
 
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
 }
-

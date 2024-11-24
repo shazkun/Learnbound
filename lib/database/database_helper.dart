@@ -1,8 +1,8 @@
 import 'dart:core';
 
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart'; // Import for join function
 import 'package:path_provider/path_provider.dart'; // Required for getApplicationDocumentsDirectory
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -26,7 +26,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2, // Increment version number
+      version: 3, // Increment version number
       onCreate: (db, version) async {
         await db.execute('''
         CREATE TABLE users(
@@ -34,10 +34,17 @@ class DatabaseHelper {
           username TEXT,
           email TEXT UNIQUE,
           password TEXT,
-          profile_picture TEXT,
-          points INTEGER DEFAULT 0
+          profile_picture TEXT
         )
       ''');
+        await db.execute('''
+        CREATE TABLE app_flags(
+            flag_name TEXT PRIMARY KEY,
+          flag_value INTEGER DEFAULT 0
+        )
+        ''');
+        await db
+            .insert('app_flags', {'flag_name': 'first_time', 'flag_value': 0});
       },
     );
   }
@@ -87,6 +94,49 @@ class DatabaseHelper {
       return result.first['profile_picture'] as String;
     }
     return null;
+  }
+
+  Future<bool?> getFlagStatus(String flagName) async {
+    final db = await database;
+
+    final List<Map<String, dynamic>> result = await db.query(
+      'app_flags',
+      columns: ['flag_value'],
+      where: 'flag_name = ?',
+      whereArgs: [flagName],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['flag_value'] == 1;
+    }
+    return false;
+  }
+
+  Future<void> updateFlagStatus(String flagName, int value) async {
+    final db = await database;
+
+    // Check if the flag exists
+    final result = await db.query(
+      'app_flags',
+      where: 'flag_name = ?',
+      whereArgs: [flagName],
+    );
+
+    if (result.isNotEmpty) {
+      // Update the existing flag
+      await db.update(
+        'app_flags',
+        {'flag_value': value},
+        where: 'flag_name = ?',
+        whereArgs: [flagName],
+      );
+    } else {
+      // Insert new flag if not found
+      await db.insert(
+        'app_flags',
+        {'flag_name': flagName, 'flag_value': value},
+      );
+    }
   }
 
   Future<String?> getUsername(int uid) async {
@@ -143,16 +193,15 @@ class DatabaseHelper {
     }
   }
 
-  Future<void> changeUsername(
-      int uid, String newUsername) async {
+  Future<void> changeUsername(int uid, String newUsername) async {
     final db = await database;
-  
-      await db.update(
-        'users',
-        {'username': newUsername},
-        where: 'id = ?',
-        whereArgs: [uid],
-      );
+
+    await db.update(
+      'users',
+      {'username': newUsername},
+      where: 'id = ?',
+      whereArgs: [uid],
+    );
   }
 
   void updateProfilePicture(int uid, String imagePath) async {
