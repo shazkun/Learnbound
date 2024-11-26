@@ -8,7 +8,7 @@ import 'profile_screen.dart';
 class HomeScreen extends StatefulWidget {
   final int? uid;
 
-  HomeScreen({super.key, required this.uid});
+  const HomeScreen({super.key, required this.uid});
   @override
   _HomeScreenWidget createState() => _HomeScreenWidget();
 }
