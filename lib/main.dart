@@ -52,7 +52,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Learnbound',
+      title: 'LearnBound',
       theme: ThemeData(
         // Define a custom color scheme to control button colors
         colorScheme: ColorScheme.fromSwatch().copyWith(

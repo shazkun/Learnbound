@@ -210,7 +210,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             TextButton(
               onPressed: () async {
                 final newUsername = usernameController.text.trim();
-                if (newUsername.isNotEmpty) {
+                if (newUsername.isNotEmpty || newUsername.length <= 12) {
                   await _dbHelper.changeUsername(widget.uid ?? 0, newUsername);
                   print('Username changed to: $newUsername');
                 }

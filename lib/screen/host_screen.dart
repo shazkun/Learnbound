@@ -572,8 +572,8 @@ class _HostScreenState extends State<HostScreen> {
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
             onPressed: () async {
-              serverSocket?.close();
-              broadcast.stopBroadcast();
+              
+             
               bool shouldExit = await _onBackPressed();
               if (shouldExit) Navigator.of(context).pop();
             },

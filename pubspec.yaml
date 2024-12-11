@@ -49,6 +49,10 @@ dependencies:
 
   shared_preferences: ^2.0.15
 
+ 
+  iconsax: ^0.0.8
+  icon_forest: ^1.1.8
+
 
 
 

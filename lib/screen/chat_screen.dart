@@ -159,27 +159,37 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // Function to send images in chat
-  Future<void> _pickAndSendImage() async {
-    // Pick an image from the gallery
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final imageBytes = await File(pickedFile.path).readAsBytes();
-      File imageFile = File(pickedFile.path);
+Future<void> _pickAndSendImage() async {
+    try {
+      // Pick an image from the gallery
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile == null) return; // If no image is selected, exit
+
+      final imageFile = File(pickedFile.path);
 
       // Convert the image bytes to base64
-      String base64Image = base64Encode(imageBytes);
+      final base64Image = base64Encode(await imageFile.readAsBytes());
 
       // Send the base64 image string with an end marker (newline)
+      if (clientSocket != null) {
+        clientSocket!.add(utf8.encode('$base64Image\n'));
+        await clientSocket!.flush();
+      }
 
-      clientSocket?.add(utf8.encode('$base64Image\n'));
-      clientSocket?.flush();
-
+      // Update the UI with the sent image
       setState(() {
-        messages
-            .add({'text': 'Image sent', 'isImage': true, 'image': imageFile});
+        messages.add({
+          'text': 'Image sent',
+          'isImage': true,
+          'image': imageFile,
+        });
       });
+    } catch (e) {
+      // Handle errors (e.g., file read or socket issues)
+      debugPrint('Error sending image: $e');
     }
   }
+
 
   // Function to open the drawing canvas
   Future<void> _openDrawingCanvas() async {
@@ -275,7 +285,7 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: () async {
                 // Handling custom back press
                 bool shouldExit = await _onBackPressed();
-                if (shouldExit) {
+                if (shouldExit && mounted) {
                   Navigator.of(context).pop(); // Proceed with navigation pop
                 }
               },

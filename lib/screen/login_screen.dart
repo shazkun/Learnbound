@@ -18,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   var db = DatabaseHelper();
   bool _isPasswordVisible = true;
-  bool _rememberMe = false;  // Variable to track the "Remember Me" state
+  bool _rememberMe = false; // Variable to track the "Remember Me" state
 
   // Function to toggle password visibility
   void _togglePasswordVisibility() {
@@ -87,6 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       appBar: AppBar(
@@ -98,131 +99,171 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFD3A97D).withOpacity(1),
-              Color(0xFFEBE1C8).withOpacity(1),
-            ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Center(
-                      child: Image.asset(
-                        'assets/applogo.png',
-                        height: 300,
-                        width: 300,
-                      ),
-                    ),
-                    SizedBox(height: 30),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          final isLandscape = orientation == Orientation.landscape;
 
-                    // Email input field
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.email),
-                        labelText: 'Email',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an email';
-                        } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                            .hasMatch(value)) {
-                          return 'Enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20),
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFD3A97D).withOpacity(1),
+                  Color(0xFFEBE1C8).withOpacity(1),
+                ],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+            ),
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal:
+                        isLandscape ? screenWidth * 0.2 : screenWidth * 0.1,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: isLandscape
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Logo Column
+                              Expanded(
+                                flex: 1,
+                                child: Center(
+                                  child: Image.asset(
+                                    'assets/applogo.png',
+                                    height: screenHeight * 0.4,
+                                    width: screenWidth * 0.3,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 20),
 
-                    // Password input field
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        prefixIcon: Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                              // Input Fields Column
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: _buildFormFields(isLandscape),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Center(
+                                child: Image.asset(
+                                  'assets/applogo.png',
+                                  height: 300,
+                                  width: 300,
+                                ),
+                              ),
+                              SizedBox(height: 30),
+                              ..._buildFormFields(isLandscape),
+                            ],
                           ),
-                          onPressed: _togglePasswordVisibility,
-                        ),
-                      ),
-                      obscureText: _isPasswordVisible,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20),
-
-                    // "Remember Me" Checkbox
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
-                        ),
-                        Text('Remember Me'),
-                      ],
-                    ),
-                    SizedBox(height: 30),
-
-                    // Login Button
-                    ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _saveUserData();  // Save user data if "Remember Me" is checked
-                          _login();
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        minimumSize: Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        backgroundColor: Colors.white,
-                      ),
-                      child: Text(
-                        'Login',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
+  }
+
+  List<Widget> _buildFormFields(bool isLandscape) {
+    return [
+      // Email Input Field
+      TextFormField(
+        controller: _emailController,
+        decoration: InputDecoration(
+          prefixIcon: Icon(Icons.email),
+          labelText: 'Email',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter an email';
+          } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+            return 'Enter a valid email';
+          }
+          return null;
+        },
+      ),
+      SizedBox(height: 20),
+
+      // Password Input Field
+      TextFormField(
+        controller: _passwordController,
+        decoration: InputDecoration(
+          labelText: 'Password',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          prefixIcon: Icon(Icons.lock),
+          suffixIcon: IconButton(
+            icon: Icon(
+              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            ),
+            onPressed: _togglePasswordVisibility,
+          ),
+        ),
+        obscureText: _isPasswordVisible,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter a password';
+          }
+          return null;
+        },
+      ),
+      SizedBox(height: 20),
+
+      // "Remember Me" Checkbox
+      Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Checkbox(
+            value: _rememberMe,
+            onChanged: (bool? value) {
+              setState(() {
+                _rememberMe = value ?? false;
+              });
+            },
+          ),
+          Text('Remember Me'),
+        ],
+      ),
+      SizedBox(height: 30),
+
+      // Login Button
+      ElevatedButton(
+        onPressed: () {
+          if (_formKey.currentState!.validate()) {
+            _saveUserData(); // Save user data if "Remember Me" is checked
+            _login();
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 15),
+          minimumSize: Size.fromHeight(50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          backgroundColor: Colors.white,
+        ),
+        child: Text(
+          'Login',
+          style: TextStyle(fontSize: 18),
+        ),
+      ),
+    ];
   }
 }

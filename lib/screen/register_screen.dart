@@ -152,6 +152,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         prefixIcon: Icon(Icons.person_2),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an username';
+                        } else if (!usernameRegex.hasMatch(value)) {
+                          return 'Enter a valid username';
+                        } else if (_usernameController.text.length >= 12) {
+                          return 'Please enter a username with a maximum of 12 characters.';
+                        }
+                        return null;
+                      },
                     ),
                     SizedBox(height: 20),
                     TextFormField(
