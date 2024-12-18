@@ -3,9 +3,9 @@ import 'dart:io'; // Ensure you import this for File usage
 import 'package:Learnbound/database/auth_service.dart';
 import 'package:Learnbound/database/database_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'auth_screen.dart';
-import 'login_screen.dart'; // Import your AuthScreen here
 
 class ProfileSettingsScreen extends StatefulWidget {
   final int? uid;
@@ -143,6 +143,43 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
   }
 
+void _about(BuildContext context) async {
+    List<String> lines = [
+    "Developer: Eusebio & Rodriguez",
+      "Version: 1.0.0",
+      "Framework: Flutter",
+      "Language: Dart",
+    ];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Center(child: Text("About")),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: lines
+                  .map((line) => ListTile(
+                      // Optional leading icon
+                        title: Text(line), // Display the line as plain text
+                      ))
+                  .toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text("Close"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _logout() async {
     // Show a confirmation dialog
     bool? shouldLogout = await showDialog<bool>(
@@ -163,7 +200,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 Navigator.of(context).pop(true); // User pressed Confirm
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  MaterialPageRoute(builder: (context) => AuthScreen()),
                   (Route<dynamic> route) => false, // Clears all previous routes
                 );
               },
@@ -195,6 +232,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         return AlertDialog(
           title: Text('Change Username'),
           content: TextField(
+            maxLength: 12, // Limits the number of characters
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(
+                  12), // Enforces the character limit
+            ],
+
             controller: usernameController,
             decoration: InputDecoration(
               hintText: 'Enter new username',
@@ -210,9 +253,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             TextButton(
               onPressed: () async {
                 final newUsername = usernameController.text.trim();
-                if (newUsername.isNotEmpty || newUsername.length <= 12) {
+                if (newUsername.isNotEmpty && newUsername.length <= 12) {
                   await _dbHelper.changeUsername(widget.uid ?? 0, newUsername);
+
                   print('Username changed to: $newUsername');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Invalid nickname.')),
+                  );
                 }
                 // Close the dialog
                 Navigator.of(context).pop();
@@ -363,6 +411,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     onTap: () {
                       _showChangeUsername(context);
                     },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text('About'),
+                    onTap: () => _about(context),
                   ),
                   ListTile(
                     leading: Icon(Icons.logout),

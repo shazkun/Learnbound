@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 
@@ -9,29 +10,63 @@ class AuthScreen extends StatefulWidget {
   _AuthScreenState createState() => _AuthScreenState();
 }
 
+Future<void> showExitDialog(BuildContext context) async {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false, // Prevent dismiss by tapping outside
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Exit App'),
+        content: Text('Are you sure you want to exit the app?'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+          ),
+          TextButton(
+            child: Text('Exit'),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+              SystemNavigator.pop(); // Exit the app
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFD3A97D).withOpacity(1), // Start color
-              Color(0xFFEBE1C8).withOpacity(1), // End color
-            ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
+    return WillPopScope(
+        onWillPop: () async {
+          showExitDialog(context);
+
+          return false;
+        },
+        child: Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFD3A97D).withOpacity(1), // Start color
+                  Color(0xFFEBE1C8).withOpacity(1), // End color
+                ],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: _buildMobileLayout(),
+              ),
+            ),
           ),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: _buildMobileLayout(),
-          ),
-        ),
-      ),
-    );
+        ));
   }
 
   // Mobile layout with scroll support

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Learnbound/database/auth_service.dart';
 import 'package:Learnbound/screen/auth_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -144,6 +145,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Email input with modern styling
                     TextFormField(
+                      maxLength: 12, // Limits the number of characters
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(
+                            12), // Enforces the character limit
+                      ],
+                   
                       controller: _usernameController,
                       decoration: InputDecoration(
                         labelText: 'Username',

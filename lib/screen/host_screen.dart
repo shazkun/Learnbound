@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:Learnbound/database/settings_db.dart';
 import 'package:Learnbound/server.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class HostScreen extends StatefulWidget {
-  const HostScreen({super.key});
+  final String nickname;
+  const HostScreen({super.key, required this.nickname});
 
   @override
   _HostScreenState createState() => _HostScreenState();
@@ -38,6 +41,7 @@ class _HostScreenState extends State<HostScreen> {
     super.initState();
     _startServer();
     broadcast.startBroadcast();
+    broadcast.setBroadcastName(widget.nickname);
   }
 
   Future<String?> getLocalIp() async {
@@ -55,6 +59,9 @@ class _HostScreenState extends State<HostScreen> {
     }
     return null; // Return null if no valid address is found
   }
+
+  final Queue<Map<String, dynamic>> imageQueue = Queue<Map<String, dynamic>>();
+  bool isProcessingImage = false;
 
   void _startServer() async {
     serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
@@ -106,15 +113,14 @@ class _HostScreenState extends State<HostScreen> {
             if (dataBuffer.toString().endsWith('\n')) {
               String completeData = dataBuffer.toString().trim();
 
-              // Update the UI with the received image
-              setState(() {
-                receivedImageBase64 = completeData;
-                messages.add({
-                  'nickname': clientNicknames[client],
-                  'image': receivedImageBase64,
-                  'isImage': true
-                });
-              });
+              // Add image data to the queue
+              imageQueue.add(
+                  {'nickname': clientNicknames[client], 'image': completeData});
+
+              // Process the queue if not already processing
+              if (!isProcessingImage) {
+                _processImageQueue();
+              }
 
               // Clear the buffer for future data
               dataBuffer.clear();
@@ -142,6 +148,9 @@ class _HostScreenState extends State<HostScreen> {
               'nickname': 'System',
               'isImage': false
             });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("$nickname dsiconnected")),
+            );
             clients
                 .remove('${client.remoteAddress.address}:${client.remotePort}');
             clientNicknames.remove(client);
@@ -150,6 +159,34 @@ class _HostScreenState extends State<HostScreen> {
         }
       });
     });
+  }
+
+  void _processImageQueue() async {
+    if (imageQueue.isEmpty) {
+      isProcessingImage = false;
+      return;
+    }
+
+    isProcessingImage = true;
+
+    // Get the next image in the queue
+    Map<String, dynamic> imageData = imageQueue.removeFirst();
+
+    if (mounted) {
+      setState(() {
+        messages.add({
+          'nickname': imageData['nickname'],
+          'image': imageData['image'],
+          'isImage': true
+        });
+      });
+    }
+
+    // Add a small delay to simulate processing time (optional, adjust as needed)
+    await Future.delayed(Duration(milliseconds: 200));
+
+    // Process the next image in the queue
+    _processImageQueue();
   }
 
   void _sendStickyQuestion(String question) {
@@ -415,237 +452,269 @@ class _HostScreenState extends State<HostScreen> {
   @override
   Widget build(BuildContext context) {
     if (lobby == "start") {
-      return Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text('Mode $selectedMode'),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () async {
-              serverSocket?.close();
-              broadcast.stopBroadcast();
-              bool shouldExit = await _onBackPressed();
-              if (shouldExit) Navigator.of(context).pop();
-            },
-          ),
-          actions: [
-            // IconButton(
-            //   icon: Icon(Icons.person),
-            //   onPressed: _openParticipantsList,
-            // ),
-            IconButton(
-              icon:
-                  Icon(Icons.settings_accessibility_sharp, color: Colors.black),
-              onPressed: () {
-                if (participants.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("please wait others to join...")),
-                  );
+      return WillPopScope(
+          onWillPop: () async {
+            // Return `false` to disable the back button globally
 
-                  // You can replace this with a widget or other logic
-                } else {
-                  // Show the dialog if the condition is not met
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Select Mode'),
-                        content: DropdownButton<String>(
-                          value: selectedMode,
-                          isExpanded: true,
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              messages.clear();
-                              selectedMode = newValue!;
-                              for (var client in connectedClients) {
-                                client.write("Mode:$selectedMode");
-                              }
-                            });
-                            Navigator.of(context).pop();
-                          },
-                          items: <String>['Chat', 'Picture', 'Drawing']
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                        ),
+            bool shouldExit = await _onBackPressed();
+            return shouldExit;
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              centerTitle: true,
+              title: Text('Mode $selectedMode'),
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () async {
+                  serverSocket?.close();
+                  broadcast.stopBroadcast();
+                  bool shouldExit = await _onBackPressed();
+                  if (shouldExit) Navigator.of(context).pop();
+                },
+              ),
+              actions: [
+                // IconButton(
+                //   icon: Icon(Icons.person),
+                //   onPressed: _openParticipantsList,
+                // ),
+                IconButton(
+                  icon: Icon(Icons.settings_accessibility_sharp,
+                      color: Colors.black),
+                  onPressed: () {
+                    if (participants.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text("please wait others to join...")),
                       );
-                    },
-                  );
-                }
-              },
-            )
-          ],
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFFD3A97D).withOpacity(1),
-                Color(0xFFEBE1C8).withOpacity(1),
-              ],
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-            ),
-          ),
-          child: Column(
-            children: [
-              Expanded(child: _buildMessagesView()),
 
-              // Sticky questions section
-              if (stickyQuestions.isNotEmpty)
-                Container(
-                  padding: EdgeInsets.all(8),
-                  child: Column(
-                    children: stickyQuestions
-                        .map((question) => ListTile(
-                              title: Text(question),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () =>
-                                    _removeStickyQuestion(question),
-                              ),
-                            ))
-                        .toList(),
-                  ),
+                      // You can replace this with a widget or other logic
+                    } else {
+                      // Show the dialog if the condition is not met
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('Select Mode'),
+                            content: DropdownButton<String>(
+                              value: selectedMode,
+                              isExpanded: true,
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  messages.clear();
+                                  selectedMode = newValue!;
+                                  for (var client in connectedClients) {
+                                    client.write("Mode:$selectedMode");
+                                  }
+                                });
+                                Navigator.of(context).pop();
+                              },
+                              items: <String>[
+                                'Chat',
+                                'Picture',
+                                'Drawing'
+                              ].map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                )
+              ],
+            ),
+            body: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFD3A97D).withOpacity(1),
+                    Color(0xFFEBE1C8).withOpacity(1),
+                  ],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
                 ),
-              Row(
+              ),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _questionController,
-                      decoration: InputDecoration(
-                        labelText: "Type a question",
-                        hintText: "Ask something...",
-                        filled: true,
-                        fillColor: Colors.grey[200],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
-                          borderSide: BorderSide(color: Colors.black, width: 2),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
-                          borderSide:
-                              BorderSide(color: Colors.grey[400]!, width: 1),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 20.0, vertical: 15.0),
-                        labelStyle: TextStyle(color: Colors.grey[600]),
-                        hintStyle: TextStyle(color: Colors.grey[500]),
+                  Expanded(child: _buildMessagesView()),
+
+                  // Sticky questions section
+                  if (stickyQuestions.isNotEmpty)
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      child: Column(
+                        children: stickyQuestions
+                            .map((question) => ListTile(
+                                  title: Text(question),
+                                  trailing: IconButton(
+                                    icon: Icon(Icons.delete),
+                                    onPressed: () =>
+                                        _removeStickyQuestion(question),
+                                  ),
+                                ))
+                            .toList(),
                       ),
                     ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          maxLength: 100, // Limits the number of characters
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(
+                                100), // Enforces the character limit
+                          ],
+                          controller: _questionController,
+                          decoration: InputDecoration(
+                            labelText: "Type a question",
+                            hintText: "Ask something...",
+                            filled: true,
+                            fillColor: Colors.grey[200],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30.0),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30.0),
+                              borderSide:
+                                  BorderSide(color: Colors.black, width: 2),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30.0),
+                              borderSide: BorderSide(
+                                  color: Colors.grey[400]!, width: 1),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 20.0, vertical: 15.0),
+                            labelStyle: TextStyle(color: Colors.grey[600]),
+                            hintStyle: TextStyle(color: Colors.grey[500]),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.send),
+                        onPressed: () {
+                          if (_questionController.text.isNotEmpty &&
+                              participants.isNotEmpty) {
+                            _sendStickyQuestion(_questionController.text);
+                            _questionController.clear();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('Participants list is empty')));
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: Icon(Icons.send),
-                    onPressed: () {
-                      if (_questionController.text.isNotEmpty &&
-                          participants.isNotEmpty) {
-                        _sendStickyQuestion(_questionController.text);
-                        _questionController.clear();
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Participants list is empty')));
-                      }
-                    },
+                  SizedBox(
+                    height: 10,
                   ),
                 ],
               ),
-              SizedBox(
-                height: 10,
-              ),
-            ],
-          ),
-        ),
-      );
+            ),
+          ));
     } else if (lobby == "lobby") {
-      return Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: Text('Participants'),
-          backgroundColor: Colors.transparent,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () async {
-              
-             
-              bool shouldExit = await _onBackPressed();
-              if (shouldExit) Navigator.of(context).pop();
-            },
-          ),
-        ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFFD3A97D).withOpacity(1),
-                Color(0xFFEBE1C8).withOpacity(1),
-              ],
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
+      return WillPopScope(
+        onWillPop: () async {
+          bool shouldExit = await _onBackPressed();
+          return shouldExit;
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            title: Text('Lobby'),
+            backgroundColor: Colors.transparent,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () async {
+                bool shouldExit = await _onBackPressed();
+                if (shouldExit) Navigator.of(context).pop();
+              },
             ),
           ),
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  itemCount: participants.length,
-                  itemBuilder: (context, index) {
-                    String participant = participants.keys.elementAt(index);
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 5),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white, // Card background color
-                          borderRadius:
-                              BorderRadius.circular(12), // Rounded corners
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  Colors.grey.withOpacity(0.2), // Subtle shadow
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.blue.shade100,
-                            child: Text(
-                              '${index + 1}', // Counter as leading icon
-                              style: const TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            participant,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          onTap: () {}, // Handle participant tap
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFD3A97D).withOpacity(1),
+                  Color(0xFFEBE1C8).withOpacity(1),
+                ],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
               ),
-              Padding(
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: participants.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No participants available',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          itemCount: participants.length,
+                          itemBuilder: (context, index) {
+                            String participant =
+                                participants.keys.elementAt(index);
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white, // Card background color
+                                  borderRadius: BorderRadius.circular(
+                                      12), // Rounded corners
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey
+                                          .withOpacity(0.2), // Subtle shadow
+                                      spreadRadius: 1,
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: Colors.blue.shade100,
+                                    child: Text(
+                                      '${index + 1}', // Counter as leading icon
+                                      style: const TextStyle(
+                                        color: Colors.blue,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    participant,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  onTap: () {}, // Handle participant tap
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                Padding(
                   padding: const EdgeInsets.all(10),
                   child: ElevatedButton(
                     onPressed: () {
-                      int minParticipants = 1;
+                      int minParticipants = 1; // Minimum participants required
                       if (participants.length >= minParticipants && mounted) {
                         setState(() {
                           broadcast.stopBroadcast();
@@ -655,25 +724,54 @@ class _HostScreenState extends State<HostScreen> {
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                              content: Text(
-                                  "Minimum number of participants required to join: $minParticipants.")),
+                            content: Text(
+                              "Minimum number of participants required to join: $minParticipants.",
+                            ),
+                          ),
                         );
                       }
                     },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(8), // Slightly rounded edges
+                      ),
+                      backgroundColor: participants.isEmpty
+                          ? const Color.fromARGB(
+                              255, 168, 68, 61) // Red for no participants
+                          : (participants.length >= 5
+                              ? Colors.green
+                                  .shade200 // Green for ready (min 5 participants)
+                              : Colors.white), // White for below 5 participants
+                      side: BorderSide(
+                        color:
+                            Colors.grey.shade400, // Border color for all states
+                        width: 1.5,
+                      ),
+                      elevation: 2, // Subtle elevation for shadow
+                      shadowColor:
+                          Colors.grey.withOpacity(0.2), // Shadow effect
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           'START',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: Colors
+                                .black, // Consistent black text for readability
+                            fontWeight: FontWeight.bold,
                             fontSize: 18,
                           ),
                         ),
                       ],
                     ),
-                  )),
-            ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );

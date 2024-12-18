@@ -160,119 +160,126 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
                 const EdgeInsets.all(16), // Margin around the tools container
             padding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 8), // Padding inside
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Color picker
-                DropdownButton<Color>(
-                  value: selectedColor,
-                  items: [
-                    DropdownMenuItem(
-                      value: Colors.black,
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.black),
-                          const SizedBox(width: 8),
-                          const Text("Black"),
-                        ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal, // Allow horizontal scrolling
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Color picker
+                  DropdownButton<Color>(
+                    value: selectedColor,
+                    items: [
+                      DropdownMenuItem(
+                        value: Colors.black,
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.black),
+                            const SizedBox(width: 8),
+                            const Text("Black"),
+                          ],
+                        ),
                       ),
-                    ),
-                    DropdownMenuItem(
-                      value: Colors.red,
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.red),
-                          const SizedBox(width: 8),
-                          const Text("Red"),
-                        ],
+                      DropdownMenuItem(
+                        value: Colors.red,
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.red),
+                            const SizedBox(width: 8),
+                            const Text("Red"),
+                          ],
+                        ),
                       ),
-                    ),
-                    DropdownMenuItem(
-                      value: Colors.green,
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.green),
-                          const SizedBox(width: 8),
-                          const Text("Green"),
-                        ],
+                      DropdownMenuItem(
+                        value: Colors.green,
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.green),
+                            const SizedBox(width: 8),
+                            const Text("Green"),
+                          ],
+                        ),
                       ),
-                    ),
-                    DropdownMenuItem(
-                      value: Colors.blue,
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          const Text("Blue"),
-                        ],
+                      DropdownMenuItem(
+                        value: Colors.blue,
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.blue),
+                            const SizedBox(width: 8),
+                            const Text("Blue"),
+                          ],
+                        ),
                       ),
-                    ),
-                    DropdownMenuItem(
-                      value: Colors.yellow,
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.yellow),
-                          const SizedBox(width: 8),
-                          const Text("Yellow"),
-                        ],
+                      DropdownMenuItem(
+                        value: Colors.yellow,
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.yellow),
+                            const SizedBox(width: 8),
+                            const Text("Yellow"),
+                          ],
+                        ),
                       ),
-                    ),
-                    DropdownMenuItem(
-                      value: Colors.pink,
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.pink),
-                          const SizedBox(width: 8),
-                          const Text("Pink"),
-                        ],
+                      DropdownMenuItem(
+                        value: Colors.pink,
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.pink),
+                            const SizedBox(width: 8),
+                            const Text("Pink"),
+                          ],
+                        ),
                       ),
-                    ),
-                    DropdownMenuItem(
-                      value: Colors.purple,
-                      child: Row(
-                        children: [
-                          Icon(Icons.circle, color: Colors.purple),
-                          const SizedBox(width: 8),
-                          const Text("Purple"),
-                        ],
+                      DropdownMenuItem(
+                        value: Colors.purple,
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle, color: Colors.purple),
+                            const SizedBox(width: 8),
+                            const Text("Purple"),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                  onChanged: (Color? newValue) {
-                    setState(() {
-                      isErasing = false; // Ensure eraser mode is disabled
-                      selectedColor = newValue!;
-                    });
-                  },
-                ),
-
-                // Stroke width slider
-                Slider(
-                  value: strokeWidth,
-                  min: 1.0,
-                  max: 10.0,
-                  divisions: 9,
-                  label: strokeWidth.round().toString(),
-                  onChanged: (double value) {
-                    setState(() {
-                      strokeWidth = value;
-                    });
-                  },
-                ),
-
-                // Eraser toggle button
-                IconButton(
-                  icon: Icon(
-                    isErasing ? Icons.create : Icons.create_outlined,
-                    color: isErasing ? Colors.grey : Colors.black,
+                    ],
+                    onChanged: (Color? newValue) {
+                      setState(() {
+                        isErasing = false; // Ensure eraser mode is disabled
+                        selectedColor = newValue!;
+                      });
+                    },
                   ),
-                  onPressed: () {
-                    setState(() {
-                      isErasing = !isErasing; // Toggle eraser mode
-                    });
-                  },
-                ),
-              ],
+
+                  const SizedBox(width: 12), // Space between elements
+
+                  // Stroke width slider
+                  Slider(
+                    value: strokeWidth,
+                    min: 1.0,
+                    max: 10.0,
+                    divisions: 9,
+                    label: strokeWidth.round().toString(),
+                    onChanged: (double value) {
+                      setState(() {
+                        strokeWidth = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(width: 12), // Space between elements
+
+                  // Eraser toggle button
+                  IconButton(
+                    icon: Icon(
+                      isErasing ? Icons.create : Icons.create_outlined,
+                      color: isErasing ? Colors.grey : Colors.black,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        isErasing = !isErasing; // Toggle eraser mode
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
 

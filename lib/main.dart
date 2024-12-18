@@ -41,7 +41,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Simulate loading with a delay or await initialization tasks
+  
     Future.delayed(Duration(seconds: 3), () {
       setState(() {
         _isLoading = false;

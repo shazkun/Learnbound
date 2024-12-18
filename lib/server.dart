@@ -6,6 +6,15 @@ class BroadcastServer {
   RawDatagramSocket? _socket;
   Timer? _broadcastTimer;
 
+  /// Name to include in the broadcast message
+  late String broadcastName;
+
+  String setBroadcastName(String text) {
+    broadcastName = text;
+    return text;
+  }
+
+  /// Get the local IP address
   Future<String?> getLocalIp() async {
     try {
       final interfaces = await NetworkInterface.list();
@@ -22,7 +31,7 @@ class BroadcastServer {
     return null; // Return null if no valid address is found
   }
 
-  // Start broadcasting
+  /// Start broadcasting
   Future<void> startBroadcast() async {
     try {
       // Bind the RawDatagramSocket to any IPv4 address on port 4040
@@ -30,9 +39,13 @@ class BroadcastServer {
       _socket!.broadcastEnabled = true;
 
       final localIp = await getLocalIp();
+      if (localIp == null) {
+        print('Error: Unable to determine local IP address.');
+        return;
+      }
 
-      // Create the broadcast message with the local IP address
-      final message = utf8.encode('$localIp');
+      // Create the broadcast message with the local IP address and broadcast name
+      final message = utf8.encode('$localIp - $broadcastName');
 
       // Set up a timer to send the broadcast message every 3 seconds
       _broadcastTimer = Timer.periodic(Duration(seconds: 3), (timer) {
@@ -42,12 +55,14 @@ class BroadcastServer {
           4040,
         );
       });
+
+      print('Broadcasting started: $localIp - $broadcastName');
     } catch (error) {
-      print('Error occurred while running server: $error');
+      print('Error occurred while starting broadcast: $error');
     }
   }
 
-  // Stop broadcasting
+  /// Stop broadcasting
   void stopBroadcast() {
     _broadcastTimer?.cancel(); // Cancel the Timer
     _socket?.close(); // Close the socket
@@ -55,6 +70,4 @@ class BroadcastServer {
     _socket = null;
     print('Broadcasting stopped.');
   }
-
-  
 }
