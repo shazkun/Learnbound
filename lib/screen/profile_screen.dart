@@ -145,10 +145,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
 void _about(BuildContext context) async {
     List<String> lines = [
-    "Developer: Eusebio & Rodriguez",
-      "Version: 1.0.0",
+    "Developer:",
+    " - Eusebio, Robert Joseph ",
+     " - Rodriguez, Sean Wilton ",
+    
       "Framework: Flutter",
-      "Language: Dart",
+      "Language: Dart",  "Version: 1.0.0",
     ];
 
     showDialog(
@@ -162,7 +164,7 @@ void _about(BuildContext context) async {
               children: lines
                   .map((line) => ListTile(
                       // Optional leading icon
-                        title: Text(line), // Display the line as plain text
+                        title: Text(line, style: TextStyle(fontSize: 14),), // Display the line as plain text
                       ))
                   .toList(),
             ),
