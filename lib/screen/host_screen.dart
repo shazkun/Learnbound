@@ -83,7 +83,9 @@ class _HostScreenState extends State<HostScreen> {
         connectedClients.add(client); // Add to the list of connected clients
       });
       client.listen((data) async {
-        String message = String.fromCharCodes(data).trim();
+        String msg = utf8.decode(data);
+        String message = msg.trim();
+        // String message = utf8.decode(data);
 
         if (message.startsWith("Nickname:")) {
           String nickname =
@@ -149,7 +151,7 @@ class _HostScreenState extends State<HostScreen> {
               'isImage': false
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("$nickname dsiconnected")),
+              SnackBar(content: Text("$nickname disconnected")),
             );
             clients
                 .remove('${client.remoteAddress.address}:${client.remotePort}');

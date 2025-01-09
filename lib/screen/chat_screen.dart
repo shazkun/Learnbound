@@ -182,13 +182,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage(String message) {
     if (clientSocket != null) {
-      clientSocket!.write(message);
+      clientSocket!.add(utf8.encode(message));
       setState(() {
         messages.add({'text': message, 'isImage': false});
       });
       messageController.clear();
     }
   }
+  
 
   // Function to send images in chat
   Future<void> _pickAndSendImage() async {
@@ -607,7 +608,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ));
     } else if (changeScreen == "S_LIST") {
-     return ServerList(
+      return ServerList(
         onSelectServer: (serverInfo) {
           int port = 4040;
 
@@ -625,7 +626,6 @@ class _ChatScreenState extends State<ChatScreen> {
           }
         },
       );
-
     }
     return Scaffold();
   }

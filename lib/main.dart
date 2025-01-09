@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:Learnbound/database/database_helper.dart';
 import 'package:Learnbound/screen/auth_screen.dart';
 import 'package:Learnbound/screen/loading_screen.dart';
@@ -54,13 +53,12 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'LearnBound',
       theme: ThemeData(
-        // Define a custom color scheme to control button colors
         colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: Colors.black, // Color for ElevatedButton background
+          primary: Colors.black, 
           secondary:
-              Colors.red, // Accent color for FloatingActionButton or toggles
-          onPrimary: Colors.white, // Text color on ElevatedButton
-          onSecondary: Colors.red, // Text color for secondary (TextButton)
+              Colors.red, 
+          onPrimary: Colors.white, 
+          onSecondary: Colors.red, 
         ),
       ),
       home: _isLoading
