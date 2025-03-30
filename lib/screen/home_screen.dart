@@ -1,7 +1,6 @@
-import 'package:Learnbound/database/auth_service.dart';
-import 'package:Learnbound/database/database_helper.dart';
 import 'package:Learnbound/screen/auth_screen.dart';
 import 'package:Learnbound/screen/login_screen.dart';
+import 'package:Learnbound/screen/wave/wave.dart';
 import 'package:flutter/material.dart';
 
 import 'chat_screen.dart';
@@ -9,16 +8,12 @@ import 'host_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final int? uid;
-
-  const HomeScreen({super.key, required this.uid});
+  const HomeScreen({super.key});
   @override
   _HomeScreenWidget createState() => _HomeScreenWidget();
 }
 
 class _HomeScreenWidget extends State<HomeScreen> {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
-  final AuthService _authService = AuthService();
   void _logout() async {
     // Show a confirmation dialog
     bool? shouldLogout = await showDialog<bool>(
@@ -52,7 +47,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
     // If user confirmed logout, proceed with the logout process
     if (shouldLogout == true) {
-      await _authService.logout();
+      //PUT LOGOUT-HERE
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -64,7 +59,6 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Define constant padding values
     const double imagePaddingBottom = 20.0; // Fixed padding below the image
     const double buttonSpacing = 10.0; // Fixed spacing between buttons
 
@@ -77,14 +71,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
         child: Scaffold(
           body: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFD3A97D).withOpacity(1), // Start color
-                  Color(0xFFEBE1C8).withOpacity(1), // End color
-                ],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-              ),
+             
             ),
             child: Stack(
               children: [
@@ -100,7 +87,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
                             padding:
                                 EdgeInsets.only(bottom: imagePaddingBottom),
                             child: Image.asset(
-                              'assets/applogo.png',
+                              'assets/logoonly.png',
                               height: 300, // Fixed height for the image
                               width: 300, // Fixed width for the image
                               errorBuilder: (context, error, stackTrace) {
@@ -133,8 +120,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                ProfileSettingsScreen(uid: widget.uid),
+                            builder: (context) => ProfileSettingsScreen(),
                           ),
                         );
                       },
@@ -146,6 +132,18 @@ class _HomeScreenWidget extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: ClipPath(
+                    clipper: BottomWaveClipper(),
+                    child: Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFD7C19C),
+                      ),
+                    ),
+                  ),
+                )
               ],
             ),
           ),
@@ -158,6 +156,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
       height: 50.0, // Fixed button height
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFFD3AC70),
           minimumSize: Size.fromHeight(50),
           padding: EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(
@@ -171,32 +170,21 @@ class _HomeScreenWidget extends State<HomeScreen> {
   }
 
   void _joinChat(BuildContext context) async {
-    String? nname = await _dbHelper.getUsername(widget.uid ?? 0);
-
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChatScreen(
-          nickname: nname ?? '',
-          uid: widget.uid,
-        ),
+        builder: (context) => ChatScreen(),
       ),
     );
   }
 
   void _createHost(BuildContext context) async {
-    String? nicknames = await _dbHelper.getUsername(widget.uid ?? 0);
-
     Navigator.push(
-      context,
-      MaterialPageRoute(
-          builder: (context) => HostScreen(nickname: nicknames ?? '')),
-    );
+        context, MaterialPageRoute(builder: (context) => HostScreen()));
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
   }
 }

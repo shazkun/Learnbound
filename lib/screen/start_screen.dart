@@ -11,7 +11,7 @@ class StartScreen extends StatefulWidget {
 }
 
 class _StartScreenState extends State<StartScreen> {
-  final DatabaseHelper db = DatabaseHelper();
+  //final DatabaseHelper db = DatabaseHelper();
   @override
   Widget build(BuildContext context) {
     // Get the width and height of the screen
@@ -48,7 +48,7 @@ class _StartScreenState extends State<StartScreen> {
                   height: screenHeight * 0.05), // Space between logo and button
               ElevatedButton(
                 onPressed: () {
-                  db.updateFlagStatus('first_time', 1);
+                  //db.updateFlagStatus('first_time', 1);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AuthScreen()),

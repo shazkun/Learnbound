@@ -1,226 +1,117 @@
-import 'dart:core';
-
-import 'package:path/path.dart'; // Import for join function
-import 'package:path_provider/path_provider.dart'; // Required for getApplicationDocumentsDirectory
 import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import '../models/user.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper _instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
+  static const String _dbName = "users.db";
+  static const String _userTable = "users";
 
+  static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
 
-  DatabaseHelper._internal();
+  DatabaseHelper._init();
 
+  /// **Initialize Database**
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
+    _database = await _initDB();
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    // Get the path to the phone's Downloads folder
-    final directory = await getApplicationDocumentsDirectory();
-    String path = join(directory.path,
-        'user_database.db'); // Appending 'Download' subdirectory
+  Future<Database> _initDB() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, _dbName);
 
-    return await openDatabase(
-      path,
-      version: 3, // Increment version number
-      onCreate: (db, version) async {
-        await db.execute('''
-        CREATE TABLE users(
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          username TEXT,
-          email TEXT UNIQUE,
-          password TEXT,
-          profile_picture TEXT
-        )
-      ''');
-        await db.execute('''
-        CREATE TABLE app_flags(
-            flag_name TEXT PRIMARY KEY,
-          flag_value INTEGER DEFAULT 0
-        )
-        ''');
-        await db
-            .insert('app_flags', {'flag_name': 'first_time', 'flag_value': 0});
-      },
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
+  Future<void> _createDB(Database db, int version) async {
+    await db.execute('''
+    CREATE TABLE $_userTable (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE,
+      email TEXT UNIQUE,
+      password TEXT,
+      profile_picture TEXT
+    )
+  ''');
+  }
+
+  /// **Get User by Email and Password (Login)**
   Future<int?> getUserIdByEmailAndPassword(
       String email, String password) async {
     final db = await database;
     final result = await db.query(
-      'users',
-      columns: ['id'], // Specify the columns to return
+      _userTable,
       where: 'email = ? AND password = ?',
       whereArgs: [email, password],
     );
-    if (result.isNotEmpty) {
-      return result.first['id'] as int; // Return the user ID
-    }
-    return null; // Return null if no user found
+    return result.isNotEmpty ? result.first['id'] as int : null;
   }
 
-  Future<void> insertUser(Map<String, dynamic> user) async {
-    final db = await database;
-    await db.insert('users', user);
-  }
-
-  Future<Map<String, dynamic>?> getUser(String email) async {
+  Future<bool> isEmailRegistered(String email) async {
     final db = await database;
     final result = await db.query(
       'users',
       where: 'email = ?',
       whereArgs: [email],
     );
-    if (result.isNotEmpty) {
-      return result.first;
-    }
-    return null;
+    return result.isNotEmpty;
   }
 
-  Future<String?> getProfilePicture(int uid) async {
+
+  /// **Get User by Email**
+  Future<User?> getUser(String email) async {
     final db = await database;
     final result = await db.query(
-      'users',
-      columns: ['profile_picture'],
-      where: 'id = ?',
-      whereArgs: [uid],
-    );
-    if (result.isNotEmpty) {
-      return result.first['profile_picture'] as String;
-    }
-    return null;
-  }
-
-  Future<bool?> getFlagStatus(String flagName) async {
-    final db = await database;
-
-    final List<Map<String, dynamic>> result = await db.query(
-      'app_flags',
-      columns: ['flag_value'],
-      where: 'flag_name = ?',
-      whereArgs: [flagName],
-    );
-
-    if (result.isNotEmpty) {
-      return result.first['flag_value'] == 1;
-    }
-    return false;
-  }
-
-  Future<void> updateFlagStatus(String flagName, int value) async {
-    final db = await database;
-
-    // Check if the flag exists
-    final result = await db.query(
-      'app_flags',
-      where: 'flag_name = ?',
-      whereArgs: [flagName],
-    );
-
-    if (result.isNotEmpty) {
-      // Update the existing flag
-      await db.update(
-        'app_flags',
-        {'flag_value': value},
-        where: 'flag_name = ?',
-        whereArgs: [flagName],
-      );
-    } else {
-      // Insert new flag if not found
-      await db.insert(
-        'app_flags',
-        {'flag_name': flagName, 'flag_value': value},
-      );
-    }
-  }
-
-  Future<String?> getUsername(int uid) async {
-    final db = await database;
-    final result = await db.query(
-      'users',
-      columns: ['username'],
-      where: 'id = ?',
-      whereArgs: [uid],
-    );
-    if (result.isNotEmpty) {
-      return result.first['username'] as String;
-    }
-    return null;
-  }
-
-  Future<String?> getPassword(int uid) async {
-    final db = await database;
-    final result = await db.query(
-      'users',
-      columns: ['password'],
-      where: 'id = ?',
-      whereArgs: [uid],
-    );
-    if (result.isNotEmpty) {
-      return result.first['password'] as String;
-    }
-    return null;
-  }
-
-  Future<void> updatePassword(String email, String newPassword) async {
-    final db = await database;
-    await db.update(
-      'users',
-      {'password': newPassword},
+      _userTable,
       where: 'email = ?',
       whereArgs: [email],
     );
+
+    return result.isNotEmpty ? User.fromMap(result.first) : null;
   }
 
-  Future<void> changePasswordDb(
-      int uid, String currentPassword, String newPassword) async {
+  /// **Register User (Ignore if Exists)**
+  Future<void> insertUser(User user) async {
     final db = await database;
-    final pass = await getPassword(uid);
-    if (currentPassword == pass) {
-      await db.update(
-        'users',
-        {'password': newPassword},
-        where: 'id = ?',
-        whereArgs: [uid],
-      );
-    } else {
-      print('password does not match');
+    final existingUser = await getUser(user.email);
+
+    if (existingUser == null) {
+      await db.insert(_userTable, user.toMap());
     }
   }
 
-  Future<void> changeUsername(int uid, String newUsername) async {
-    final db = await database;
-
-    await db.update(
-      'users',
-      {'username': newUsername},
-      where: 'id = ?',
-      whereArgs: [uid],
-    );
-  }
-
-  void updateProfilePicture(int uid, String imagePath) async {
+  /// **Update Profile Picture**
+  Future<void> updateProfilePicture(int userId, String imagePath) async {
     final db = await database;
     await db.update(
-      'users',
+      _userTable,
       {'profile_picture': imagePath},
       where: 'id = ?',
-      whereArgs: [uid],
+      whereArgs: [userId],
     );
   }
 
-  void removeProfilePicture(int uid) async {
+  /// **Change Password**
+  Future<void> updatePassword(int userId, String newPassword) async {
     final db = await database;
     await db.update(
-      'users',
-      {'profile_picture': ""},
+      _userTable,
+      {'password': newPassword},
       where: 'id = ?',
-      whereArgs: [uid],
+      whereArgs: [userId],
+    );
+  }
+
+  /// **Change Username**
+  Future<void> updateUsername(int userId, String newUsername) async {
+    final db = await database;
+    await db.update(
+      _userTable,
+      {'username': newUsername},
+      where: 'id = ?',
+      whereArgs: [userId],
     );
   }
 }

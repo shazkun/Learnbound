@@ -1,20 +1,26 @@
 import 'dart:io';
-import 'package:Learnbound/database/database_helper.dart';
-import 'package:Learnbound/screen/auth_screen.dart';
-import 'package:Learnbound/screen/loading_screen.dart';
-import 'package:Learnbound/screen/start_screen.dart';
+
+import 'package:Learnbound/screen/login_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'database/user_provider.dart';
+import 'screen/auth_screen.dart';
+import 'screen/loading_screen.dart';
+import 'screen/start_screen.dart';
+
 void main() {
+  //sqlite
   if (Platform.isWindows || Platform.isLinux) {
-    // Initialize FFI database factory
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
   runApp(
-    ProviderScope(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+      ],
       child: MyApp(),
     ),
   );
@@ -29,19 +35,19 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _isLoading = true;
-  final DatabaseHelper db = DatabaseHelper();
+  //final DatabaseHelper db = DatabaseHelper();
 
   Future<bool?> isFirstTime() async {
-    final ff = await db.getFlagStatus('first_time');
-    print(ff);
-    return ff;
+    //final ff = await db.getFlagStatus('first_time');
+    //print(ff);
+    return true;
   }
 
   @override
   void initState() {
     super.initState();
-  
-    Future.delayed(Duration(seconds: 3), () {
+
+    Future.delayed(Duration(seconds: 2), () {
       setState(() {
         _isLoading = false;
       });
@@ -53,12 +59,12 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'LearnBound',
       theme: ThemeData(
+        fontFamily: "Comic Sans",
         colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: Colors.black, 
-          secondary:
-              Colors.red, 
-          onPrimary: Colors.white, 
-          onSecondary: Colors.red, 
+          primary: Colors.black,
+          secondary: Colors.red,
+          onPrimary: Colors.white,
+          onSecondary: Colors.red,
         ),
       ),
       home: _isLoading
@@ -73,7 +79,7 @@ class _MyAppState extends State<MyApp> {
                   // Render appropriate screen based on `isFirstTime`
                   bool? isFirstTimeResult = snapshot.data;
                   return isFirstTimeResult == true
-                      ? AuthScreen()
+                      ? LoginScreen()
                       : StartScreen();
                 }
               },

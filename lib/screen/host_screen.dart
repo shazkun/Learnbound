@@ -2,783 +2,731 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:Learnbound/database/settings_db.dart';
+import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/server.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class HostScreen extends StatefulWidget {
-  final String nickname;
-  const HostScreen({super.key, required this.nickname});
+  const HostScreen({super.key});
 
   @override
   _HostScreenState createState() => _HostScreenState();
 }
 
-class _HostScreenState extends State<HostScreen> {
-  List<String> clients = [];
-  List<Map<String, dynamic>> messages = [];
-  List<String> stickyQuestions = [];
-  List<File> drawings = [];
-  ServerSocket? serverSocket;
-  final SettingsDb sdb = SettingsDb();
-  final TextEditingController _questionController =
-      TextEditingController(); // Controller for TextField
-  Map<Socket, String> clientNicknames = {}; // Socket to nickname mapping
-  List<Socket> connectedClients = [];
+class _HostScreenState extends State<HostScreen>
+    with SingleTickerProviderStateMixin {
+  final _clients = <String>[];
+  final _messages = <Map<String, dynamic>>[];
+  final _stickyQuestions = <String>[];
+  final _multipleChoiceResponses = <String, Map<String, int>>{};
+  ServerSocket? _serverSocket;
+  final _questionController = TextEditingController();
+  final _clientNicknames = <Socket, String>{};
+  final _connectedClients = <Socket>[];
+  final _participants = <String, int>{};
+  final _dataBuffer = StringBuffer();
+  final _broadcast = BroadcastServer();
+  String _lobbyState = "lobby";
+  String _selectedMode = "Chat";
+  final _imageQueue = Queue<Map<String, dynamic>>();
+  bool _isProcessingImage = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+ 
 
-  Map<String, int> participants = {};
-  String? receivedImageBase64;
-  final StringBuffer dataBuffer =
-      StringBuffer(); // Buffer to accumulate incoming data
-  final BroadcastServer broadcast = BroadcastServer();
-  String lobby = "lobby";
 
-  String selectedMode = "Chat";
   @override
   void initState() {
     super.initState();
     _startServer();
-    broadcast.startBroadcast();
-    broadcast.setBroadcastName(widget.nickname);
+    _broadcast.startBroadcast();
+    _animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+    _fadeAnimation =
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+    _animationController.forward();
   }
 
-  Future<String?> getLocalIp() async {
+  Future<String?> _getLocalIp() async {
     try {
       final interfaces = await NetworkInterface.list();
-      for (var interface in interfaces) {
-        for (var addr in interface.addresses) {
-          if (addr.type == InternetAddressType.IPv4 && !addr.isLoopback) {
-            return addr.address; // Return the first non-loopback IPv4 address
-          }
-        }
-      }
+      return interfaces
+          .expand((i) => i.addresses)
+          .firstWhere((addr) =>
+              addr.type == InternetAddressType.IPv4 && !addr.isLoopback)
+          .address;
     } catch (e) {
       print('Error getting local IP: $e');
+      return null;
     }
-    return null; // Return null if no valid address is found
   }
 
-  final Queue<Map<String, dynamic>> imageQueue = Queue<Map<String, dynamic>>();
-  bool isProcessingImage = false;
+  Future<void> _startServer() async {
+     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    _broadcast.setBroadcastName(userProvider.user?.username ?? "no name");
+    _serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
+    final localIp = await _getLocalIp();
+    if (mounted)
+      _addSystemMessage('Server started at $localIp:${_serverSocket!.port}');
+    _serverSocket!.listen(_handleClientConnection);
+  }
 
-  void _startServer() async {
-    serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
-
-    final localIp = await getLocalIp();
-    if (mounted) {
-      setState(() {
-        messages.add({
-          'text': 'Server started at $localIp:${serverSocket!.port}',
-          'nickname': 'System',
-          'isImage': false
-        });
-      });
-    }
-
-    serverSocket!.listen((Socket client) {
-      setState(() {
-        clients.add('${client.remoteAddress.address}:${client.remotePort}');
-        connectedClients.add(client); // Add to the list of connected clients
-      });
-      client.listen((data) async {
-        String msg = utf8.decode(data);
-        String message = msg.trim();
-        // String message = utf8.decode(data);
-
-        if (message.startsWith("Nickname:")) {
-          String nickname =
-              message.substring(9); // Extract nickname after "Nickname:"
-          clientNicknames[client] = nickname; // Store nickname for this client
-          participants[nickname] = 0;
-          setState(() {
-            messages.add({
-              'text': '$nickname connected.',
-              'nickname': 'System',
-              'isImage': false
-            });
-          });
-        } else if (message.startsWith("Question:")) {
-          String question = message.substring(9);
-          setState(() {
-            messages.add({
-              'text': question,
-              'nickname': clientNicknames[client],
-              'isImage': false
-            });
-          });
-        } else {
-          if (selectedMode == "Picture" || selectedMode == "Drawing") {
-            dataBuffer.write(utf8.decode(data));
-
-            if (dataBuffer.toString().endsWith('\n')) {
-              String completeData = dataBuffer.toString().trim();
-
-              // Add image data to the queue
-              imageQueue.add(
-                  {'nickname': clientNicknames[client], 'image': completeData});
-
-              // Process the queue if not already processing
-              if (!isProcessingImage) {
-                _processImageQueue();
-              }
-
-              // Clear the buffer for future data
-              dataBuffer.clear();
-            }
-          }
-          if (selectedMode == "Chat") {
-            setState(() {
-              String nickname =
-                  clientNicknames[client] ?? client.remoteAddress.address;
-              messages.add({
-                'text': ' $message',
-                'nickname': nickname,
-                'isImage': false
-              });
-            });
-          }
-        }
-      }, onDone: () {
-        if (mounted) {
-          setState(() {
-            String nickname =
-                clientNicknames[client] ?? client.remoteAddress.address;
-            messages.add({
-              'text': '$nickname disconnected.',
-              'nickname': 'System',
-              'isImage': false
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("$nickname disconnected")),
-            );
-            clients
-                .remove('${client.remoteAddress.address}:${client.remotePort}');
-            clientNicknames.remove(client);
-            participants.remove(nickname);
-          });
-        }
-      });
+  void _handleClientConnection(Socket client) {
+    final clientId = '${client.remoteAddress.address}:${client.remotePort}';
+    setState(() {
+      _clients.add(clientId);
+      _connectedClients.add(client);
     });
+    client.listen((data) => _handleClientData(client, data),
+        onDone: () => _handleClientDisconnect(client, clientId));
   }
 
-  void _processImageQueue() async {
-    if (imageQueue.isEmpty) {
-      isProcessingImage = false;
+  void _handleClientData(Socket client, List<int> data) async {
+    final message = utf8.decode(data).trim();
+    final nickname = _clientNicknames[client] ?? client.remoteAddress.address;
+
+    if (message.startsWith("Nickname:")) {
+      final newNickname = message.substring(9);
+      _clientNicknames[client] = newNickname;
+      _participants[newNickname] = 0;
+      _addSystemMessage('$newNickname connected.');
+    } else if (message.startsWith("Question:")) {
+      final question = message.substring(9);
+      _addMessage(question, nickname);
+    } else if (_selectedMode == "Picture" || _selectedMode == "Drawing") {
+      _dataBuffer.write(utf8.decode(data));
+      if (_dataBuffer.toString().endsWith('\n')) {
+        _imageQueue.add(
+            {'nickname': nickname, 'image': _dataBuffer.toString().trim()});
+        if (!_isProcessingImage) _processImageQueue();
+        _dataBuffer.clear();
+      }
+    } else if (_selectedMode == "Multiple Choice" &&
+        message.startsWith("Answer:")) {
+      final answerData = message.substring(7).split("|");
+      final question = answerData[0];
+      final option = answerData[1];
+      setState(() {
+        _multipleChoiceResponses.putIfAbsent(question, () => {});
+        _multipleChoiceResponses[question]![option] =
+            (_multipleChoiceResponses[question]![option] ?? 0) + 1;
+      });
+    } else if (_selectedMode == "Chat") {
+      _addMessage(message, nickname);
+    }
+  }
+
+  void _handleClientDisconnect(Socket client, String clientId) {
+    if (!mounted) return;
+    final nickname = _clientNicknames[client] ?? client.remoteAddress.address;
+    setState(() {
+      _addSystemMessage('$nickname disconnected.');
+      _clients.remove(clientId);
+      _clientNicknames.remove(client);
+      _participants.remove(nickname);
+    });
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text("$nickname disconnected")));
+  }
+
+  void _addSystemMessage(String text) => setState(() =>
+      _messages.add({'text': text, 'nickname': 'System', 'isImage': false}));
+  void _addMessage(String text, String nickname) => setState(() =>
+      _messages.add({'text': text, 'nickname': nickname, 'isImage': false}));
+
+  Future<void> _processImageQueue() async {
+    if (_imageQueue.isEmpty) {
+      _isProcessingImage = false;
       return;
     }
-
-    isProcessingImage = true;
-
-    // Get the next image in the queue
-    Map<String, dynamic> imageData = imageQueue.removeFirst();
-
-    if (mounted) {
-      setState(() {
-        messages.add({
-          'nickname': imageData['nickname'],
-          'image': imageData['image'],
-          'isImage': true
-        });
-      });
-    }
-
-    // Add a small delay to simulate processing time (optional, adjust as needed)
+    _isProcessingImage = true;
+    final imageData = _imageQueue.removeFirst();
+    if (mounted)
+      setState(() => _messages.add({
+            'nickname': imageData['nickname'],
+            'image': imageData['image'],
+            'isImage': true
+          }));
     await Future.delayed(Duration(milliseconds: 200));
-
-    // Process the next image in the queue
     _processImageQueue();
   }
 
   void _sendStickyQuestion(String question) {
-    for (var client in connectedClients) {
-      client.write("Question:$question");
-    }
+    final trimmedQuestion = question.trim();
+    final encodedMessage = utf8.encode("Question:$trimmedQuestion");
+    for (var client in _connectedClients) client.add(encodedMessage);
     setState(() {
-      stickyQuestions.add(question);
+      _stickyQuestions.add(trimmedQuestion);
+      print('Added sticky question: "$trimmedQuestion"');
+      print('Updated _stickyQuestions: $_stickyQuestions');
     });
   }
 
   void _removeStickyQuestion(String question) {
-    for (var client in connectedClients) {
-      client.write("Removed:$question");
+    print('Attempting to remove: "$question"');
+    print('Current _stickyQuestions: $_stickyQuestions');
+    String questionToRemove = question.trim();
+    bool isMultipleChoice = questionToRemove.endsWith(" (Multiple Choice)");
+
+    for (var client in _connectedClients) {
+      client.write("Removed:$questionToRemove");
     }
+
     setState(() {
-      stickyQuestions.remove(question);
+      bool removed = _stickyQuestions.remove(questionToRemove);
+      print('Exact match removal result: $removed');
+      if (!removed) {
+        String baseQuestion = isMultipleChoice
+            ? questionToRemove.replaceAll(" (Multiple Choice)", "")
+            : questionToRemove;
+        _stickyQuestions.removeWhere(
+            (q) => q == baseQuestion || q == "$baseQuestion (Multiple Choice)");
+        print(
+            'Fallback removal attempted. Updated _stickyQuestions: $_stickyQuestions');
+      }
+    });
+
+    Navigator.pop(context);
+    if (_stickyQuestions.isNotEmpty) {
+      _showStickyQuestionsDialog();
+    } else {
+      print('No sticky questions remain after removal.');
+    }
+  }
+
+  void _sendMultipleChoiceQuestion(String question, List<String> options) {
+    final trimmedQuestion = question.trim();
+    final fullQuestion = "$trimmedQuestion (Multiple Choice)";
+    final message = "MC:$trimmedQuestion|${options.join('|')}";
+    for (var client in _connectedClients) client.write(message);
+    setState(() {
+      _stickyQuestions.add(fullQuestion);
+      print('Added MC question: "$fullQuestion"');
+      print('Updated _stickyQuestions: $_stickyQuestions');
     });
   }
 
-  void startSession() {
-    for (var client in connectedClients) {
-      client.write("Session started:"); // Send the sticky question message
-    }
+  void _startSession() {
+    for (var client in _connectedClients) client.write("Session started:");
   }
 
   @override
   void dispose() {
-    if (connectedClients.isNotEmpty) {
-      for (var client in connectedClients) {
-        // Send the message to each connected client
-        client.write(
-            "Host Disconnected"); // Notify the client about the host disconnection
-      }
+    if (_connectedClients.isNotEmpty) {
+      for (var client in _connectedClients) client.write("Host Disconnected");
     }
-
-    broadcast.stopBroadcast();
-    serverSocket?.close();
-    _questionController.clear();
-    stickyQuestions.clear();
+    _broadcast.stopBroadcast();
+    _serverSocket?.close();
+    _questionController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   Future<bool> _onBackPressed() async {
-    // Show a confirmation dialog when the user tries to leave the screen
-    final shouldPop = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Are you sure you want to exit?'),
-        content: Text('Any ongoing connections will be lost.'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel'),
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('Exit Session?',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Text('All connections will be terminated.'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text('Cancel', style: TextStyle(color: Colors.grey))),
+              TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text('Exit', style: TextStyle(color: Colors.red))),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-            child: Text('Exit'),
-          ),
-        ],
-      ),
-    );
-    return shouldPop ??
-        false; // Return false if the user cancels, true if they confirm
+        ) ??
+        false;
   }
-
-  // void _addPoints(String participant, int points) {
-  //   setState(() {
-  //     participants[participant] = (participants[participant] ?? 0) + points;
-  //     messages.add({
-  //       'text': '$participant received $points points!',
-  //       'nickname': 'System',
-  //       'isImage': false
-  //     });
-  //   });
-  // }
-
-  // // Decrement points for a participant
-  // void _removePoints(String participant, int points) {
-  //   setState(() {
-  //     participants[participant] = (participants[participant] ?? 0) - points;
-  //     if (participants[participant]! < 0) participants[participant] = 0;
-  //     messages.add({
-  //       'text': '$participant lost $points points!',
-  //       'nickname': 'System',
-  //       'isImage': false
-  //     });
-  //   });
-  // }
-
-  // // Reset points for all participants
-  // void _resetPoints() {
-  //   setState(() {
-  //     participants.updateAll((key, value) => 0);
-  //     messages.add({
-  //       'text': 'All points have been reset.',
-  //       'nickname': 'System',
-  //       'isImage': false
-  //     });
-  //   });
-  // }
-
-  // // Method to show a dialog with point management options
-  // void _showPointManagementDialog(String participant) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: Text('Manage Points for $participant'),
-  //         actions: [
-  //           TextButton(
-  //             child: Text('Add 10 Points'),
-  //             onPressed: () {
-  //               _addPoints(participant, 10);
-  //               Navigator.of(context).pop();
-  //             },
-  //           ),
-  //           TextButton(
-  //             child: Text('Remove 10 Points'),
-  //             onPressed: () {
-  //               _removePoints(participant, 10);
-  //               Navigator.of(context).pop();
-  //             },
-  //           ),
-  //           TextButton(
-  //             child: Text('Reset Points'),
-  //             onPressed: () {
-  //               _resetPoints();
-  //               Navigator.of(context).pop();
-  //             },
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
-  // // Button to open the ParticipantsList with points
-  // void _openParticipantsList() {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => ParticipantsList(
-  //         participants: participants,
-  //         onManagePoints: _showPointManagementDialog, // Pass the callback
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildImageThumbnail(String base64Image) {
     return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            content: Image.memory(
-              base64Decode(base64Image),
-              errorBuilder: (context, error, stackTrace) =>
-                  Text('Image not found', style: TextStyle(color: Colors.red)),
-            ),
+      onTap: () => showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.memory(base64Decode(base64Image)),
           ),
-        );
-      },
-      child: Image.memory(
-        base64Decode(base64Image),
-        width: 80,
-        height: 80,
-        fit: BoxFit.cover,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(base64Decode(base64Image),
+            width: 100, height: 100, fit: BoxFit.cover),
       ),
     );
   }
 
-  Widget _buildMessagesView() {
-    if (selectedMode == "Chat") {
-      return ListView.builder(
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final messageData = messages[index];
-          return Container(
-            margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-            padding: EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  messageData['nickname'] ?? 'Unknown User',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
-                  ),
-                ),
-                if (messageData['text'] != null) Text(messageData['text']),
-                if (messageData['isImage'] == true &&
-                    messageData['image'] != null)
-                  _buildImageThumbnail(messageData['image']),
-              ],
-            ),
-          );
-        },
-      );
-    } else {
-      return SingleChildScrollView(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // Adjust the number of columns based on screen width
-            int crossAxisCount =
-                (constraints.maxWidth / 150).floor().clamp(2, 4);
-
-            return GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 4.0,
-                mainAxisSpacing: 4.0,
-                childAspectRatio: 0.75,
-              ),
-              itemCount: messages
-                  .where(
-                      (msg) => msg['isImage'] == true && msg['image'] != null)
-                  .length,
-              itemBuilder: (context, index) {
-                final messageData = messages
-                    .where(
-                        (msg) => msg['isImage'] == true && msg['image'] != null)
-                    .toList()[index];
-
-                return Container(
-                  margin: EdgeInsets.all(4.0),
-                  padding: EdgeInsets.all(4.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        messageData['nickname'] ?? 'Unknown User',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey,
-                        ),
-                      ),
-                      ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(12.0), // Rounded corners
-                        child: _buildImageThumbnail(messageData['image']),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
+  Widget _buildMessageTile(Map<String, dynamic> message) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))
+          ],
         ),
-      );
-    }
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message['nickname'] ?? 'Unknown',
+                style: TextStyle(
+                    fontWeight: FontWeight.w600, color: Colors.blueGrey[800])),
+            SizedBox(height: 4),
+            if (message['text'] != null)
+              Text(message['text'], style: TextStyle(fontSize: 16)),
+            if (message['isImage'] == true)
+              _buildImageThumbnail(message['image']),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageTile(Map<String, dynamic> message) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Container(
+        margin: EdgeInsets.all(8),
+        child: Column(
+          children: [
+            Text(message['nickname'] ?? 'Unknown',
+                style: TextStyle(
+                    fontWeight: FontWeight.w600, color: Colors.blueGrey[800])),
+            SizedBox(height: 8),
+            _buildImageThumbnail(message['image']),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (lobby == "start") {
-      return WillPopScope(
-          onWillPop: () async {
-            // Return `false` to disable the back button globally
-
-            bool shouldExit = await _onBackPressed();
-            return shouldExit;
-          },
-          child: Scaffold(
-            appBar: AppBar(
-              centerTitle: true,
-              title: Text('Mode $selectedMode'),
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back),
-                onPressed: () async {
-                  serverSocket?.close();
-                  broadcast.stopBroadcast();
-                  bool shouldExit = await _onBackPressed();
-                  if (shouldExit) Navigator.of(context).pop();
-                },
-              ),
-              actions: [
-                // IconButton(
-                //   icon: Icon(Icons.person),
-                //   onPressed: _openParticipantsList,
-                // ),
-                IconButton(
-                  icon: Icon(Icons.settings_accessibility_sharp,
-                      color: Colors.black),
-                  onPressed: () {
-                    if (participants.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text("please wait others to join...")),
-                      );
-
-                      // You can replace this with a widget or other logic
-                    } else {
-                      // Show the dialog if the condition is not met
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text('Select Mode'),
-                            content: DropdownButton<String>(
-                              value: selectedMode,
-                              isExpanded: true,
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  messages.clear();
-                                  selectedMode = newValue!;
-                                  for (var client in connectedClients) {
-                                    client.write("Mode:$selectedMode");
-                                  }
-                                });
-                                Navigator.of(context).pop();
-                              },
-                              items: <String>[
-                                'Chat',
-                                'Picture',
-                                'Drawing'
-                              ].map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  },
-                )
-              ],
-            ),
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFFD3A97D).withOpacity(1),
-                    Color(0xFFEBE1C8).withOpacity(1),
-                  ],
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Expanded(child: _buildMessagesView()),
-
-                  // Sticky questions section
-                  if (stickyQuestions.isNotEmpty)
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      child: Column(
-                        children: stickyQuestions
-                            .map((question) => ListTile(
-                                  title: Text(question),
-                                  trailing: IconButton(
-                                    icon: Icon(Icons.delete),
-                                    onPressed: () =>
-                                        _removeStickyQuestion(question),
-                                  ),
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          maxLength: 100, // Limits the number of characters
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(
-                                100), // Enforces the character limit
-                          ],
-                          controller: _questionController,
-                          decoration: InputDecoration(
-                            labelText: "Type a question",
-                            hintText: "Ask something...",
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30.0),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30.0),
-                              borderSide:
-                                  BorderSide(color: Colors.black, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(30.0),
-                              borderSide: BorderSide(
-                                  color: Colors.grey[400]!, width: 1),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 20.0, vertical: 15.0),
-                            labelStyle: TextStyle(color: Colors.grey[600]),
-                            hintStyle: TextStyle(color: Colors.grey[500]),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.send),
-                        onPressed: () {
-                          if (_questionController.text.isNotEmpty &&
-                              participants.isNotEmpty) {
-                            _sendStickyQuestion(_questionController.text);
-                            _questionController.clear();
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text('Participants list is empty')));
-                          }
-                        },
-                      ),
-                    ],
+    return WillPopScope(
+      onWillPop: _onBackPressed,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(
+            _lobbyState == "lobby" ? 'Lobby' : '$_selectedMode Mode',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          centerTitle: true,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () async {
+              if (await _onBackPressed()) {
+                _serverSocket?.close();
+                _broadcast.stopBroadcast();
+                Navigator.pop(context);
+              }
+            },
+          ),
+          actions: _lobbyState == "start"
+              ? [
+                  IconButton(
+                    icon: Icon(Icons.settings, color: Colors.white),
+                    onPressed: _showModeSelector,
                   ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                ],
-              ),
-            ),
-          ));
-    } else if (lobby == "lobby") {
-      return WillPopScope(
-        onWillPop: () async {
-          bool shouldExit = await _onBackPressed();
-          return shouldExit;
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            centerTitle: true,
-            title: Text('Lobby'),
-            backgroundColor: Colors.transparent,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back),
-              onPressed: () async {
-                bool shouldExit = await _onBackPressed();
-                if (shouldExit) Navigator.of(context).pop();
-              },
+                ]
+              : null,
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueGrey[900]!, Colors.blueGrey[700]!],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
           ),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFD3A97D).withOpacity(1),
-                  Color(0xFFEBE1C8).withOpacity(1),
-                ],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-              ),
-            ),
-            child: Column(
-              children: [
-                Expanded(
-                  child: participants.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No participants available',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          itemCount: participants.length,
-                          itemBuilder: (context, index) {
-                            String participant =
-                                participants.keys.elementAt(index);
+          child: SafeArea(
+              child: _lobbyState == "lobby"
+                  ? _buildLobbyView()
+                  : _buildSessionView()),
+        ),
+        floatingActionButton:
+            _lobbyState == "start" && _stickyQuestions.isNotEmpty
+                ? FloatingActionButton(
+                    onPressed: _showStickyQuestionsDialog,
+                    backgroundColor: Colors.teal[400],
+                    child: Icon(Icons.question_answer),
+                  )
+                : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      ),
+    );
+  }
 
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white, // Card background color
-                                  borderRadius: BorderRadius.circular(
-                                      12), // Rounded corners
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey
-                                          .withOpacity(0.2), // Subtle shadow
-                                      spreadRadius: 1,
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: Colors.blue.shade100,
-                                    child: Text(
-                                      '${index + 1}', // Counter as leading icon
-                                      style: const TextStyle(
-                                        color: Colors.blue,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    participant,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  onTap: () {}, // Handle participant tap
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      int minParticipants = 1; // Minimum participants required
-                      if (participants.length >= minParticipants && mounted) {
-                        setState(() {
-                          broadcast.stopBroadcast();
-                          startSession();
-                          lobby = "start";
-                        });
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "Minimum number of participants required to join: $minParticipants.",
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
+  Widget _buildLobbyView() {
+    return Column(
+      children: [
+        Expanded(
+          child: _participants.isEmpty
+              ? Center(
+                  child: Text(
+                    'Awaiting Participants...',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white70),
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.all(16),
+                  itemCount: _participants.length,
+                  itemBuilder: (context, index) => FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Card(
+                      color: Colors.white.withOpacity(0.95),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(8), // Slightly rounded edges
-                      ),
-                      backgroundColor: participants.isEmpty
-                          ? const Color.fromARGB(
-                              255, 168, 68, 61) // Red for no participants
-                          : (participants.length >= 5
-                              ? Colors.green
-                                  .shade200 // Green for ready (min 5 participants)
-                              : Colors.white), // White for below 5 participants
-                      side: BorderSide(
-                        color:
-                            Colors.grey.shade400, // Border color for all states
-                        width: 1.5,
-                      ),
-                      elevation: 2, // Subtle elevation for shadow
-                      shadowColor:
-                          Colors.grey.withOpacity(0.2), // Shadow effect
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'START',
-                          style: TextStyle(
-                            color: Colors
-                                .black, // Consistent black text for readability
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 4,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueGrey[100],
+                          child: Text('${index + 1}',
+                              style: TextStyle(
+                                  color: Colors.blueGrey[800],
+                                  fontWeight: FontWeight.bold)),
                         ),
-                      ],
+                        title: Text(
+                          _participants.keys.elementAt(index),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ],
+        ),
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: ElevatedButton(
+            onPressed: _participants.length >= 1
+                ? () => setState(() {
+                      _broadcast.stopBroadcast();
+                      _startSession();
+                      _lobbyState = "start";
+                      _animationController.forward(from: 0);
+                    })
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  _participants.isEmpty ? Colors.grey[600] : Colors.teal[400],
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              elevation: 8,
+            ),
+            child: Text(
+              'START SESSION',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
             ),
           ),
         ),
-      );
-    }
+      ],
+    );
+  }
 
-    return Scaffold();
+  Widget _buildSessionView() {
+    return Column(
+      children: [
+        Expanded(
+          child: _selectedMode == "Chat"
+              ? ListView.builder(
+                  padding: EdgeInsets.all(16),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) =>
+                      _buildMessageTile(_messages[index]),
+                )
+              : _selectedMode == "Multiple Choice"
+                  ? ListView.builder(
+                      padding: EdgeInsets.all(16),
+                      itemCount: _multipleChoiceResponses.length,
+                      itemBuilder: (context, index) {
+                        final question =
+                            _multipleChoiceResponses.keys.elementAt(index);
+                        final responses = _multipleChoiceResponses[question]!;
+                        return FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Card(
+                            color: Colors.white.withOpacity(0.95),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(question,
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold)),
+                                  SizedBox(height: 8),
+                                  ...responses.entries.map((entry) => Row(
+                                        children: [
+                                          Text("${entry.key}: ",
+                                              style: TextStyle(fontSize: 16)),
+                                          Text("${entry.value} votes",
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: Colors.teal[400])),
+                                        ],
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : GridView.builder(
+                      padding: EdgeInsets.all(16),
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 150,
+                        childAspectRatio: 0.8,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount:
+                          _messages.where((m) => m['isImage'] == true).length,
+                      itemBuilder: (context, index) => _buildImageTile(_messages
+                          .where((m) => m['isImage'] == true)
+                          .toList()[index]),
+                    ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _questionController,
+                  maxLength: 100,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: _selectedMode == "Multiple Choice"
+                        ? "Type a question (add options in dialog)"
+                        : "Ask a question...",
+                    hintStyle: TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.2),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              FloatingActionButton(
+                onPressed: () {
+                  if (_questionController.text.isNotEmpty &&
+                      _participants.isNotEmpty) {
+                    if (_selectedMode == "Multiple Choice") {
+                      _showMultipleChoiceDialog();
+                    } else {
+                      _sendStickyQuestion(_questionController.text);
+                      _questionController.clear();
+                      _animationController.forward(from: 0);
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('No participants')));
+                  }
+                },
+                backgroundColor: Colors.teal[400],
+                child: Icon(Icons.send),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showModeSelector() {
+    if (_participants.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Waiting for participants...")));
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: Colors.white,
+      builder: (context) => Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: ['Chat', 'Picture', 'Drawing', 'Multiple Choice']
+              .map((mode) => ListTile(
+                    title: Text(mode,
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      setState(() {
+                        _messages.clear();
+                        _multipleChoiceResponses.clear();
+                        _selectedMode = mode;
+                        for (var client in _connectedClients)
+                          client.write("Mode:$_selectedMode");
+                        _animationController.forward(from: 0);
+                      });
+                      Navigator.pop(context);
+                    },
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showMultipleChoiceDialog() {
+    final List<TextEditingController> optionControllers = [
+      TextEditingController(),
+      TextEditingController(),
+      TextEditingController(),
+      TextEditingController(),
+    ];
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Create Multiple Choice Question',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              SizedBox(height: 16),
+              TextField(
+                controller: _questionController,
+                decoration: InputDecoration(labelText: 'Question'),
+              ),
+              SizedBox(height: 16),
+              ...optionControllers.map((controller) => Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: TextField(
+                      controller: controller,
+                      decoration: InputDecoration(labelText: 'Option'),
+                    ),
+                  )),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  final question = _questionController.text;
+                  final options = optionControllers
+                      .map((c) => c.text)
+                      .where((text) => text.isNotEmpty)
+                      .toList();
+                  if (question.isNotEmpty && options.length >= 2) {
+                    _sendMultipleChoiceQuestion(question, options);
+                    _questionController.clear();
+                    optionControllers.forEach((c) => c.clear());
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content:
+                            Text('Enter a question and at least 2 options')));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal[400],
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                child: Text('Send', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showStickyQuestionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.5),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Sticky Questions',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey[800])),
+              SizedBox(height: 16),
+              Expanded(
+                child: _stickyQuestions.isEmpty
+                    ? Center(
+                        child: Text('No sticky questions yet',
+                            style: TextStyle(color: Colors.grey)))
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _stickyQuestions.length,
+                        itemBuilder: (context, index) {
+                          final question = _stickyQuestions[index];
+                          return FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: ListTile(
+                              title: Text(question,
+                                  style: TextStyle(fontSize: 16)),
+                              trailing: IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () =>
+                                    _removeStickyQuestion(question),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal[400],
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text('Close', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

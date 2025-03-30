@@ -10,76 +10,80 @@ class ServerList extends StatefulWidget {
   _ServerListState createState() => _ServerListState();
 }
 
-class _ServerListState extends State<ServerList> {
-  final Set<String> serverList = {}; // Use a Set for unique entries
-  RawDatagramSocket? udpSocket;
-  final int udpPort = 4040;
-  bool isListening = false; // Flag to prevent multiple listeners
-  static const int debounceDuration = 300; // Duration in milliseconds
-  DateTime? lastUpdateTime; // Track the last update time
-  String? localIp; // Store the local IP address
+class _ServerListState extends State<ServerList>
+    with SingleTickerProviderStateMixin {
+  final Set<String> _serverList = {};
+  RawDatagramSocket? _udpSocket;
+  final int _udpPort = 4040;
+  bool _isListening = false;
+  static const int _debounceDuration = 300;
+  DateTime? _lastUpdateTime;
+  String? _localIp;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _initializeLocalIp();
     _startListeningForServers();
+    _animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
+    _fadeAnimation =
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
+    _animationController.forward();
   }
 
   Future<void> _initializeLocalIp() async {
-    localIp = await getLocalIp();
-    print('Local IP: $localIp');
+    _localIp = await _getLocalIp();
+    print('Local IP: $_localIp');
   }
 
-  Future<String?> getLocalIp() async {
+  Future<String?> _getLocalIp() async {
     try {
       final interfaces = await NetworkInterface.list();
       for (var interface in interfaces) {
         for (var addr in interface.addresses) {
           if (addr.type == InternetAddressType.IPv4 && !addr.isLoopback) {
-            return addr.address; // Return the first non-loopback IPv4 address
+            return addr.address;
           }
         }
       }
     } catch (e) {
       print('Error getting local IP: $e');
     }
-    return null; // Return null if no valid address is found
+    return null;
   }
 
   void _startListeningForServers() async {
-    if (isListening) return; // Prevent multiple calls to start listening
-    isListening = true;
+    if (_isListening) return;
+    _isListening = true;
 
     try {
-      udpSocket =
-          await RawDatagramSocket.bind(InternetAddress.anyIPv4, udpPort);
-      print('Listening for UDP packets on port $udpPort');
+      _udpSocket =
+          await RawDatagramSocket.bind(InternetAddress.anyIPv4, _udpPort);
+      print('Listening for UDP packets on port $_udpPort');
 
-      udpSocket!.listen((RawSocketEvent event) {
+      _udpSocket!.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read) {
-          Datagram? datagram = udpSocket!.receive();
+          Datagram? datagram = _udpSocket!.receive();
           if (datagram != null) {
             String serverInfo = String.fromCharCodes(datagram.data).trim();
-
-            // Check if the received server info matches the local IP and filter it out
-            if (serverInfo != localIp) {
-              // Check the time since the last update
-              if (lastUpdateTime == null ||
-                  DateTime.now().difference(lastUpdateTime!).inMilliseconds >
-                      debounceDuration) {
-                setState(() {
-                  serverList.add(serverInfo); // Add new server info
-                  lastUpdateTime =
-                      DateTime.now(); // Update the last update time
-                });
+            if (serverInfo != _localIp) {
+              if (_lastUpdateTime == null ||
+                  DateTime.now().difference(_lastUpdateTime!).inMilliseconds >
+                      _debounceDuration) {
+                if (mounted) {
+                  setState(() {
+                    _serverList.add(serverInfo);
+                    _lastUpdateTime = DateTime.now();
+                  });
+                }
               }
             }
           }
         }
-      }, onError: (error) {
-        print('Error listening for UDP packets: $error');
-      });
+      }, onError: (error) => print('Error listening for UDP packets: $error'));
     } catch (e) {
       print('Error binding to UDP socket: $e');
     }
@@ -87,7 +91,8 @@ class _ServerListState extends State<ServerList> {
 
   @override
   void dispose() {
-    udpSocket?.close();
+    _udpSocket?.close();
+    _animationController.dispose();
     print('UDP socket closed');
     super.dispose();
   }
@@ -95,33 +100,82 @@ class _ServerListState extends State<ServerList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Available Servers'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text('Available Servers',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: Colors.white),
             onPressed: () {
-              setState(() {
-                serverList.clear();
-              });
-              _startListeningForServers(); // Restart the listening process
+              setState(() => _serverList.clear());
+              _startListeningForServers();
+              _animationController.forward(from: 0); // Restart animation
             },
           ),
         ],
       ),
-      body: serverList.isEmpty
-          ? Center(child: Text('No servers found'))
-          : ListView.builder(
-              itemCount: serverList.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(
-                      serverList.elementAt(index)), // Use elementAt for Set
-                  onTap: () =>
-                      widget.onSelectServer(serverList.elementAt(index)),
-                );
-              },
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueGrey[900]!, Colors.blueGrey[700]!],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: _serverList.isEmpty
+              ? Center(
+                  child: Text(
+                    'No servers found',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white70),
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.all(16),
+                  itemCount: _serverList.length,
+                  itemBuilder: (context, index) {
+                    final serverInfo = _serverList.elementAt(index);
+                    return FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Card(
+                        color: Colors.white.withOpacity(0.95),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 4,
+                        margin: EdgeInsets.symmetric(vertical: 8),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.teal[400],
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          title: Text(
+                            serverInfo,
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blueGrey[800]),
+                          ),
+                          trailing: Icon(Icons.arrow_forward_ios,
+                              color: Colors.teal[400]),
+                          onTap: () => widget.onSelectServer(serverInfo),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
     );
   }
 }

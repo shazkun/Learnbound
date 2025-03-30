@@ -1,10 +1,15 @@
 import 'dart:io';
+import 'package:Learnbound/models/user.dart';
 
-import 'package:Learnbound/database/auth_service.dart';
 import 'package:Learnbound/screen/auth_screen.dart';
+import 'package:Learnbound/screen/login_screen.dart';
+import 'package:Learnbound/screen/wave/wave.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../database/user_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,21 +22,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   String? _profilePicture;
   final _formKey = GlobalKey<FormState>();
 
-  // Regex for email validation
   final RegExp emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-  // Basic username validation regex (alphanumeric)
   final RegExp usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
-  // Declare a variable to track visibility state
+
   bool _isPasswordVisible = false;
 
-  // Function to toggle password visibility
+  bool _isConfirmPasswordVisible = false;
+
   void _togglePasswordVisibility() {
     setState(() {
       _isPasswordVisible = !_isPasswordVisible;
+    });
+  }
+
+  void _toggleConfirmPasswordVisibility() {
+    setState(() {
+      _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
     });
   }
 
@@ -47,53 +58,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // if (_profilePicture != null) {
-      //   await _authService.updateProfilePicture(
-      //    _emailController.text, _profilePicture.toString());
-      // }
-      final success = await _authService.register(
-        _usernameController.text,
-        _emailController.text,
-        _passwordController.text,
-        _profilePicture ?? '',
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+      // Check if email is already registered
+      bool emailExists =
+          await userProvider.isEmailRegistered(_emailController.text);
+      if (emailExists) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text(
+                    'Email is already registered. Try logging in instead.'),
+                actions: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        }
+        return; // Stop registration
+      }
+
+      // If email is unique, proceed with registration
+      final newUser = User(
+        id: null, // Auto-generated in DB
+        username: _usernameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+        profilePicture: _profilePicture ?? '',
       );
-      // Handle success or failure (as before)
-      if (success) {
-        // Show success dialog
+
+      await userProvider.registerUser(newUser);
+
+      if (context.mounted) {
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Success'),
-              content: Text('Registration successful'),
-              actions: <Widget>[
+              title: const Text('Success'),
+              content: const Text('Registration successful'),
+              actions: [
                 TextButton(
-                  child: Text('OK'),
+                  child: const Text('OK'),
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => AuthScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const AuthScreen()),
                     );
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      } else {
-        // Show failure dialog
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Error'),
-              content: Text('Registration failed'),
-              actions: <Widget>[
-                TextButton(
-                  child: Text('OK'),
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
                   },
                 ),
               ],
@@ -106,170 +127,215 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFD3A97D).withOpacity(1), // Start color
-              Color(0xFFEBE1C8).withOpacity(1), // End color
-            ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Curved Header
+            ClipPath(
+              clipper: TopClipper(),
+              child: Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Color(0xFFD7C19C),
+                ),
+                child: Stack(
                   children: [
-                    Center(
-                      child: Image.asset(
-                        'assets/applogo.png', // Path to your logo asset
-                        height: 300,
-                        width: 300,
-                      ),
-                    ),
-                    SizedBox(height: 30),
-
-                    // Email input with modern styling
-                    TextFormField(
-                      maxLength: 12, // Limits the number of characters
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(
-                            12), // Enforces the character limit
-                      ],
-                   
-                      controller: _usernameController,
-                      decoration: InputDecoration(
-                        labelText: 'Username',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        prefixIcon: Icon(Icons.person_2),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an username';
-                        } else if (!usernameRegex.hasMatch(value)) {
-                          return 'Enter a valid username';
-                        } else if (_usernameController.text.length >= 12) {
-                          return 'Please enter a username with a maximum of 12 characters.';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        prefixIcon: Icon(Icons.email),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an email';
-                        } else if (!emailRegex.hasMatch(value)) {
-                          return 'Enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20),
-
-                    // Password input with modern styling and toggle
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        prefixIcon: Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(_isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off),
-                          onPressed: _togglePasswordVisibility,
-                        ),
-                      ),
-                      obscureText: !_isPasswordVisible,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
-                        } else if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20),
-
-                    // Profile picture picker button
-                    ElevatedButton(
-                      onPressed: _pickImage,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: Size.fromHeight(50),
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                      ),
+                    Positioned(
+                      top: 30, // Adjust based on wave shape
+                      right: 40, // Moves text to the right
                       child: Text(
-                        _profilePicture == null
-                            ? 'Pick Profile Picture'
-                            : 'Change Profile Picture',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-
-                    // Display picked profile picture
-                    if (_profilePicture != null) ...[
-                      SizedBox(height: 20),
-                      CircleAvatar(
-                        backgroundImage: FileImage(File(_profilePicture!)),
-                        radius: 50,
-                      ),
-                    ],
-
-                    SizedBox(height: 30),
-
-                    // Register button
-                    ElevatedButton(
-                      onPressed: _register,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        minimumSize: Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
+                        "Sign Up",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                      ),
-                      child: Text(
-                        'Register',
-                        style: TextStyle(fontSize: 18),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 30),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: _pickImage, // Remove parentheses
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey[200],
+                        child: ClipOval(
+                          child: _profilePicture != null &&
+                                  _profilePicture!.isNotEmpty
+                              ? Image.file(
+                                  File(_profilePicture!),
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.asset(
+                                  'assets/defaultprofile.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    buildTextField(
+                      "Email",
+                      Icons.email,
+                      _emailController,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Email cannot be empty";
+                        } else if (!emailRegex.hasMatch(value)) {
+                          return "Enter a valid email address";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 15),
+                    buildTextField(
+                      "Username",
+                      Icons.person,
+                      _usernameController,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Username cannot be empty";
+                        } else if (!usernameRegex.hasMatch(value)) {
+                          return "Username can only contain letters, numbers, and underscores";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 15),
+                    buildTextField(
+                      "Password",
+                      Icons.lock,
+                      _passwordController,
+                      obscureText: !_isPasswordVisible, // Uses visibility state
+                      isPassword: true,
+                      toggleVisibility: _togglePasswordVisibility,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Password cannot be empty";
+                        } else if (value.length < 6) {
+                          return "Password must be at least 6 characters";
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    buildTextField(
+                      "Confirm Password",
+                      Icons.lock,
+                      _confirmPasswordController,
+                      obscureText:
+                          !_isConfirmPasswordVisible, // Uses confirm visibility state
+                      isPassword: true,
+                      toggleVisibility: _toggleConfirmPasswordVisibility,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please confirm your password";
+                        } else if (value != _passwordController.text) {
+                          return "Passwords do not match";
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 25),
+                    // Register Button
+                    ElevatedButton(
+                      onPressed: _register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFD3AC70),
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        minimumSize: Size(double.infinity, 50),
+                      ),
+                      child: Text(
+                        "Register",
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Sign in Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Already have account? "),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => LoginScreen()),
+                            );
+                          },
+                          child: const Text(
+                            "Sign in",
+                            style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+
+Widget buildTextField(
+    String label, IconData icon, TextEditingController controller,
+    {bool obscureText = false,
+    String? Function(String?)? validator,
+    void Function()? toggleVisibility,
+    bool isPassword = false}) {
+  return TextFormField(
+    controller: controller,
+    obscureText: obscureText,
+    validator: validator,
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.black),
+      suffixIcon: isPassword
+          ? IconButton(
+              icon: Icon(
+                obscureText ? Icons.visibility : Icons.visibility_off,
+                color: Colors.black,
+              ),
+              onPressed: toggleVisibility,
+            )
+          : null,
+      filled: true,
+      fillColor: Color(0xFFF5EFE2),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        borderSide: BorderSide.none,
+      ),
+    ),
+  );
+}
+
