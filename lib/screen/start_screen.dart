@@ -1,7 +1,6 @@
-import 'package:Learnbound/database/database_helper.dart';
+import 'package:Learnbound/screen/login_screen.dart';
 import 'package:flutter/material.dart';
 
-import 'auth_screen.dart';
 
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key});
@@ -48,10 +47,10 @@ class _StartScreenState extends State<StartScreen> {
                   height: screenHeight * 0.05), // Space between logo and button
               ElevatedButton(
                 onPressed: () {
-                  //db.updateFlagStatus('first_time', 1);
+                  // db.updateFlagStatus('first_time', 1);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => AuthScreen()),
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(

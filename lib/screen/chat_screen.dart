@@ -1,16 +1,16 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
-import 'package:Learnbound/database/database_helper.dart';
 import 'package:Learnbound/database/user_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../drawing_canvas.dart';
-import '../server_list.dart';
+import 'drawing_screen.dart';
+import 'server_list_screen.dart';
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
   @override
   _ChatScreenState createState() => _ChatScreenState();
 }
@@ -60,8 +60,9 @@ class _ChatScreenState extends State<ChatScreen>
       final messageData = messageQueue.removeFirst();
       setState(() => _messages.add(
           {'text': messageData['text'], 'isImage': messageData['isImage']}));
-      if (messageQueue.isNotEmpty)
+      if (messageQueue.isNotEmpty) {
         Future.delayed(Duration(milliseconds: 50), processNextMessage);
+      }
     }
 
     try {
@@ -268,9 +269,9 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           title: Row(
             children: [
-               profilePicture!= null && profilePicture!.isNotEmpty
+               profilePicture!= null && profilePicture.isNotEmpty
                   ? CircleAvatar(
-                      backgroundImage: FileImage(File(profilePicture!)))
+                      backgroundImage: FileImage(File(profilePicture)))
                   : CircleAvatar(
                       child: Icon(Icons.account_circle, color: Colors.white)),
               SizedBox(width: 12),
@@ -417,10 +418,10 @@ class _ChatScreenState extends State<ChatScreen>
                                         ? Icon(Icons.info,
                                             color: Colors.blueGrey[800])
                                         : profilePicture != null &&
-                                                profilePicture!.isNotEmpty
+                                                profilePicture.isNotEmpty
                                             ? CircleAvatar(
                                                 backgroundImage: FileImage(
-                                                    File(profilePicture!)))
+                                                    File(profilePicture)))
                                             : CircleAvatar(
                                                 child: Icon(
                                                     Icons.account_circle,

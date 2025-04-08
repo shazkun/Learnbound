@@ -1,9 +1,8 @@
-import 'package:Learnbound/screen/auth_screen.dart';
 import 'package:Learnbound/screen/login_screen.dart';
-import 'package:Learnbound/screen/wave/wave.dart';
+import 'package:Learnbound/screen/modes/chat_screen.dart';
+import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
-import 'chat_screen.dart';
 import 'host_screen.dart';
 import 'profile_screen.dart';
 
@@ -51,7 +50,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => AuthScreen()),
+          MaterialPageRoute(builder: (context) => LoginScreen()),
         );
       }
     }
@@ -70,9 +69,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
         },
         child: Scaffold(
           body: Container(
-            decoration: BoxDecoration(
-             
-            ),
+            decoration: BoxDecoration(),
             child: Stack(
               children: [
                 Center(

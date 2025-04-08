@@ -3,9 +3,8 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/server.dart';
+import 'package:Learnbound/util/server.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class HostScreen extends StatefulWidget {
@@ -34,8 +33,6 @@ class _HostScreenState extends State<HostScreen>
   bool _isProcessingImage = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
- 
-
 
   @override
   void initState() {
@@ -64,12 +61,13 @@ class _HostScreenState extends State<HostScreen>
   }
 
   Future<void> _startServer() async {
-     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     _broadcast.setBroadcastName(userProvider.user?.username ?? "no name");
     _serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
     final localIp = await _getLocalIp();
-    if (mounted)
+    if (mounted) {
       _addSystemMessage('Server started at $localIp:${_serverSocket!.port}');
+    }
     _serverSocket!.listen(_handleClientConnection);
   }
 
@@ -143,12 +141,13 @@ class _HostScreenState extends State<HostScreen>
     }
     _isProcessingImage = true;
     final imageData = _imageQueue.removeFirst();
-    if (mounted)
+    if (mounted) {
       setState(() => _messages.add({
             'nickname': imageData['nickname'],
             'image': imageData['image'],
             'isImage': true
           }));
+    }
     await Future.delayed(Duration(milliseconds: 200));
     _processImageQueue();
   }
@@ -156,7 +155,9 @@ class _HostScreenState extends State<HostScreen>
   void _sendStickyQuestion(String question) {
     final trimmedQuestion = question.trim();
     final encodedMessage = utf8.encode("Question:$trimmedQuestion");
-    for (var client in _connectedClients) client.add(encodedMessage);
+    for (var client in _connectedClients) {
+      client.add(encodedMessage);
+    }
     setState(() {
       _stickyQuestions.add(trimmedQuestion);
       print('Added sticky question: "$trimmedQuestion"');
@@ -169,9 +170,13 @@ class _HostScreenState extends State<HostScreen>
     print('Current _stickyQuestions: $_stickyQuestions');
     String questionToRemove = question.trim();
     bool isMultipleChoice = questionToRemove.endsWith(" (Multiple Choice)");
+    String broadcastQuestion = isMultipleChoice
+        ? questionToRemove.replaceAll(" (Multiple Choice)", "")
+        : questionToRemove;
 
     for (var client in _connectedClients) {
-      client.write("Removed:$questionToRemove");
+      client.write("Removed:$broadcastQuestion"); // Send without suffix
+      print('Sent to clients: Removed:$broadcastQuestion');
     }
 
     setState(() {
@@ -200,7 +205,9 @@ class _HostScreenState extends State<HostScreen>
     final trimmedQuestion = question.trim();
     final fullQuestion = "$trimmedQuestion (Multiple Choice)";
     final message = "MC:$trimmedQuestion|${options.join('|')}";
-    for (var client in _connectedClients) client.write(message);
+    for (var client in _connectedClients) {
+      client.write(message);
+    }
     setState(() {
       _stickyQuestions.add(fullQuestion);
       print('Added MC question: "$fullQuestion"');
@@ -209,13 +216,17 @@ class _HostScreenState extends State<HostScreen>
   }
 
   void _startSession() {
-    for (var client in _connectedClients) client.write("Session started:");
+    for (var client in _connectedClients) {
+      client.write("Session started:");
+    }
   }
 
   @override
   void dispose() {
     if (_connectedClients.isNotEmpty) {
-      for (var client in _connectedClients) client.write("Host Disconnected");
+      for (var client in _connectedClients) {
+        client.write("Host Disconnected");
+      }
     }
     _broadcast.stopBroadcast();
     _serverSocket?.close();
@@ -420,7 +431,7 @@ class _HostScreenState extends State<HostScreen>
         Padding(
           padding: EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: _participants.length >= 1
+            onPressed: _participants.isNotEmpty
                 ? () => setState(() {
                       _broadcast.stopBroadcast();
                       _startSession();
@@ -593,8 +604,9 @@ class _HostScreenState extends State<HostScreen>
                         _messages.clear();
                         _multipleChoiceResponses.clear();
                         _selectedMode = mode;
-                        for (var client in _connectedClients)
+                        for (var client in _connectedClients) {
                           client.write("Mode:$_selectedMode");
+                        }
                         _animationController.forward(from: 0);
                       });
                       Navigator.pop(context);
@@ -648,7 +660,9 @@ class _HostScreenState extends State<HostScreen>
                   if (question.isNotEmpty && options.length >= 2) {
                     _sendMultipleChoiceQuestion(question, options);
                     _questionController.clear();
-                    optionControllers.forEach((c) => c.clear());
+                    for (var c in optionControllers) {
+                      c.clear();
+                    }
                     Navigator.pop(context);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

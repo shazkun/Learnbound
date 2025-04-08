@@ -21,10 +21,11 @@ class LoadingScreen extends StatelessWidget {
         ),
         child: Center(
           child: LoadingAnimationWidget.discreteCircle(
-              color: Colors.black, // Color for the loading animation
+              color: Color.fromRGBO(
+                  209, 193, 164, 1), // Color for the loading animation
               size: 80, // Size of the loading animation
               secondRingColor: Color.fromRGBO(206, 140, 17, 1),
-              thirdRingColor: Color.fromRGBO(209, 193, 164, 1)),
+          )
         ),
       ),
     );

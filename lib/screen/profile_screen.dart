@@ -1,14 +1,18 @@
 import 'dart:io';
 import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/wave/wave.dart';
+import 'package:Learnbound/util/design/wave.dart';
+import 'package:Learnbound/screen/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import 'auth_screen.dart';
+import '../util/design/cs_snackbar.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
+  const ProfileSettingsScreen({super.key});
+
   @override
   _ProfileSettingsScreenState createState() => _ProfileSettingsScreenState();
 }
@@ -27,10 +31,21 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   void _deleteProfilePicture() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    await userProvider.updateProfilePicture("");
+    final success = await userProvider.updateProfilePicture("");
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profile picture deleted successfully.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete profile picture.')),
+      );
+    }
   }
 
   void _showChangeUsername(BuildContext context) {
+    if (!mounted) return;
     final TextEditingController usernameController = TextEditingController();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
@@ -53,14 +68,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             TextButton(
               onPressed: () async {
                 final newUsername = usernameController.text.trim();
+
                 if (newUsername.isNotEmpty && newUsername.length <= 12) {
                   await userProvider.changeUsername(newUsername);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Username updated successfully!')));
+
+                  CustomSnackBar.show(context, 'Username updated successfully!',
+                      isSuccess: true);
+
                   Navigator.of(context).pop();
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Invalid username.')));
+                  CustomSnackBar.show(context, 'Invalid username.',
+                      backgroundColor: Colors.red, isSuccess: false);
                 }
               },
               child: Text('Save'),
@@ -102,28 +120,37 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               onPressed: () async {
                 if (currentPasswordController.text.isEmpty ||
                     newPasswordController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Please fill in all fields.')));
+                  CustomSnackBar.show(context, 'Please fill in all fields.',
+                      isSuccess: false);
                   return;
                 }
 
-                if (userProvider.user!.password ==
+                if (newPasswordController.text.length < 6) {
+                  CustomSnackBar.show(
+                      context, 'New password must be at least 6 characters.',
+                      isSuccess: false);
+                  return;
+                }
+
+                if (newPasswordController.text ==
                     currentPasswordController.text) {
-                  if (newPasswordController.text.length >= 6 &&
-                      newPasswordController.text !=
-                          currentPasswordController.text) {
-                    await userProvider
-                        .changePassword(newPasswordController.text);
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('Password changed successfully!')));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Invalid new password.')));
-                  }
+                  CustomSnackBar.show(
+                      context, 'New password cannot be the same as current.',
+                      isSuccess: false);
+                  return;
+                }
+                bool success = await userProvider.changePassword(
+                  currentPasswordController.text,
+                  newPasswordController.text,
+                );
+
+                if (success) {
+                  Navigator.of(context).pop();
+                  CustomSnackBar.show(context, 'Password changed successfully!',
+                      isSuccess: true);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Current password is incorrect.')));
+                  CustomSnackBar.show(context, 'Incorrect current password.',
+                      isSuccess: false);
                 }
               },
               child: Text('Change'),
@@ -159,12 +186,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       },
     );
 
-    if (shouldLogout == true) {
+    if (shouldLogout == true || context.mounted) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.logout();
+      if (!mounted) return;
+      CustomSnackBar.show(context, "You have been logged out.",
+          isSuccess: true,
+          backgroundColor: Colors.orange,
+          icon: Icons.exit_to_app,
+          duration: Duration(seconds: 1));
       if (mounted) {
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => AuthScreen()));
+            context, MaterialPageRoute(builder: (context) => LoginScreen()));
       }
     }
   }
@@ -190,25 +223,31 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                     child: Stack(
                       children: [
-                        SizedBox(height: 20),
-                        Row(
-                          
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                        Positioned(
+                            top: 30, // Adjust based on wave shape
+                            left: 30, // Moves text to the right
+                            child: IconButton(
                               onPressed: () => Navigator.pop(context),
+                              icon: SvgPicture.asset(
+                                'assets/arrow.svg',
+                                height: 24,
+                                width: 24,
+                                colorFilter: const ColorFilter.mode(
+                                    Colors.white,
+                                    BlendMode.srcIn), // Change color
+                              ),
+                            )),
+                        Positioned(
+                          top: 30, // Adjust based on wave shape
+                          right: 60, // Moves text to the right
+                          child: Text(
+                            "Profile",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            Spacer(),
-                            Text(
-                              "Profile",
-                              style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            ),
-                            Spacer(),
-                          ],
+                          ),
                         ),
                       ],
                     ),
@@ -240,10 +279,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     child: ClipOval(
                       child: user?.profilePicture != null &&
                               user!.profilePicture!.isNotEmpty
-                          ? Image.file(File(user.profilePicture!),
-                              width: 100, height: 100, fit: BoxFit.cover)
-                          : Image.asset('assets/defaultprofile.png',
-                              width: 100, height: 100, fit: BoxFit.cover),
+                          ? Image.network(
+                              user!.profilePicture!,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Fallback to default image if URL fails to load
+                                return Image.asset(
+                                  'assets/defaultprofile.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              'assets/defaultprofile.png',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
                 ),
@@ -269,7 +325,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       ListTile(
                         leading: Icon(Icons.person),
                         title: Text('Change username'),
-                        onTap: () => _showChangeUsername(context),
+                        onTap: () {
+                          _showChangeUsername(context);
+                        },
                       ),
                       ListTile(
                         leading: Icon(Icons.logout),

@@ -1,9 +1,9 @@
 import 'package:Learnbound/database/user_provider.dart';
+import 'package:Learnbound/util/design/cs_snackbar.dart';
 import 'package:Learnbound/screen/home_screen.dart';
 import 'package:Learnbound/screen/register_screen.dart';
-import 'package:Learnbound/screen/wave/wave.dart';
+import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,6 +48,8 @@ class _LoginScreenState extends State<LoginScreen> {
       prefs.remove('email');
       prefs.remove('password');
     }
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('userEmail', _emailController.text);
   }
 
   Future<void> _login() async {
@@ -63,68 +65,87 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (userProvider.user != null) {
         _saveUserData();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful')),
+
+        CustomSnackBar.show(
+          context,
+          "Login successful!",
+          isSuccess: true,
+          backgroundColor: Colors.green,
+          icon: Icons.check_circle,
         );
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
-        );
+        CustomSnackBar.show(context, 'Invalid email or password',
+            isSuccess: false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Logo positioned at top left
-          Positioned(
-            top: 40,
-            left: 20,
-            child: Image.asset(
-              'assets/logoonly.png',
-              width: 60,
-              height: 60,
-            ),
-          ),
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 600; // Threshold for small screens
 
-          // Main Login UI
-          Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
+    return WillPopScope(
+      onWillPop: () async => false, // Prevents back navigation
+      child: Scaffold(
+        resizeToAvoidBottomInset:
+            false, // Prevents bottom widgets from shifting up
+        body: Stack(
+          children: [
+            // Logo positioned at top left
+            Positioned(
+              top: screenSize.height * 0.05, // 5% from top
+              left: screenSize.width * 0.05, // 5% from left
+              child: Image.asset(
+                'assets/logoonly.png',
+                width: isSmallScreen ? 50 : 60,
+                height: isSmallScreen ? 50 : 60,
+              ),
+            ),
+
+            // Concurrent Login UI
+            Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context)
+                      .viewInsets
+                      .bottom, // Keyboard adjustment
+                  left: screenSize.width * 0.08, // 8% horizontal padding
+                  right: screenSize.width * 0.08,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start, // Align left
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 80),
+                      SizedBox(
+                          height:
+                              screenSize.height * 0.12), // Dynamic top spacing
 
                       // Sign In Title
-                      const Text(
+                      Text(
                         "Sign In",
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: isSmallScreen ? 22 : 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
 
                       // Subtitle
-                      const Text(
+                      Text(
                         "Please fill the credentials",
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isSmallScreen ? 12 : 14,
                           color: Colors.grey,
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      SizedBox(height: screenSize.height * 0.05),
 
                       // Email Field
                       TextFormField(
@@ -138,6 +159,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(15),
                             borderSide: BorderSide.none,
                           ),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: isSmallScreen ? 12 : 16,
+                            horizontal: 10,
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -146,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: screenSize.height * 0.025),
 
                       // Password Field
                       TextFormField(
@@ -173,6 +198,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               });
                             },
                           ),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: isSmallScreen ? 12 : 16,
+                            horizontal: 10,
+                          ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -181,23 +210,40 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: screenSize.height * 0.015),
 
                       // Remember Me Checkbox
                       Row(
                         children: [
                           Checkbox(
                             value: _rememberMe,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            activeColor: Colors.grey,
                             onChanged: (value) {
                               setState(() {
                                 _rememberMe = value ?? false;
                               });
                             },
                           ),
-                          const Text("Remember Me"),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _rememberMe = !_rememberMe;
+                              });
+                            },
+                            child: Text(
+                              "Remember Me",
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 14 : 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: screenSize.height * 0.04),
 
                       // Sign In Button
                       SizedBox(
@@ -209,57 +255,79 @@ class _LoginScreenState extends State<LoginScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            padding: EdgeInsets.symmetric(
+                              vertical: isSmallScreen ? 16 : 20,
+                            ),
                           ),
                           onPressed: _login,
-                          child: const Text("Sign In",
-                              style: TextStyle(color: Colors.white)),
+                          child: Text(
+                            "Sign In",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 16 : 18,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: screenSize.height * 0.025),
 
                       // Sign Up Link
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Don't have an account? "),
+                          Text(
+                            "Don't have an account? ",
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
+                            ),
+                          ),
                           GestureDetector(
                             onTap: () {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => RegisterScreen()),
+                                  builder: (context) => RegisterScreen(),
+                                ),
                               );
                             },
-                            child: const Text(
+                            child: Text(
                               "Sign up",
                               style: TextStyle(
-                                  color: Colors.orange,
-                                  fontWeight: FontWeight.bold),
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isSmallScreen ? 14 : 16,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: screenSize.height * 0.025),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: ClipPath(
-              clipper: BottomWaveClipper(),
-              child: Container(
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Color(0xFFD7C19C),
+
+            // Bottom UI (Wave)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: IgnorePointer(
+                ignoring: MediaQuery.of(context).viewInsets.bottom >
+                    0, // Hide with keyboard
+                child: ClipPath(
+                  clipper: BottomWaveClipper(),
+                  child: Container(
+                    height: screenSize.height * 0.15, // 15% of screen height
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFD7C19C),
+                    ),
+                  ),
                 ),
               ),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
