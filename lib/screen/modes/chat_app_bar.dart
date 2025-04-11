@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/models/user.dart';
 import 'package:flutter/material.dart';
 
@@ -7,7 +6,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final User? user;
   final Future<bool> Function() onBackPressed;
 
-  const ChatAppBar({required this.user, required this.onBackPressed});
+  const ChatAppBar({super.key, required this.user, required this.onBackPressed});
 
   @override
   Widget build(BuildContext context) {
