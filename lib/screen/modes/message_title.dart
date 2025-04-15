@@ -5,7 +5,7 @@ class MessageTile extends StatelessWidget {
   final Map<String, dynamic> messageData;
   final String? profilePicture;
 
-  const MessageTile({required this.messageData, required this.profilePicture});
+  const MessageTile({super.key, required this.messageData, required this.profilePicture});
 
   @override
   Widget build(BuildContext context) {

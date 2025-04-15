@@ -1,21 +1,22 @@
 import 'package:Learnbound/screen/login/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
 
 import 'database/user_provider.dart';
 import 'screen/loading_screen.dart';
 
 void main() async {
-  // WidgetsFlutterBinding.ensureInitialized();
-  // sqfliteFfiInit();
-  // databaseFactory = databaseFactoryFfi;
+  WidgetsFlutterBinding.ensureInitialized();
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
 
-  await Supabase.initialize(
-    url: 'https://acxqyygwnsuyturslbpa.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjeHF5eWd3bnN1eXR1cnNsYnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MzEyODIsImV4cCI6MjA1OTAwNzI4Mn0.RnF9PMageUkyBa_C7YvLMYvyEIyJXIIFnLxBm5vtEM4',
-  );
+  // await Supabase.initialize(
+  //   url: 'https://acxqyygwnsuyturslbpa.supabase.co',
+  //   anonKey:
+  //       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjeHF5eWd3bnN1eXR1cnNsYnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0MzEyODIsImV4cCI6MjA1OTAwNzI4Mn0.RnF9PMageUkyBa_C7YvLMYvyEIyJXIIFnLxBm5vtEM4',
+  // );
 
   runApp(
     MultiProvider(

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
 class ServerList extends StatefulWidget {
@@ -12,7 +13,7 @@ class ServerList extends StatefulWidget {
 
 class _ServerListState extends State<ServerList>
     with SingleTickerProviderStateMixin {
-  final Set<String> _serverList = {};
+  final Set<String> _serverList = {"test1"};
   RawDatagramSocket? _udpSocket;
   final int _udpPort = 4040;
   bool _isListening = false;
@@ -100,81 +101,140 @@ class _ServerListState extends State<ServerList>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Available Servers',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white),
-            onPressed: () {
-              setState(() => _serverList.clear());
-              _startListeningForServers();
-              _animationController.forward(from: 0); // Restart animation
-            },
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueGrey[900]!, Colors.blueGrey[700]!],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      backgroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(120), // Increased height for wave design
+        child: ClipPath(
+          clipper: WaveClipper(), // Custom clipper for wave shape
+          child: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: Color(0xFF4A4A4A)),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            title: Text(
+              'Available Servers',
+              style: TextStyle(
+                color: Color(0xFF4A4A4A),
+                fontWeight: FontWeight.w700,
+                fontSize: 24,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.refresh, color: Color(0xFFFFD3AC)),
+                onPressed: () {
+                  setState(() => _serverList.clear());
+                  _startListeningForServers();
+                  _animationController.forward(from: 0);
+                },
+              ),
+            ],
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+              color: Color(0xFFD7C19C)
+              ),
+            ),
           ),
         ),
-        child: SafeArea(
-          child: _serverList.isEmpty
-              ? Center(
-                  child: Text(
-                    'No servers found',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white70),
-                  ),
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.all(16),
-                  itemCount: _serverList.length,
-                  itemBuilder: (context, index) {
-                    final serverInfo = _serverList.elementAt(index);
-                    return FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: Card(
-                        color: Colors.white.withOpacity(0.95),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        elevation: 4,
-                        margin: EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.teal[400],
+      ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: _serverList.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.wifi_off,
+                      size: 64,
+                      color:  const Color.fromRGBO(211, 172, 112, 1.0),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No servers found',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF4A4A4A).withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                itemCount: _serverList.length,
+                itemBuilder: (context, index) {
+                  final serverInfo = _serverList.elementAt(index);
+                  return FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Card(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                      margin: EdgeInsets.symmetric(vertical: 6),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:  const Color.fromRGBO(211, 172, 112, 1.0),
+                          ),
+                          child: Center(
                             child: Text(
                               '${index + 1}',
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
-                          title: Text(
-                            serverInfo,
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blueGrey[800]),
+                        ),
+                        title: Text(
+                          serverInfo,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF4A4A4A),
                           ),
-                          trailing: Icon(Icons.arrow_forward_ios,
-                              color: Colors.teal[400]),
-                          onTap: () => widget.onSelectServer(serverInfo),
+                        ),
+                        trailing: ElevatedButton(
+                          onPressed: () => widget.onSelectServer(serverInfo),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:  const Color.fromRGBO(211, 172, 112, 1.0),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Connect',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
-                    );
-                  },
-                ),
-        ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }

@@ -12,7 +12,7 @@ class MultipleChoiceUI extends StatelessWidget {
   final Socket? clientSocket;
   final Function(VoidCallback) onStateUpdate;
 
-  const MultipleChoiceUI({
+  const MultipleChoiceUI({super.key, 
     required this.questions,
     required this.selectedAnswers,
     required this.confirmedAnswers,

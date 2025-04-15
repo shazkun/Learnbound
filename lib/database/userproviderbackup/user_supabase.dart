@@ -1,182 +1,337 @@
-import 'dart:async';
-import 'package:Learnbound/models/user.dart' as AppUser;
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'dart:async';
+// import 'dart:io'; // For File handling
+// import 'package:Learnbound/models/user.dart' as AppUser;
+// import 'package:flutter/material.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
-class UserProvider with ChangeNotifier {
-  final SupabaseClient _supabaseClient = Supabase.instance.client;
-  AppUser.User? _user; // Store the user data fetched from Supabase.
 
-  AppUser.User? get user => _user;
+// class UserProvider with ChangeNotifier {
+//   final SupabaseClient _supabaseClient = Supabase.instance.client;
+//   AppUser.User? _user;
+//   final _userStreamController = StreamController<AppUser.User?>.broadcast();
+//   RealtimeChannel? _subscription;
 
-  /// **Listen to Auth State Changes**
-  UserProvider() {
-    // Listen for authentication state changes (login/logout).
-    _supabaseClient.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      if (session != null) {
-        // User is logged in
-        fetchUserData(
-            session.user.id); // No need for ! since session is non-null
-      } else {
-        // User is logged out
-        _user = null;
-        notifyListeners();
-      }
-    });
-  }
+//   AppUser.User? get user => _user;
+//   Stream<AppUser.User?> get userStream => _userStreamController.stream;
 
-  /// **Register User**
-  Future<bool> registerUser(
-      String username, String email, String password, String pathImg) async {
-    try {
-      // Register in Supabase Authentication
-      final response = await _supabaseClient.auth.signUp(
-        password: password, // Updated syntax: password first
-        email: email,
-      );
+//   UserProvider() {
+//     _initAuthListener();
+//     _initStreamListener();
+//   }
 
-      if (response.user == null) {
-        print("Error registering user: No user returned");
-        return false;
-      }
+//   void _initAuthListener() {
+//     _supabaseClient.auth.onAuthStateChange.listen((data) async {
+//       final session = data.session;
+//       if (session != null) {
+//         await fetchUserData(session.user.id);
+//         listenToUserChanges();
+//       } else {
+//         _clearUserState();
+//       }
+//     });
+//   }
 
-      // After successful registration, insert user data into Supabase.
-      final user = response.user!;
-      final uid = user.id;
-      final insertResponse = await _supabaseClient.from('users').insert({
-        'uid': uid,
-        'username': username,
-        'email': email,
-        'profile_picture': pathImg,
-      });
+//   void _initStreamListener() {
+//     _userStreamController.stream.listen((newUser) {
+//       _user = newUser;
+//       notifyListeners();
+//     }, onError: (error) {
+//       print("Stream error: $error");
+//       _user = null;
+//       notifyListeners();
+//     });
+//   }
 
-      if (insertResponse.error != null) {
-        print("Error inserting user data: ${insertResponse.error?.message}");
-        return false;
-      }
+//   Future<bool> registerUser(
+//       String username, String email, String password, String? pathImg) async {
+//     try {
+//       final response = await _supabaseClient.auth.signUp(
+//         password: password,
+//         email: email,
+//         data: {'username': username},
+//       );
 
-      // Fetch and update user provider
-      await fetchUserData(uid);
-      return true;
-    } catch (e) {
-      print("Error during registration: $e");
-      return false;
-    }
-  }
+//       final user = response.user;
+//       if (user == null) {
+//         throw Exception("No user returned after sign-up");
+//       }
 
-  /// **Login User**
-  Future<bool> loginUser(String email, String password) async {
-    try {
-      final response = await _supabaseClient.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+//       String profilePictureUrl = "";
 
-      if (response.user == null) {
-        print("Error logging in user: No user returned");
-        return false;
-      }
+//       if (pathImg != null && pathImg.isNotEmpty) {
+//         final file = File(pathImg);
+//         final storagePath =
+//             'profile_pictures/${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+//         await _supabaseClient.storage.from('avatars').upload(storagePath, file);
+//         profilePictureUrl =
+//             _supabaseClient.storage.from('avatars').getPublicUrl(storagePath);
+//       }
 
-      // After successful login, fetch user data
-      final uid = response.user!.id;
-      await fetchUserData(uid);
-      return true;
-    } catch (e) {
-      print("Error during login: $e");
-      return false;
-    }
-  }
+//       await _supabaseClient.from('users').insert({
+//         'uid': user.id,
+//         'username': username,
+//         'email': email,
+//         'profile_picture': profilePictureUrl,
+//       });
 
-  /// **Fetch User Data**
-  Future<void> fetchUserData(String uid) async {
-    try {
-      final response =
-          await _supabaseClient.from('users').select().eq('uid', uid).single();
+//       await fetchUserData(user.id);
+//       print("User successfully registered: $email");
+//       return true;
+//     } catch (e) {
+//       print("Registration failed: $e");
+//       if (e is AuthException && e.message.contains('User already registered')) {
+//         print("Error: Email '$email' is already registered");
+//         return false;
+//       }
+//       return false;
+//     }
+//   }
 
-      // Populate the user data from the response
-      _user = AppUser.User.fromMap(response);
-      notifyListeners();
-    } catch (e) {
-      print("Error during fetching user data: $e");
-    }
-  }
+//   /// **Login User**
+//   Future<bool> loginUser(String email, String password) async {
+//     try {
+//       final response = await _supabaseClient.auth.signInWithPassword(
+//         email: email,
+//         password: password,
+//       );
 
-  /// **Update Profile Picture**
-  Future<void> updateProfilePicture(String imageUrl) async {
-    if (_user == null) return;
+//       final user = response.user;
+//       if (user == null) {
+//         throw Exception("No user returned after login");
+//       }
 
-    try {
-      final response = await _supabaseClient
-          .from('users')
-          .update({'profile_picture': imageUrl}).eq('uid', _user!.uid);
+//       await fetchUserData(user.id);
+//       return true;
+//     } catch (e) {
+//       print("Login failed: $e");
+//       return false;
+//     }
+//   }
 
-      if (response.error != null) {
-        print("Error updating profile picture: ${response.error?.message}");
-        return;
-      }
+//   /// **Fetch User Data**
+//   Future<void> fetchUserData(String uid) async {
+//     try {
+//       final response = await _supabaseClient
+//           .from('users')
+//           .select()
+//           .eq('uid', uid)
+//           .maybeSingle();
 
-      // Update the user profile picture in the provider
-      _user = AppUser.User(
-        uid: _user!.uid,
-        username: _user!.username,
-        email: _user!.email,
-        profilePicture: imageUrl,
-      );
-      notifyListeners();
-    } catch (e) {
-      print("Error updating profile picture: $e");
-    }
-  }
+//       if (response != null) {
+//         final newUser = AppUser.User.fromMap(response);
+//         _userStreamController.add(newUser);
+//       } else {
+//         _userStreamController.add(null);
+//       }
+//     } catch (e) {
+//       print("Failed to fetch user data: $e");
+//       _userStreamController.addError(e);
+//     }
+//   }
 
-  /// **Logout**
-  Future<void> logout() async {
-    await _supabaseClient.auth.signOut();
-    _user = null;
-    notifyListeners();
-  }
+//   /// **Update Profile Picture**
+//   Future<bool> updateProfilePicture(String imagePath) async {
+//     if (_user == null) return false;
 
-  /// **Change Username**
-  Future<bool> changeUsername(String newUsername) async {
-    if (_user == null) return false;
+//     try {
+//       // Step 1: Fetch the current profile picture URL
+//       final userData = await _supabaseClient
+//           .from('users')
+//           .select('profile_picture')
+//           .eq('uid', _user!.uid)
+//           .single();
 
-    try {
-      final response = await _supabaseClient
-          .from('users')
-          .update({'username': newUsername}).eq('uid', _user!.uid);
+//       final currentProfileUrl = userData['profile_picture'] as String?;
+//       String? currentStoragePath;
 
-      if (response.error != null) {
-        print("Error changing username: ${response.error?.message}");
-        return false;
-      }
+//       // Step 2: Convert public URL to storage path
+//       if (currentProfileUrl != null && currentProfileUrl.isNotEmpty) {
+//         final uri = Uri.parse(currentProfileUrl);
+//         final segments = uri.pathSegments;
+//         final index = segments.indexOf('avatars');
+//         if (index != -1 && segments.length > index + 1) {
+//           currentStoragePath = segments.sublist(index + 1).join('/');
+//         }
+//       }
 
-      // Update username in the provider
-      _user = AppUser.User(
-        uid: _user!.uid,
-        username: newUsername,
-        email: _user!.email,
-        profilePicture: _user!.profilePicture,
-      );
-      notifyListeners();
-      return true;
-    } catch (e) {
-      print("Error changing username: $e");
-      return false;
-    }
-  }
+//       String? profilePictureUrl;
 
-  Future<bool> isEmailRegistered(String email) async {
-    try {
-      final response = await Supabase.instance.client
-          .from('users')
-          .select('email')
-          .eq('email', email);
+//       if (imagePath.isEmpty) {
+//         // Deletion request
+//         if (currentStoragePath != null) {
+//           await _supabaseClient.storage
+//               .from('avatars')
+//               .remove([currentStoragePath]);
+//         }
+//         profilePictureUrl = null; // Or a default image URL
+//       } else {
+//         // Upload new profile picture
+//         final file = File(imagePath);
+//         final newStoragePath =
+//             'profile_pictures/${_user!.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+//         await _supabaseClient.storage
+//             .from('avatars')
+//             .upload(newStoragePath, file);
+//         profilePictureUrl = _supabaseClient.storage
+//             .from('avatars')
+//             .getPublicUrl(newStoragePath);
 
-      // response is a List<Map<String, dynamic>> if data exists, empty otherwise
-      return response.isNotEmpty; // Returns true if the email exists
-    } catch (e) {
-      print("Error checking email registration: $e");
-      return false; // Assume false on error to avoid blocking registration
-    }
-  }
-}
+//         // Optional: Remove old image if it exists
+//         if (currentStoragePath != null) {
+//           await _supabaseClient.storage
+//               .from('avatars')
+//               .remove([currentStoragePath]);
+//         }
+//       }
+
+//       // Step 3: Update the user's profile picture in the database
+//       await _supabaseClient
+//           .from('users')
+//           .update({'profile_picture': profilePictureUrl}).eq('uid', _user!.uid);
+
+//       return true;
+//     } catch (e) {
+//       print("Failed to update/delete profile picture: $e");
+//       return false;
+//     }
+//   }
+
+//   /// **Reset Password**
+//   Future<bool> resetPassword(String email) async {
+//     try {
+//       await _supabaseClient.auth.resetPasswordForEmail(
+//         email,
+//         redirectTo:
+//             "myapp://reset-password", // Optional: Add redirect URL for web apps if needed
+//       );
+//       print("Password reset email sent to: $email");
+//       return true;
+//     } catch (e) {
+//       print("Failed to send password reset email: $e");
+//       return false;
+//     }
+//   }
+
+//   /// **Logout**
+//   Future<void> logout() async {
+//     try {
+//       await _supabaseClient.auth.signOut();
+//       _clearUserState();
+//     } catch (e) {
+//       print("Logout failed: $e");
+//     }
+//   }
+
+//   /// **Change Username**
+//   Future<bool> changeUsername(String newUsername) async {
+//     if (_user == null) return false;
+
+//     try {
+//       await _supabaseClient
+//           .from('users')
+//           .update({'username': newUsername}).eq('uid', _user!.uid);
+//       return true;
+//     } catch (e) {
+//       print("Failed to change username: $e");
+//       return false;
+//     }
+//   }
+
+//   /// **Check if Email is Registered**
+//   Future<bool> isEmailRegistered(String email) async {
+//     try {
+//       final response = await _supabaseClient
+//           .from('users')
+//           .select('email')
+//           .eq('email', email)
+//           .limit(1);
+//       return response.isNotEmpty;
+//     } catch (e) {
+//       print("Failed to check email registration: $e");
+//       return false;
+//     }
+//   }
+
+//   /// **Change Password**
+//   Future<bool> changePassword(
+//       String currentPassword, String newPassword) async {
+//     if (_user == null) {
+//       print("No user logged in");
+//       return false;
+//     }
+
+//     try {
+//       await _supabaseClient.auth.signInWithPassword(
+//         email: _user!.email,
+//         password: currentPassword,
+//       );
+
+//       await _supabaseClient.auth.updateUser(
+//         UserAttributes(password: newPassword),
+//       );
+//       return true;
+//     } catch (e) {
+//       print("Failed to change password: $e");
+//       return false;
+//     }
+//   }
+
+//   /// **Listen to User Changes**
+//   void listenToUserChanges() {
+//     final currentUser = _supabaseClient.auth.currentUser;
+//     if (currentUser == null) {
+//       print("No current user for real-time subscription");
+//       return;
+//     }
+
+//     _cancelSubscription();
+//     _subscription = _supabaseClient
+//         .channel('users:${currentUser.id}')
+//         .onPostgresChanges(
+//           event: PostgresChangeEvent.all,
+//           schema: 'public',
+//           table: 'users',
+//           filter: PostgresChangeFilter(
+//             type: PostgresChangeFilterType.eq,
+//             column: 'uid',
+//             value: currentUser.id,
+//           ),
+//           callback: (payload) {
+//             print("Real-time update: $payload");
+//             if (payload.eventType == PostgresChangeEvent.delete) {
+//               _userStreamController.add(null);
+//             } else if (payload.newRecord.isNotEmpty) {
+//               final newUser = AppUser.User.fromMap(payload.newRecord);
+//               _userStreamController.add(newUser);
+//             }
+//           },
+//         )
+//         .subscribe((status, [error]) {
+//       print(
+//           "Subscription status: $status${error != null ? ' Error: $error' : ''}");
+//     });
+//   }
+
+//   /// **Clear User State**
+//   void _clearUserState() {
+//     _user = null;
+//     _userStreamController.add(null);
+//     _cancelSubscription();
+//     notifyListeners();
+//   }
+
+//   /// **Cancel Subscription**
+//   void _cancelSubscription() {
+//     if (_subscription != null) {
+//       _supabaseClient.removeChannel(_subscription!);
+//       _subscription = null;
+//     }
+//   }
+
+//   @override
+//   void dispose() {
+//     _cancelSubscription();
+//     _userStreamController.close();
+//     super.dispose();
+//   }
+// }

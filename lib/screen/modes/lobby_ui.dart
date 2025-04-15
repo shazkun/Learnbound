@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class LobbyUI extends StatelessWidget {
   final VoidCallback onShowServerList;
 
-  const LobbyUI({required this.onShowServerList});
+  const LobbyUI({super.key, required this.onShowServerList});
 
   @override
   Widget build(BuildContext context) {

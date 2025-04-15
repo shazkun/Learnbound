@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:Learnbound/database/user_provider.dart';
+import 'package:Learnbound/screen/login/login_screen.dart';
 import 'package:Learnbound/util/design/wave.dart';
-import 'package:Learnbound/screen/login_screen.dart';
+import 'package:Learnbound/oldfiles/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -174,11 +175,15 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           content: Text('Do you really want to log out?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Cancel
+              },
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Confirm logout
+              },
               child: Text('Logout'),
             ),
           ],
@@ -186,7 +191,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       },
     );
 
-    if (shouldLogout == true || context.mounted) {
+    if (shouldLogout == true && context.mounted) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.logout();
       if (!mounted) return;
@@ -279,8 +284,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     child: ClipOval(
                       child: user?.profilePicture != null &&
                               user!.profilePicture!.isNotEmpty
-                          ? Image.network(
-                              user!.profilePicture!,
+                          ? Image.file(
+                              File(user.profilePicture!),
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,

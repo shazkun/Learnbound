@@ -1,4 +1,6 @@
-import 'package:Learnbound/screen/register_screen.dart';
+import 'package:Learnbound/screen/login/login_screen.dart';
+import 'package:Learnbound/screen/register/register_screen.dart';
+
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
@@ -156,26 +158,56 @@ Widget buildLoginUI({
                       ),
                     ),
                     SizedBox(height: screenSize.height * 0.025),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Don't have an account? ",
-                          style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+                        // "Don't have an account? Sign up" section
+                        Row(
+                          children: [
+                            Text(
+                              "Don't have an account? ",
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 14 : 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const RegisterScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                "Sign up",
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        // "Forgot your password?" section
                         GestureDetector(
                           onTap: () {
-                            Navigator.pushReplacement(
+                            Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => RegisterScreen()),
+                                builder: (context) =>
+                                    const LoginScreen(),
+                              ),
                             );
                           },
                           child: Text(
-                            "Sign up",
+                            "Forgot your password?",
                             style: TextStyle(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                              fontWeight: FontWeight.normal,
                               fontSize: isSmallScreen ? 14 : 16,
                             ),
                           ),

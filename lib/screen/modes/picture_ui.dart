@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class PictureUI extends StatelessWidget {
   final Future<void> Function() onPickAndSendImage;
 
-  const PictureUI({required this.onPickAndSendImage});
+  const PictureUI({super.key, required this.onPickAndSendImage});
 
   @override
   Widget build(BuildContext context) {
