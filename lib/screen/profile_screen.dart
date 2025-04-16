@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/login/login_screen.dart';
+import 'package:Learnbound/screen/auth/login/login_screen.dart';
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:Learnbound/oldfiles/login_screen.dart';
 import 'package:flutter/material.dart';
@@ -213,140 +213,158 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final user = userProvider.user;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                ClipPath(
-                  clipper: TopClipper(),
-                  child: Container(
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFD7C19C),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                            top: 30, // Adjust based on wave shape
-                            left: 30, // Moves text to the right
-                            child: IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: SvgPicture.asset(
-                                'assets/arrow.svg',
-                                height: 24,
-                                width: 24,
-                                colorFilter: const ColorFilter.mode(
-                                    Colors.white,
-                                    BlendMode.srcIn), // Change color
-                              ),
-                            )),
-                        Positioned(
-                          top: 30, // Adjust based on wave shape
-                          right: 60, // Moves text to the right
-                          child: Text(
-                            "Profile",
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                GestureDetector(
-                  onTap: () => showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Profile Options'),
-                        content:
-                            Text('Choose an action for your profile picture:'),
-                        actions: [
-                          TextButton(
-                              onPressed: _changeProfilePicture,
-                              child: Text('Change Profile')),
-                          TextButton(
-                              onPressed: _deleteProfilePicture,
-                              child: Text('Delete Profile')),
-                        ],
-                      );
-                    },
-                  ),
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey[200],
-                    child: ClipOval(
-                      child: user?.profilePicture != null &&
-                              user!.profilePicture!.isNotEmpty
-                          ? Image.file(
-                              File(user.profilePicture!),
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Fallback to default image if URL fails to load
-                                return Image.asset(
-                                  'assets/defaultprofile.png',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                );
-                              },
-                            )
-                          : Image.asset(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(120), // Match the original height
+        child: ClipPath(
+          clipper: TopClipper(),
+          child: AppBar(
+            backgroundColor: Color(0xFFD7C19C),
+            leading: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Image.asset(
+                'assets/back-arrow.png',
+                height: 24,
+                width: 24,
+                // colorFilter: const ColorFilter.mode(
+                //   Colors.white,
+                //   BlendMode.srcIn,
+                // ),
+              ),
+            ),
+            title: Text(
+              "Profile",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            centerTitle:
+                true, // Align title similar to the original positioning
+            // titleSpacing:
+            //     20, // Adjust spacing to mimic original right: 60 positioning
+            elevation: 0, // Remove shadow for a cleaner look
+          ),
+        ),
+      ),
+      body: Container(
+        color: Colors.white,
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            GestureDetector(
+              onTap: () => showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Profile Options'),
+                    content: Text('Choose an action for your profile picture:'),
+                    actions: [
+                      TextButton(
+                        onPressed: _changeProfilePicture,
+                        child: Text('Change Profile'),
+                      ),
+                      TextButton(
+                        onPressed: _deleteProfilePicture,
+                        child: Text('Delete Profile'),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey[200],
+                child: ClipOval(
+                  child: user?.profilePicture != null &&
+                          user!.profilePicture!.isNotEmpty
+                      ? Image.file(
+                          File(user.profilePicture!),
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
                               'assets/defaultprofile.png',
                               width: 100,
                               height: 100,
                               fit: BoxFit.cover,
-                            ),
-                    ),
-                  ),
+                            );
+                          },
+                        )
+                      : Image.asset(
+                          'assets/defaultprofile.png',
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
                 ),
-                SizedBox(height: 10),
-                Text(
-                  user?.username ?? "Name",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                SizedBox(height: 20),
-                Card(
-                  margin: EdgeInsets.symmetric(horizontal: 30),
-                  color: Color(0xFFEBE1C8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: Icon(Icons.lock),
-                        title: Text('Change password'),
-                        onTap: () => _showChangePasswordDialog(context),
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.person),
-                        title: Text('Change username'),
-                        onTap: () {
-                          _showChangeUsername(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: Icon(Icons.logout),
-                        title: Text('Logout'),
-                        onTap: _logout,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 10),
+            Text(
+              user?.username ?? "Name",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            SizedBox(height: 20),
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 30),
+              color: Color(0xFFEBE1C8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.lock),
+                    title: Text('Change password'),
+                    onTap: () => _showChangePasswordDialog(context),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.person),
+                    title: Text('Change username'),
+                    onTap: () {
+                      _showChangeUsername(context);
+                    },
+                  ),
+                  // ListTile(
+                  //   leading: Icon(Icons.logout),
+                  //   title: Text('Logout'),
+                  //   onTap: _logout,
+                  // ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showAbout(); // make sure this function accepts BuildContext if needed
+        },
+        hoverColor: Colors.grey,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        highlightElevation: 0,
+        child: Icon(
+          Icons.info_outlined,
+          size: 32,
+          color: Colors.black,
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+    );
+  }
+
+  void showAbout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('LearnBound'),
+          content: Text('VERSION: 1.2'),
+        );
+      },
     );
   }
 }

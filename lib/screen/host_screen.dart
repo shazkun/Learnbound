@@ -346,7 +346,7 @@ class _HostScreenState extends State<HostScreen>
             onPressed: () async {
               if (await _onBackPressed()) {
                 _serverSocket?.close();
-                _broadcast.stopBroadcast();
+
                 Navigator.pop(context);
               }
             },

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 class ServerList extends StatefulWidget {
   final Function(String serverInfo) onSelectServer;
@@ -105,25 +106,30 @@ class _ServerListState extends State<ServerList>
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(120), // Increased height for wave design
         child: ClipPath(
-          clipper: WaveClipper(), // Custom clipper for wave shape
+          clipper: TopClipper(), // Custom clipper for wave shape
           child: AppBar(
+            centerTitle: true,
             backgroundColor: Colors.white,
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Color(0xFF4A4A4A)),
+              icon: Image.asset(
+                'assets/back-arrow.png',
+                height: 24,
+                width: 24,
+              ),
               onPressed: () => Navigator.of(context).pop(),
             ),
             title: Text(
               'Available Servers',
               style: TextStyle(
-                color: Color(0xFF4A4A4A),
+                color: Colors.black87,
                 fontWeight: FontWeight.w700,
                 fontSize: 24,
               ),
             ),
             actions: [
               IconButton(
-                icon: Icon(Icons.refresh, color: Color(0xFFFFD3AC)),
+                icon: Icon(Icons.refresh, color: Colors.black),
                 onPressed: () {
                   setState(() => _serverList.clear());
                   _startListeningForServers();
@@ -132,9 +138,7 @@ class _ServerListState extends State<ServerList>
               ),
             ],
             flexibleSpace: Container(
-              decoration: BoxDecoration(
-              color: Color(0xFFD7C19C)
-              ),
+              decoration: BoxDecoration(color: Color(0xFFD7C19C)),
             ),
           ),
         ),
@@ -149,7 +153,7 @@ class _ServerListState extends State<ServerList>
                     Icon(
                       Icons.wifi_off,
                       size: 64,
-                      color:  const Color.fromRGBO(211, 172, 112, 1.0),
+                      color: const Color.fromRGBO(211, 172, 112, 1.0),
                     ),
                     SizedBox(height: 16),
                     Text(
@@ -171,7 +175,7 @@ class _ServerListState extends State<ServerList>
                   return FadeTransition(
                     opacity: _fadeAnimation,
                     child: Card(
-                      color: Colors.white,
+                      color: const Color.fromARGB(171, 221, 203, 203),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -187,7 +191,7 @@ class _ServerListState extends State<ServerList>
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color:  const Color.fromRGBO(211, 172, 112, 1.0),
+                            color: const Color.fromRGBO(211, 172, 112, 1.0),
                           ),
                           child: Center(
                             child: Text(
@@ -211,7 +215,8 @@ class _ServerListState extends State<ServerList>
                         trailing: ElevatedButton(
                           onPressed: () => widget.onSelectServer(serverInfo),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:  const Color.fromRGBO(211, 172, 112, 1.0),
+                            backgroundColor:
+                                const Color.fromRGBO(211, 172, 112, 1.0),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),

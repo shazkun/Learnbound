@@ -1,33 +1,39 @@
 import 'dart:io';
-import 'package:Learnbound/screen/login/login_screen.dart';
+import 'package:Learnbound/screen/auth/login/login_screen.dart';
+import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
 class RegisterUI {
-  static Widget buildHeader(BuildContext context, bool isSmallScreen) {
+  static PreferredSizeWidget buildAppBar(
+      BuildContext context, bool isSmallScreen) {
     final screenSize = MediaQuery.of(context).size;
-    return ClipPath(
-      clipper: TopClipper(),
-      child: Container(
-        height: screenSize.height * 0.18,
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          color: Color(0xFFD7C19C),
+
+    return PreferredSize(
+      preferredSize: Size.fromHeight(
+          screenSize.height * 0.15), // Set the height of the app bar
+      child: AppBar(
+        centerTitle: true,
+        title: Text(
+          'Sign Up',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w700,
+            fontSize: 24,
+          ),
         ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: screenSize.height * 0.04,
-              right: screenSize.width * 0.1,
-              child: Text(
-                "Sign Up",
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 24 : 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+        automaticallyImplyLeading:
+            false, // Optional, if you don't want a back button
+        backgroundColor: Colors
+            .transparent, // Make background transparent to show custom design
+        elevation: 0, // Removes the default shadow
+        flexibleSpace: ClipPath(
+          clipper:
+              TopClipper(), // Assuming you have a TopClipper defined elsewhere
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFD7C19C), // Background color of the app bar
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -131,7 +137,7 @@ class RegisterUI {
         ),
         GestureDetector(
           onTap: () {
-           Navigator.push(
+            Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => LoginScreen()),
             );
@@ -148,23 +154,4 @@ class RegisterUI {
       ],
     );
   }
-}
-
-// Placeholder for TopClipper (replace with your actual Wave clipper)
-class TopClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 20);
-    path.quadraticBezierTo(
-        size.width / 4, size.height, size.width / 2, size.height - 20);
-    path.quadraticBezierTo(
-        3 * size.width / 4, size.height - 40, size.width, size.height - 20);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
