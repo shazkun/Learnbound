@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 
 class ServerList extends StatefulWidget {
   final Function(String serverInfo) onSelectServer;
@@ -14,7 +13,7 @@ class ServerList extends StatefulWidget {
 
 class _ServerListState extends State<ServerList>
     with SingleTickerProviderStateMixin {
-  final Set<String> _serverList = {"test1"};
+  final Set<String> _serverList = {"127.0.0.1 - jobert"};
   RawDatagramSocket? _udpSocket;
   final int _udpPort = 4040;
   bool _isListening = false;
@@ -23,6 +22,7 @@ class _ServerListState extends State<ServerList>
   String? _localIp;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  ServerSocket? _serverSocket;
 
   @override
   void initState() {
@@ -34,6 +34,11 @@ class _ServerListState extends State<ServerList>
     _fadeAnimation =
         CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
     _animationController.forward();
+    _startServerTesting();
+  }
+
+  Future<void> _startServerTesting() async {
+    _serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
   }
 
   Future<void> _initializeLocalIp() async {
@@ -174,64 +179,41 @@ class _ServerListState extends State<ServerList>
                   final serverInfo = _serverList.elementAt(index);
                   return FadeTransition(
                     opacity: _fadeAnimation,
-                    child: Card(
-                      color: const Color.fromARGB(171, 221, 203, 203),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
-                      margin: EdgeInsets.symmetric(vertical: 6),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                    child: GestureDetector(
+                      onTap: () => widget.onSelectServer(serverInfo),
+                      child: Card(
+                        color: Color(0xFFF5F5F5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color.fromRGBO(211, 172, 112, 1.0),
+                        elevation: 2,
+                        margin: EdgeInsets.symmetric(vertical: 6),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
+                          leading: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  color: Colors.black, // White text color
+                                  fontWeight: FontWeight.bold, // Bold text
+                                  fontSize: 18, // Larger font size
+                                  fontFamily: 'Roboto', // Modern font family
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        title: Text(
-                          serverInfo,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF4A4A4A),
-                          ),
-                        ),
-                        trailing: ElevatedButton(
-                          onPressed: () => widget.onSelectServer(serverInfo),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromRGBO(211, 172, 112, 1.0),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Connect',
+                          title: Text(
+                            serverInfo,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: Color(0xFF4A4A4A),
                             ),
                           ),
                         ),

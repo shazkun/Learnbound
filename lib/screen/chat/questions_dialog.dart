@@ -66,7 +66,8 @@ void showQuestionsDialog({
                                       label: Text('Confirmed',
                                           style:
                                               TextStyle(color: Colors.white)),
-                                      backgroundColor: Colors.teal[400],
+                                      backgroundColor: const Color.fromRGBO(
+                                          211, 172, 112, 1.0),
                                     ),
                                 ],
                               ),
@@ -81,7 +82,7 @@ void showQuestionsDialog({
                                           if (isConfirmed &&
                                               selectedAnswer == option)
                                             Icon(Icons.check,
-                                                color: Colors.teal[400]),
+                                                color: const Color.fromRGBO(211, 172, 112, 1.0)),
                                         ],
                                       ),
                                       onTap: isConfirmed
@@ -103,7 +104,8 @@ void showQuestionsDialog({
                                         }
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.teal[400],
+                                        backgroundColor: const Color.fromRGBO(
+                                            211, 172, 112, 1.0),
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(12)),
@@ -124,7 +126,7 @@ void showQuestionsDialog({
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal[400],
+                backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),

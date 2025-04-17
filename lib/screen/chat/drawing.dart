@@ -15,7 +15,7 @@ class DrawingUI extends StatelessWidget {
           padding: EdgeInsets.all(16),
           child: FloatingActionButton(
             onPressed: onOpenDrawingCanvas,
-            backgroundColor: Colors.teal[400],
+            backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
             child: Icon(Icons.brush),
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/models/user.dart';
+import 'package:Learnbound/screen/auth/login/login_screen.dart';
 import 'package:Learnbound/util/design/cs_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -76,7 +77,10 @@ class RegisterFunctions {
           backgroundColor: Colors.green,
           icon: Icons.check_circle,
         );
-        Navigator.pushReplacementNamed(context, '/login');
+       Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
       }
     }
   }

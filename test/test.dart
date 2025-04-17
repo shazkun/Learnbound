@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,8 +24,8 @@ void main() {
 
       await Future.delayed(Duration(milliseconds: 300));
 
-      client1.destroy();
-      client2.destroy();
+      // client1.destroy();
+      // client2.destroy();
     });
 
     test('Send and process multiple choice answer', () async {

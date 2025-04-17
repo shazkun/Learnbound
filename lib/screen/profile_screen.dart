@@ -316,17 +316,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               child: Column(
                 children: [
                   ListTile(
-                    leading: Icon(Icons.lock),
-                    title: Text('Change password'),
-                    onTap: () => _showChangePasswordDialog(context),
-                  ),
-                  ListTile(
                     leading: Icon(Icons.person),
                     title: Text('Change username'),
                     onTap: () {
                       _showChangeUsername(context);
                     },
                   ),
+                  ListTile(
+                    leading: Icon(Icons.lock),
+                    title: Text('Change password'),
+                    onTap: () => _showChangePasswordDialog(context),
+                  ),
+
                   // ListTile(
                   //   leading: Icon(Icons.logout),
                   //   title: Text('Logout'),

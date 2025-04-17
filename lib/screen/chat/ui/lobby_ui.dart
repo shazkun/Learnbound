@@ -13,7 +13,7 @@ class LobbyUI extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onShowServerList,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal[400],
+            backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
             padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

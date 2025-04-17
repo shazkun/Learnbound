@@ -3,18 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/screen/drawing_screen.dart';
-import 'package:Learnbound/screen/modes/drawing.dart';
-import 'package:Learnbound/screen/modes/questions_dialog.dart';
+import 'package:Learnbound/screen/chat/drawing.dart';
+import 'package:Learnbound/screen/chat/questions_dialog.dart';
 import 'package:Learnbound/screen/server_list_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'chat_app_bar.dart';
-import 'lobby_ui.dart';
-import 'chat_ui.dart';
+import 'ui/lobby_ui.dart';
+import 'ui/chat_ui.dart';
 import 'multiple_choice_ui.dart';
-import 'picture_ui.dart';
+import 'ui/picture_ui.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -303,30 +303,33 @@ class _ChatScreenState extends State<ChatScreen>
               body: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.blueGrey[900]!, Colors.blueGrey[700]!],
+                     colors: [
+                      Color(0xFFF5F5F5), // Light grey (off-white)
+                      Color(0xFFFFFFFF), // Pure white
+                    ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                 ),
                 child: SafeArea(child: _buildModeUI()),
               ),
-              floatingActionButton:
-                  _questions.isNotEmpty || _multipleChoiceQuestions.isNotEmpty
-                      ? FloatingActionButton(
-                          onPressed: () => showQuestionsDialog(
-                            context: context,
-                            questions: _questions,
-                            multipleChoiceQuestions: _multipleChoiceQuestions,
-                            selectedAnswers: _selectedAnswers,
-                            confirmedAnswers: _confirmedAnswers,
-                            fadeAnimation: _fadeAnimation,
-                            clientSocket: _clientSocket,
-                            onStateUpdate: setState,
-                          ),
-                          backgroundColor: Colors.teal[400],
-                          child: Icon(Icons.question_answer),
-                        )
-                      : null,
+              floatingActionButton: _questions.isNotEmpty ||
+                      _multipleChoiceQuestions.isNotEmpty
+                  ? FloatingActionButton(
+                      onPressed: () => showQuestionsDialog(
+                        context: context,
+                        questions: _questions,
+                        multipleChoiceQuestions: _multipleChoiceQuestions,
+                        selectedAnswers: _selectedAnswers,
+                        confirmedAnswers: _confirmedAnswers,
+                        fadeAnimation: _fadeAnimation,
+                        clientSocket: _clientSocket,
+                        onStateUpdate: setState,
+                      ),
+                      backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
+                      child: Icon(Icons.question_answer),
+                    )
+                  : null,
               floatingActionButtonLocation:
                   FloatingActionButtonLocation.endFloat,
             )
@@ -353,6 +356,12 @@ class _ChatScreenState extends State<ChatScreen>
           isStarted: _isStarted,
           onSendMessage: _sendMessage,
           onWaitSnackBar: _showHostWaitSnackBar,
+          questions: _questions,
+          multipleChoiceQuestions: _multipleChoiceQuestions,
+          selectedAnswers: _selectedAnswers,
+          confirmedAnswers: _confirmedAnswers,
+          clientSocket: _clientSocket,
+          onStateUpdate: setState,
         );
       case "Multiple Choice":
         return MultipleChoiceUI(

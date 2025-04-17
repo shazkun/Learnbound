@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:Learnbound/screen/auth/login/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,12 +9,13 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'database/user_provider.dart';
 import 'screen/loading_screen.dart';
-import 'screen/start_screen.dart'; // 👈 Make sure this exists
+import 'screen/start_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
 
   runApp(
     MultiProvider(
@@ -41,6 +45,7 @@ class _MyAppState extends State<MyApp> {
     Future.delayed(Duration(seconds: 2), () {
       setState(() {
         _isLoading = false;
+        
       });
     });
   }

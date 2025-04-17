@@ -3,12 +3,12 @@ import 'dart:io';
 import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/screen/auth/login/login_screen.dart';
 
-import 'package:Learnbound/screen/modes/chat_screen.dart';
+import 'package:Learnbound/screen/chat/chat_screen.dart';
+import 'package:Learnbound/screen/host/host_screen.dart';
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'host_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -75,10 +75,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('Home'),
-          // Drawer icon (hamburger menu) will automatically appear in the AppBar
-        ),
+        appBar: AppBar(),
         drawer: Drawer(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -89,14 +86,6 @@ class _HomeScreenWidget extends State<HomeScreen> {
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      'Menu',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                      ),
-                    ),
                     CircleAvatar(
                       radius: 35,
                       backgroundColor: Colors.grey[200],
@@ -123,6 +112,16 @@ class _HomeScreenWidget extends State<HomeScreen> {
                                 height: 100,
                                 fit: BoxFit.cover,
                               ),
+                      ),
+                    ),
+
+                    Text(
+                      user!.username,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
                       ),
                     ),
                     SizedBox(height: 20), // Space between image and text

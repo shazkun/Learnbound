@@ -57,7 +57,7 @@ class MultipleChoiceUI extends StatelessWidget {
                         Chip(
                           label: Text('Confirmed',
                               style: TextStyle(color: Colors.white)),
-                          backgroundColor: Colors.teal[400],
+                          backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
                         ),
                     ],
                   ),
@@ -69,7 +69,8 @@ class MultipleChoiceUI extends StatelessWidget {
                             if (isConfirmed && selectedAnswer == option)
                               SizedBox(width: 8),
                             if (isConfirmed && selectedAnswer == option)
-                              Icon(Icons.check, color: Colors.teal[400]),
+                              Icon(Icons.check, color:
+                                      const Color.fromRGBO(211, 172, 112, 1.0)),
                           ],
                         ),
                         value: option,
@@ -89,7 +90,7 @@ class MultipleChoiceUI extends StatelessWidget {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal[400],
+                        backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),

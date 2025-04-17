@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 void loadUserData({
   required void Function(VoidCallback) setState,
   required TextEditingController emailController,
@@ -57,7 +56,7 @@ Future<void> login({
         passwordController.text,
       );
 
-      if (!context.mounted) return; // Check if the widget is still in the tree
+      if (!context.mounted) return;
 
       if (userProvider.user != null) {
         saveUserData();
@@ -82,7 +81,6 @@ Future<void> login({
         );
       }
     } catch (e) {
-      // Handle any errors
       CustomSnackBar.show(
         context,
         'An error occurred: $e',
