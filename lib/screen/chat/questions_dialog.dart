@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 void showQuestionsDialog({
@@ -82,7 +83,8 @@ void showQuestionsDialog({
                                           if (isConfirmed &&
                                               selectedAnswer == option)
                                             Icon(Icons.check,
-                                                color: const Color.fromRGBO(211, 172, 112, 1.0)),
+                                                color: const Color.fromRGBO(
+                                                    211, 172, 112, 1.0)),
                                         ],
                                       ),
                                       onTap: isConfirmed

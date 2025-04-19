@@ -1,5 +1,6 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+
 import '../../models/user.dart';
 
 class DatabaseHelper {
@@ -59,6 +60,11 @@ class DatabaseHelper {
     return result.isNotEmpty;
   }
 
+  Future<List<User>> getUsers() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('users');
+    return List.generate(maps.length, (i) => User.fromMap(maps[i]));
+  }
 
   /// **Get User by Email**
   Future<User?> getUser(String email) async {

@@ -1,7 +1,8 @@
 import 'dart:core';
-import 'package:sqflite/sqflite.dart';
+
 import 'package:path/path.dart'; // Import for join function
 import 'package:path_provider/path_provider.dart'; // Required for getApplicationDocumentsDirectory
+import 'package:sqflite/sqflite.dart';
 
 class SettingsDb {
   static final _instance = SettingsDb._internal();

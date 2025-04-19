@@ -1,5 +1,6 @@
 import 'package:Learnbound/database/helper/database_helper.dart';
 import 'package:flutter/material.dart';
+
 import '../models/user.dart';
 
 class UserProvider with ChangeNotifier {
@@ -33,7 +34,6 @@ class UserProvider with ChangeNotifier {
   /// **Logout**
   Future<void> logout() async {
     _user = null;
-
     notifyListeners();
   }
 

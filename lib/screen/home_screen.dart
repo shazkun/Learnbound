@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/screen/auth/login/login_screen.dart';
-
 import 'package:Learnbound/screen/chat/chat_screen.dart';
 import 'package:Learnbound/screen/host/host_screen.dart';
+import 'package:Learnbound/screen/quiz/quiz_screen.dart';
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -51,7 +51,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
     // If user confirmed logout, proceed with the logout process
     if (shouldLogout == true) {
-      //PUT LOGOUT-HERE
+      // PUT LOGOUT-HERE
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -63,8 +63,9 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const double imagePaddingBottom = 20.0; // Fixed padding below the image
-    const double buttonSpacing = 10.0; // Fixed spacing between buttons
+    final screenSize = MediaQuery.of(context).size;
+    const double imagePaddingBottom = 20.0;
+    const double buttonSpacing = 10.0;
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
 
@@ -114,7 +115,6 @@ class _HomeScreenWidget extends State<HomeScreen> {
                               ),
                       ),
                     ),
-
                     Text(
                       user!.username,
                       textAlign: TextAlign.center,
@@ -124,7 +124,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
                         fontSize: 24,
                       ),
                     ),
-                    SizedBox(height: 20), // Space between image and text
+                    SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -148,69 +148,76 @@ class _HomeScreenWidget extends State<HomeScreen> {
             ],
           ),
         ),
-        body: Container(
-          decoration: BoxDecoration(),
-          child: Stack(
-            children: [
-              Center(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Padding(
-                          padding: EdgeInsets.only(bottom: imagePaddingBottom),
-                          child: Image.asset(
-                            'assets/logoonly.png',
-                            height: 300, // Fixed height for the image
-                            width: 300, // Fixed width for the image
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                  Icons.error); // Placeholder for image error
-                            },
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            bool isPortrait = constraints.maxHeight > constraints.maxWidth;
+            double imageSize = isPortrait ? 300 : 250;
+            double buttonWidth = isPortrait ? 200.0 : 250.0;
+
+            return Container(
+              decoration: BoxDecoration(),
+              child: Stack(
+                children: [
+                  Center(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Padding(
+                            padding:
+                                EdgeInsets.only(bottom: imagePaddingBottom),
+                            child: Image.asset(
+                              'assets/logoonly.png',
+                              height: imageSize, // Responsive image size
+                              width: imageSize, // Responsive image size
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(Icons.error);
+                              },
+                            ),
                           ),
-                        ),
-                        SizedBox(height: buttonSpacing),
-                        _buildButton('Host', () {
-                          _createHost(context);
-                        }),
-                        SizedBox(height: buttonSpacing),
-                        _buildButton('Join', () {
-                          _joinChat(context);
-                        }),
-                      ],
+                          SizedBox(height: buttonSpacing),
+                          _buildButton('Host', buttonWidth, () {
+                            _createHost(context);
+                          }),
+                          SizedBox(height: buttonSpacing),
+                          _buildButton('Join', buttonWidth, () {
+                            _joinChat(context);
+                          }),
+                          SizedBox(height: buttonSpacing),
+                          _buildButton('Quiz-PAD', buttonWidth, () {
+                            _joinChatQuiz(context);
+                          }),
+                          SizedBox(
+                            height: 30,
+                          ),
+                          ClipPath(
+                            clipper: BottomWaveClipper(),
+                            child: Container(
+                              height: screenSize.height * 0.26,
+                              width: double.infinity,
+                              decoration:
+                                  const BoxDecoration(color: Color(0xFFD7C19C)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: ClipPath(
-                  clipper: BottomWaveClipper(),
-                  child: Container(
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFD7C19C),
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildButton(String text, VoidCallback onPressed) {
+  Widget _buildButton(String text, double buttonWidth, VoidCallback onPressed) {
     return SizedBox(
-      width: 200.0, // Fixed button width
-      height: 50.0, // Fixed button height
+      width: buttonWidth,
+      height: 50.0,
       child: Tooltip(
-        message:
-            'Click to $text', // Tooltip message, it will be dynamic based on the button text
+        message: 'Click to $text',
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: Color(0xFFD3AC70),
@@ -232,6 +239,15 @@ class _HomeScreenWidget extends State<HomeScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ChatScreen(),
+      ),
+    );
+  }
+
+  void _joinChatQuiz(BuildContext context) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizScreen(),
       ),
     );
   }

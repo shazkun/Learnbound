@@ -1,19 +1,20 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/drawing_screen.dart';
 import 'package:Learnbound/screen/chat/drawing.dart';
-import 'package:Learnbound/screen/chat/questions_dialog.dart';
+import 'package:Learnbound/screen/drawing_screen.dart';
 import 'package:Learnbound/screen/server_list_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+
 import 'chat_app_bar.dart';
-import 'ui/lobby_ui.dart';
 import 'ui/chat_ui.dart';
-import 'multiple_choice_ui.dart';
+import 'ui/lobby_ui.dart';
+import 'ui/multiple_choice_ui.dart';
 import 'ui/picture_ui.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -303,7 +304,7 @@ class _ChatScreenState extends State<ChatScreen>
               body: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                     colors: [
+                    colors: [
                       Color(0xFFF5F5F5), // Light grey (off-white)
                       Color(0xFFFFFFFF), // Pure white
                     ],
@@ -313,25 +314,6 @@ class _ChatScreenState extends State<ChatScreen>
                 ),
                 child: SafeArea(child: _buildModeUI()),
               ),
-              floatingActionButton: _questions.isNotEmpty ||
-                      _multipleChoiceQuestions.isNotEmpty
-                  ? FloatingActionButton(
-                      onPressed: () => showQuestionsDialog(
-                        context: context,
-                        questions: _questions,
-                        multipleChoiceQuestions: _multipleChoiceQuestions,
-                        selectedAnswers: _selectedAnswers,
-                        confirmedAnswers: _confirmedAnswers,
-                        fadeAnimation: _fadeAnimation,
-                        clientSocket: _clientSocket,
-                        onStateUpdate: setState,
-                      ),
-                      backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
-                      child: Icon(Icons.question_answer),
-                    )
-                  : null,
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.endFloat,
             )
           : ServerList(
               onSelectServer: (serverInfo) {

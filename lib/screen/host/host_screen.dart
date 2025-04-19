@@ -2,16 +2,16 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/screen/host/app_styles.dart';
 import 'package:Learnbound/screen/host/host_widgets.dart';
+import 'package:Learnbound/util/server.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/util/server.dart';
-
 class HostScreen extends StatefulWidget {
-  const HostScreen({Key? key}) : super(key: key);
+  const HostScreen({super.key});
 
   @override
   _HostScreenState createState() => _HostScreenState();
@@ -21,13 +21,13 @@ class _HostScreenState extends State<HostScreen>
     with SingleTickerProviderStateMixin {
   final _clients = <String>[];
   final _messages = <Map<String, dynamic>>[];
-  final _stickyQuestions = <String>[];
+  final _stickyQuestions = <String>["test"];
   final _multipleChoiceResponses = <String, Map<String, int>>{};
   ServerSocket? _serverSocket;
   final _questionController = TextEditingController();
   final _clientNicknames = <Socket, String>{};
   final _connectedClients = <Socket>[];
-  final _participants = <String, int>{"JOBERT-TESTING USER": 1};
+  final _participants = <String, int>{};
   final _dataBuffer = StringBuffer();
   final _broadcast = BroadcastServer();
   String _lobbyState = "lobby";
@@ -66,7 +66,6 @@ class _HostScreenState extends State<HostScreen>
       return null;
     }
   }
-
 
   Future<void> _startServer() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -253,7 +252,7 @@ class _HostScreenState extends State<HostScreen>
       );
       return;
     }
-showModalBottomSheet(
+    showModalBottomSheet(
       context: context,
       shape: AppStyles.dialogShape, // should already have borderRadius
       backgroundColor: Colors.white,
@@ -277,9 +276,6 @@ showModalBottomSheet(
         ),
       ),
     );
-
-
-
   }
 
   void _showMultipleChoiceDialog() {

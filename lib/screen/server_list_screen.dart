@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
@@ -22,7 +23,7 @@ class _ServerListState extends State<ServerList>
   String? _localIp;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  ServerSocket? _serverSocket;
+  // ServerSocket? _serverSocket;
 
   @override
   void initState() {
@@ -34,12 +35,12 @@ class _ServerListState extends State<ServerList>
     _fadeAnimation =
         CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
     _animationController.forward();
-    _startServerTesting();
+    // _startServerTesting();
   }
 
-  Future<void> _startServerTesting() async {
-    _serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
-  }
+  // Future<void> _startServerTesting() async {
+  //   _serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
+  // }
 
   Future<void> _initializeLocalIp() async {
     _localIp = await _getLocalIp();
@@ -100,6 +101,7 @@ class _ServerListState extends State<ServerList>
   void dispose() {
     _udpSocket?.close();
     _animationController.dispose();
+
     print('UDP socket closed');
     super.dispose();
   }

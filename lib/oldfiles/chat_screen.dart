@@ -1,10 +1,12 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:Learnbound/database/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+
 import '../screen/drawing_screen.dart';
 import '../screen/server_list_screen.dart';
 
@@ -269,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           title: Row(
             children: [
-               profilePicture!= null && profilePicture.isNotEmpty
+              profilePicture != null && profilePicture.isNotEmpty
                   ? CircleAvatar(
                       backgroundImage: FileImage(File(profilePicture)))
                   : CircleAvatar(

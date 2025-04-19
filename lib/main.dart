@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:Learnbound/screen/auth/login/login_screen.dart';
@@ -45,7 +44,6 @@ class _MyAppState extends State<MyApp> {
     Future.delayed(Duration(seconds: 2), () {
       setState(() {
         _isLoading = false;
-        
       });
     });
   }
@@ -67,7 +65,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'LearnBound',
       theme: ThemeData(
-        fontFamily: "Comic Sans",
+        fontFamily: "Poppins",
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: Colors.black,
           secondary: Colors.red,

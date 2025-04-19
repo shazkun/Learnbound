@@ -1,11 +1,13 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 class MessageTile extends StatelessWidget {
   final Map<String, dynamic> messageData;
   final String? profilePicture;
 
-  const MessageTile({super.key, required this.messageData, required this.profilePicture});
+  const MessageTile(
+      {super.key, required this.messageData, required this.profilePicture});
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +31,13 @@ class MessageTile extends StatelessWidget {
                   ? CircleAvatar(
                       backgroundImage: FileImage(File(profilePicture!)))
                   : CircleAvatar(
-                      child: Icon(Icons.account_circle,
-                          color: Colors.blueGrey[800])),
+                      backgroundColor: Colors.grey,
+                      child: Image.asset(
+                        'assets/defaultprofile.png',
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      )),
           SizedBox(width: 12),
           Expanded(
             child: Column(

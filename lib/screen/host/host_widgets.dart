@@ -1,9 +1,9 @@
 import 'dart:convert';
+
 import 'package:Learnbound/screen/host/app_styles.dart';
 import 'package:Learnbound/util/design/cs_snackbar.dart';
 import 'package:Learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String lobbyState;
@@ -81,11 +81,11 @@ class LobbyView extends StatelessWidget {
   final VoidCallback onStartSession;
 
   const LobbyView({
-    Key? key,
+    super.key,
     required this.participants,
     required this.fadeAnimation,
     required this.onStartSession,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -93,9 +93,14 @@ class LobbyView extends StatelessWidget {
       children: [
         Expanded(
           child: participants.isEmpty
-              ? const Center(
-                  child: Text('Awaiting Participants...',
-                      style: AppStyles.awaitingText),
+              ? Center(
+                  child: Text(
+                    'Awaiting Participants...',
+                    style: AppStyles.awaitingText.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.black.withOpacity(0.5), // Low opacity
+                    ),
+                  ),
                 )
               : ListView.builder(
                   padding: AppStyles.defaultPadding,
@@ -128,19 +133,21 @@ class LobbyView extends StatelessWidget {
                 ),
         ),
         Padding(
-          padding: AppStyles.defaultPadding,
-          child: ElevatedButton(
-            onPressed: participants.isNotEmpty ? onStartSession : null,
-            style: AppStyles.elevatedButtonStyle.copyWith(
-              backgroundColor: WidgetStateProperty.all(
-                participants.isEmpty
-                    ? Colors.grey[600]
-                    : const Color.fromRGBO(211, 172, 112, 1.0),
+            padding: AppStyles.defaultPadding,
+            child: ElevatedButton(
+              onPressed: participants.isNotEmpty ? onStartSession : null,
+              style: AppStyles.elevatedButtonStyle.copyWith(
+                backgroundColor: WidgetStateProperty.all(
+                  participants.isEmpty
+                      ? Colors.grey.withOpacity(0.4) // Lower opacity gray
+                      : Colors.green[400],
+                ),
               ),
-            ),
-            child: const Text('START SESSION', style: AppStyles.buttonText),
-          ),
-        ),
+              child: Text(
+                'START SESSION',
+                style: AppStyles.buttonText.copyWith(color: Colors.black),
+              ),
+            )),
       ],
     );
   }
@@ -335,6 +342,7 @@ class SessionView extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               FloatingActionButton(
+                heroTag: 'send-Host',
                 onPressed: () {
                   if (questionController.text.isNotEmpty) {
                     if (selectedMode == "Multiple Choice") {
@@ -343,7 +351,7 @@ class SessionView extends StatelessWidget {
                       onSendQuestion();
                     }
                   } else {
-                      CustomSnackBar.show(context, "Input is empty.",
+                    CustomSnackBar.show(context, "Input is empty.",
                         backgroundColor: Colors.orange, icon: Icons.info);
                   }
                 },
@@ -352,6 +360,7 @@ class SessionView extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               FloatingActionButton(
+                heroTag: 'list-Host',
                 onPressed: onShowSticky,
                 backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
                 child: const Icon(Icons.question_answer),

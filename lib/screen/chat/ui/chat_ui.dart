@@ -100,10 +100,12 @@ class ChatUI extends StatelessWidget {
               ),
               SizedBox(width: 8),
               FloatingActionButton(
+                heroTag: 'send-Student',
                 onPressed: () {
                   if (messageController.text.trim().isEmpty) {
                     // Show SnackBar if the message is blank
-                    CustomSnackBar.show(context, "Input is empty.", backgroundColor: Colors.orange ,icon: Icons.info);
+                    CustomSnackBar.show(context, "Input is empty.",
+                        backgroundColor: Colors.orange, icon: Icons.info);
                   } else {
                     // Send the message if it's not blank
                     isStarted
@@ -116,6 +118,7 @@ class ChatUI extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               FloatingActionButton(
+                heroTag: 'q-Student',
                 onPressed: () => showQuestionsDialog(
                   context: context,
                   questions: questions,

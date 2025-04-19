@@ -1,8 +1,7 @@
-
 import 'package:Learnbound/screen/auth/register/register_functions.dart';
 import 'package:flutter/material.dart';
-import 'register_ui.dart';
 
+import 'register_ui.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -27,12 +26,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar:  RegisterUI.buildAppBar(context, isSmallScreen),
+      appBar: RegisterUI.buildAppBar(context, isSmallScreen),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              
               SizedBox(height: screenSize.height * 0.03),
               Padding(
                 padding:

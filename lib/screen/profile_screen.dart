@@ -1,11 +1,10 @@
 import 'dart:io';
+
 import 'package:Learnbound/database/user_provider.dart';
 import 'package:Learnbound/screen/auth/login/login_screen.dart';
 import 'package:Learnbound/util/design/wave.dart';
-import 'package:Learnbound/oldfiles/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 

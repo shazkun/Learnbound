@@ -1,0 +1,2 @@
+C:/Users/SHAKUZA/Desktop/Flutter/learnbound_flutter/android/app/.cxx/Debug/n5sl1j0v/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/SHAKUZA/Desktop/Flutter/learnbound_flutter/android/app/.cxx/Debug/n5sl1j0v/x86_64/CMakeFiles/rebuild_cache.dir

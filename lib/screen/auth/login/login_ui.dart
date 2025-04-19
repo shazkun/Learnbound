@@ -207,7 +207,7 @@ Widget buildLoginUI({
           ClipPath(
             clipper: BottomWaveClipper(),
             child: Container(
-              height: screenSize.height * 0.15,
+              height: 150,
               width: double.infinity,
               decoration: const BoxDecoration(color: Color(0xFFD7C19C)),
             ),
