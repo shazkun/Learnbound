@@ -1,6 +1,6 @@
-import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/home_screen.dart';
-import 'package:Learnbound/util/design/cs_snackbar.dart';
+import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/home_screen.dart';
+import 'package:learnbound/util/design/cs_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,7 +36,7 @@ Future<void> saveUserData({
     prefs.remove('email');
     prefs.remove('password');
   }
-  await prefs.setBool('isLoggedIn', true);
+
   await prefs.setString('userEmail', email);
 }
 
@@ -49,6 +49,7 @@ Future<void> login({
 }) async {
   if (formKey.currentState?.validate() ?? false) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
 
     try {
       await userProvider.loginUser(
@@ -60,7 +61,7 @@ Future<void> login({
 
       if (userProvider.user != null) {
         saveUserData();
-
+        await prefs.setBool('isLoggedIn', true);
         CustomSnackBar.show(
           context,
           "Login successful!",

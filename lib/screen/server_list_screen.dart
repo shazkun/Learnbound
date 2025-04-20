@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:Learnbound/util/design/wave.dart';
+import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
 class ServerList extends StatefulWidget {

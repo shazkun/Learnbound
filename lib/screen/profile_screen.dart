@@ -1,10 +1,11 @@
 import 'dart:io';
 
-import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/auth/login/login_screen.dart';
-import 'package:Learnbound/util/design/wave.dart';
+import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/auth/login/login_screen.dart';
+import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:iconify_flutter/iconify_flutter.dart';
+import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -34,137 +35,206 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final success = await userProvider.updateProfilePicture("");
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile picture deleted successfully.')),
+      CustomSnackBar.show(
+        context,
+        'Profile picture deleted successfully.',
+        isSuccess: true,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete profile picture.')),
+      CustomSnackBar.show(
+        context,
+        'Failed to delete profile picture.',
+        isSuccess: false,
       );
     }
   }
 
-  void _showChangeUsername(BuildContext context) {
-    if (!mounted) return;
-    final TextEditingController usernameController = TextEditingController();
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Change Username'),
-          content: TextField(
-            maxLength: 12,
-            inputFormatters: [LengthLimitingTextInputFormatter(12)],
-            controller: usernameController,
-            decoration: InputDecoration(hintText: 'Enter new username'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final newUsername = usernameController.text.trim();
-
-                if (newUsername.isNotEmpty && newUsername.length <= 12) {
-                  await userProvider.changeUsername(newUsername);
-
-                  CustomSnackBar.show(context, 'Username updated successfully!',
-                      isSuccess: true);
-
-                  Navigator.of(context).pop();
-                } else {
-                  CustomSnackBar.show(context, 'Invalid username.',
-                      backgroundColor: Colors.red, isSuccess: false);
-                }
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showChangePasswordDialog(BuildContext context) {
-    final TextEditingController currentPasswordController =
-        TextEditingController();
-    final TextEditingController newPasswordController = TextEditingController();
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-
+  void _showModernDialog({
+    required String title,
+    required Widget content,
+    required List<Widget> actions,
+  }) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Change Password'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
-                controller: currentPasswordController,
-                decoration: InputDecoration(labelText: 'Current Password'),
-                obscureText: true,
-              ),
-              TextField(
-                controller: newPasswordController,
-                decoration: InputDecoration(labelText: 'New Password'),
-                obscureText: true,
-              ),
+              Text(title,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              SizedBox(height: 8),
+              Divider(thickness: 1),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                if (currentPasswordController.text.isEmpty ||
-                    newPasswordController.text.isEmpty) {
-                  CustomSnackBar.show(context, 'Please fill in all fields.',
-                      isSuccess: false);
-                  return;
-                }
-
-                if (newPasswordController.text.length < 6) {
-                  CustomSnackBar.show(
-                      context, 'New password must be at least 6 characters.',
-                      isSuccess: false);
-                  return;
-                }
-
-                if (newPasswordController.text ==
-                    currentPasswordController.text) {
-                  CustomSnackBar.show(
-                      context, 'New password cannot be the same as current.',
-                      isSuccess: false);
-                  return;
-                }
-                bool success = await userProvider.changePassword(
-                  currentPasswordController.text,
-                  newPasswordController.text,
-                );
-
-                if (success) {
-                  Navigator.of(context).pop();
-                  CustomSnackBar.show(context, 'Password changed successfully!',
-                      isSuccess: true);
-                } else {
-                  CustomSnackBar.show(context, 'Incorrect current password.',
-                      isSuccess: false);
-                }
-              },
-              child: Text('Change'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-          ],
+          content: content,
+          actions: actions,
+          actionsAlignment: MainAxisAlignment.end,
         );
       },
     );
   }
 
+  void _showChangeUsername(BuildContext context) {
+    final TextEditingController usernameController = TextEditingController();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    _showModernDialog(
+      title: 'Change Username',
+      content: TextField(
+        maxLength: 12,
+        controller: usernameController,
+        decoration: InputDecoration(
+          hintText: 'Enter new username',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final newUsername = usernameController.text.trim();
+            if (newUsername.isNotEmpty && newUsername.length <= 12) {
+              await userProvider.changeUsername(newUsername);
+              CustomSnackBar.show(context, 'Username updated successfully!',
+                  isSuccess: true);
+              Navigator.of(context).pop();
+            } else {
+              CustomSnackBar.show(context, 'Invalid username.',
+                  backgroundColor: Colors.red, isSuccess: false);
+            }
+          },
+          child: Text('Save'),
+        ),
+      ],
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    bool isCurrentVisible = false;
+    bool isNewVisible = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Change Password',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                  SizedBox(height: 8),
+                  Divider(thickness: 1),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: currentPasswordController,
+                    obscureText: !isCurrentVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Current Password',
+                      border: OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(isCurrentVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () {
+                          setState(() => isCurrentVisible = !isCurrentVisible);
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  TextField(
+                    controller: newPasswordController,
+                    obscureText: !isNewVisible,
+                    decoration: InputDecoration(
+                      labelText: 'New Password',
+                      border: OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(isNewVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () {
+                          setState(() => isNewVisible = !isNewVisible);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final current = currentPasswordController.text;
+                    final newPass = newPasswordController.text;
+
+                    if (current.isEmpty || newPass.isEmpty) {
+                      CustomSnackBar.show(context, 'Please fill in all fields.',
+                          isSuccess: false);
+                      return;
+                    }
+                    if (newPass.length < 6) {
+                      CustomSnackBar.show(context,
+                          'New password must be at least 6 characters.',
+                          isSuccess: false);
+                      return;
+                    }
+                    if (newPass == current) {
+                      CustomSnackBar.show(context,
+                          'New password cannot be the same as current.',
+                          isSuccess: false);
+                      return;
+                    }
+
+                    final success =
+                        await userProvider.changePassword(current, newPass);
+                    if (success) {
+                      Navigator.pop(context);
+                      CustomSnackBar.show(
+                          context, 'Password changed successfully!',
+                          isSuccess: true);
+                    } else {
+                      CustomSnackBar.show(
+                          context, 'Incorrect current password.',
+                          isSuccess: false);
+                    }
+                  },
+                  child: Text('Change'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ignore: unused_element
   void _logout() async {
     bool? shouldLogout = await showDialog<bool>(
       context: context,
@@ -194,16 +264,31 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.logout();
       if (!mounted) return;
-      CustomSnackBar.show(context, "You have been logged out.",
-          isSuccess: true,
-          backgroundColor: Colors.orange,
-          icon: Icons.exit_to_app,
-          duration: Duration(seconds: 1));
+      CustomSnackBar.show(
+        context,
+        "You have been logged out.",
+        isSuccess: true,
+        backgroundColor: Colors.orange,
+        icon: Icons.exit_to_app,
+        duration: Duration(seconds: 1),
+      );
       if (mounted) {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => LoginScreen()));
       }
     }
+  }
+
+  void showAbout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('LearnBound'),
+          content: Text('VERSION: 1.2'),
+        );
+      },
+    );
   }
 
   @override
@@ -224,10 +309,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 'assets/back-arrow.png',
                 height: 24,
                 width: 24,
-                // colorFilter: const ColorFilter.mode(
-                //   Colors.white,
-                //   BlendMode.srcIn,
-                // ),
               ),
             ),
             title: Text(
@@ -240,8 +321,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             ),
             centerTitle:
                 true, // Align title similar to the original positioning
-            // titleSpacing:
-            //     20, // Adjust spacing to mimic original right: 60 positioning
             elevation: 0, // Remove shadow for a cleaner look
           ),
         ),
@@ -315,7 +394,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               child: Column(
                 children: [
                   ListTile(
-                    leading: Icon(Icons.person),
+                    leading: Iconify(Mdi.rename_box),
                     title: Text('Change username'),
                     onTap: () {
                       _showChangeUsername(context);
@@ -326,12 +405,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     title: Text('Change password'),
                     onTap: () => _showChangePasswordDialog(context),
                   ),
-
-                  // ListTile(
-                  //   leading: Icon(Icons.logout),
-                  //   title: Text('Logout'),
-                  //   onTap: _logout,
-                  // ),
                 ],
               ),
             ),
@@ -353,18 +426,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-    );
-  }
-
-  void showAbout() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('LearnBound'),
-          content: Text('VERSION: 1.2'),
-        );
-      },
     );
   }
 }

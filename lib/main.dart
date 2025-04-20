@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:Learnbound/screen/auth/login/login_screen.dart';
+import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -48,6 +48,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  // Check if it's the user's first time opening the app
   Future<bool> isFirstTime() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool? seen = prefs.getBool('seenOnboarding');

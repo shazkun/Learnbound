@@ -2,10 +2,10 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/chat/drawing.dart';
-import 'package:Learnbound/screen/drawing_screen.dart';
-import 'package:Learnbound/screen/server_list_screen.dart';
+import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/chat/drawing.dart';
+import 'package:learnbound/screen/drawing_screen.dart';
+import 'package:learnbound/screen/server_list_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';

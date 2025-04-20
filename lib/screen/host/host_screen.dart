@@ -3,10 +3,10 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/host/app_styles.dart';
-import 'package:Learnbound/screen/host/host_widgets.dart';
-import 'package:Learnbound/util/server.dart';
+import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/host/app_styles.dart';
+import 'package:learnbound/screen/host/host_widgets.dart';
+import 'package:learnbound/util/server.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

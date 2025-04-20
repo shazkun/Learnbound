@@ -27,7 +27,6 @@ class _QuestionListState extends State<QuestionList> {
   @override
   Widget build(BuildContext context) {
     final question = widget.questions[_currentIndex];
-    final bool isEmpty = question.text.trim().isEmpty;
 
     return Stack(
       children: [
@@ -72,7 +71,6 @@ class _QuestionListState extends State<QuestionList> {
                       itemCount: widget.questions.length,
                       itemBuilder: (context, index) {
                         final question = widget.questions[index];
-                        final bool isEmpty = question.text.trim().isEmpty;
 
                         return FadeInUp(
                           delay: Duration(milliseconds: index * 100),

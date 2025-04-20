@@ -1,14 +1,17 @@
 import 'dart:io';
 
-import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/auth/login/login_screen.dart';
-import 'package:Learnbound/screen/chat/chat_screen.dart';
-import 'package:Learnbound/screen/host/host_screen.dart';
-import 'package:Learnbound/screen/quiz/quiz_screen.dart';
-import 'package:Learnbound/util/design/wave.dart';
+import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/auth/login/login_screen.dart';
+import 'package:learnbound/screen/chat/chat_screen.dart';
+import 'package:learnbound/screen/host/host_screen.dart';
+import 'package:learnbound/screen/quiz/quiz_screen.dart';
+import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
+import 'package:iconify_flutter/iconify_flutter.dart';
+import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:provider/provider.dart';
 
+import '../util/design/cs_snackbar.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,44 +22,75 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenWidget extends State<HomeScreen> {
   void _logout() async {
-    // Show a confirmation dialog
     bool? shouldLogout = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Are you sure?'),
-          content: Text('Do you really want to log out?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          title: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Log out?',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+              SizedBox(height: 8),
+              Divider(thickness: 1),
+            ],
+          ),
+          content: const Text(
+            'Do you really want to log out?',
+            style: TextStyle(fontSize: 16),
+          ),
+          actionsAlignment: MainAxisAlignment.end,
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(false); // User pressed Cancel
+                Navigator.of(context).pop(false); // Cancel
               },
-              child: Text('Cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               onPressed: () {
-                Navigator.of(context).pop(true); // User pressed Confirm
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                  (Route<dynamic> route) => false, // Clears all previous routes
-                );
+                Navigator.of(context).pop(true); // Confirm logout
               },
-              child: Text('Logout'),
+              child: const Text('OK'),
             ),
           ],
         );
       },
     );
 
-    // If user confirmed logout, proceed with the logout process
-    if (shouldLogout == true) {
-      // PUT LOGOUT-HERE
+    if (shouldLogout == true && context.mounted) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.logout();
+      if (!mounted) return;
+      CustomSnackBar.show(
+        context,
+        "You have been logged out.",
+        isSuccess: true,
+        backgroundColor: Colors.orange,
+        icon: Icons.exit_to_app,
+        duration: Duration(seconds: 1),
+      );
       if (mounted) {
         Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
-        );
+            context, MaterialPageRoute(builder: (context) => LoginScreen()));
       }
     }
   }
@@ -66,8 +100,14 @@ class _HomeScreenWidget extends State<HomeScreen> {
     final screenSize = MediaQuery.of(context).size;
     const double imagePaddingBottom = 20.0;
     const double buttonSpacing = 10.0;
+
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return WillPopScope(
       onWillPop: () async {
@@ -76,7 +116,9 @@ class _HomeScreenWidget extends State<HomeScreen> {
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          surfaceTintColor: Colors.transparent,
+        ),
         drawer: Drawer(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -87,22 +129,23 @@ class _HomeScreenWidget extends State<HomeScreen> {
                 ),
                 child: Column(
                   children: [
+                    SizedBox(height: 20),
                     CircleAvatar(
-                      radius: 35,
+                      radius: 50,
                       backgroundColor: Colors.grey[200],
                       child: ClipOval(
-                        child: user?.profilePicture != null &&
-                                user!.profilePicture!.isNotEmpty
+                        child: user.profilePicture != null &&
+                                user.profilePicture!.isNotEmpty
                             ? Image.file(
                                 File(user.profilePicture!),
-                                width: 64,
-                                height: 64,
+                                width: 100,
+                                height: 100,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Image.asset(
                                     'assets/defaultprofile.png',
-                                    width: 64,
-                                    height: 64,
+                                    width: 100,
+                                    height: 100,
                                     fit: BoxFit.cover,
                                   );
                                 },
@@ -115,16 +158,6 @@ class _HomeScreenWidget extends State<HomeScreen> {
                               ),
                       ),
                     ),
-                    Text(
-                      user!.username,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                    SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -154,57 +187,55 @@ class _HomeScreenWidget extends State<HomeScreen> {
             double imageSize = isPortrait ? 300 : 250;
             double buttonWidth = isPortrait ? 200.0 : 250.0;
 
-            return Container(
-              decoration: BoxDecoration(),
-              child: Stack(
-                children: [
-                  Center(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Padding(
-                            padding:
-                                EdgeInsets.only(bottom: imagePaddingBottom),
-                            child: Image.asset(
-                              'assets/logoonly.png',
-                              height: imageSize, // Responsive image size
-                              width: imageSize, // Responsive image size
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.error);
-                              },
-                            ),
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // your content here
+                        Padding(
+                          padding: EdgeInsets.only(bottom: imagePaddingBottom),
+                          child: Image.asset(
+                            'assets/logoonly.png',
+                            height: imageSize,
+                            width: imageSize,
                           ),
-                          SizedBox(height: buttonSpacing),
-                          _buildButton('Host', buttonWidth, () {
-                            _createHost(context);
-                          }),
-                          SizedBox(height: buttonSpacing),
-                          _buildButton('Join', buttonWidth, () {
-                            _joinChat(context);
-                          }),
-                          SizedBox(height: buttonSpacing),
-                          _buildButton('Quiz-PAD', buttonWidth, () {
-                            _joinChatQuiz(context);
-                          }),
-                          SizedBox(
-                            height: 30,
-                          ),
-                          ClipPath(
-                            clipper: BottomWaveClipper(),
-                            child: Container(
-                              height: screenSize.height * 0.26,
-                              width: double.infinity,
-                              decoration:
-                                  const BoxDecoration(color: Color(0xFFD7C19C)),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: buttonSpacing),
+                        _buildButton('Host', buttonWidth, () {
+                          _createHost(context);
+                        },
+                            icon: const Iconify(Mdi.account_multiple,
+                                size: 24, color: Colors.black)),
+                        SizedBox(height: buttonSpacing),
+                        _buildButton('Join', buttonWidth, () {
+                          _joinChat(context);
+                        },
+                            icon: const Iconify(Mdi.lan_connect,
+                                size: 24, color: Colors.black)),
+                        SizedBox(height: buttonSpacing),
+                        _buildButton('Quiz-PAD', buttonWidth, () {
+                          _joinQuiz(context);
+                        },
+                            icon: const Iconify(Mdi.assignment,
+                                size: 24, color: Colors.black)),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                // Footer
+                ClipPath(
+                  clipper: BottomWaveClipper(),
+                  child: Container(
+                    height: screenSize.height * 0.20,
+                    width: double.infinity,
+                    decoration: const BoxDecoration(color: Color(0xFFD7C19C)),
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -212,7 +243,12 @@ class _HomeScreenWidget extends State<HomeScreen> {
     );
   }
 
-  Widget _buildButton(String text, double buttonWidth, VoidCallback onPressed) {
+  Widget _buildButton(
+    String text,
+    double buttonWidth,
+    VoidCallback onPressed, {
+    Widget? icon,
+  }) {
     return SizedBox(
       width: buttonWidth,
       height: 50.0,
@@ -220,15 +256,29 @@ class _HomeScreenWidget extends State<HomeScreen> {
         message: 'Click to $text',
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFD3AC70),
-            minimumSize: Size.fromHeight(50),
-            padding: EdgeInsets.symmetric(vertical: 15),
+            backgroundColor: const Color(0xFFD3AC70),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.0),
             ),
           ),
           onPressed: onPressed,
-          child: Text(text),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (icon != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: icon,
+                ),
+              Center(
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -243,7 +293,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
     );
   }
 
-  void _joinChatQuiz(BuildContext context) async {
+  void _joinQuiz(BuildContext context) async {
     Navigator.push(
       context,
       MaterialPageRoute(

@@ -1,5 +1,6 @@
-import 'package:Learnbound/database/helper/database_helper.dart';
+import 'package:learnbound/database/helper/sqlite_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user.dart';
 
@@ -48,13 +49,28 @@ class UserProvider with ChangeNotifier {
     return false;
   }
 
+  /// **Check if User is Logged In**
+  Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    notifyListeners();
+    return prefs.getBool('isLoggedIn') ??
+        false; // Returns true/false based on stored value
+  }
+
   /// **Change Password**
-  Future<bool> changePassword(String newPassword, String text) async {
+  Future<bool> changePassword(
+      String currentPassword, String newPassword) async {
     if (_user != null) {
-      await _dbHelper.updatePassword(_user!.id!, newPassword);
-      _user!.password = newPassword;
-      notifyListeners();
-      return true;
+      // Check if the current password matches the stored one
+      if (_user!.password == currentPassword) {
+        await _dbHelper.updatePassword(_user!.id!, newPassword);
+        _user!.password = newPassword;
+        notifyListeners();
+        return true;
+      } else {
+        // Current password incorrect
+        return false;
+      }
     }
     return false;
   }

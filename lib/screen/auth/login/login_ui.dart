@@ -1,6 +1,6 @@
-import 'package:Learnbound/screen/auth/register/register_screen.dart'
+import 'package:learnbound/screen/auth/register/register_screen.dart'
     show RegisterScreen;
-import 'package:Learnbound/util/design/wave.dart' show BottomWaveClipper;
+import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
 Widget buildLoginUI({
@@ -25,12 +25,13 @@ Widget buildLoginUI({
         automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         centerTitle: false,
         title: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Image.asset(
             'assets/logoonly.png',
-            height: isSmallScreen ? 60 : 80, // Increased logo size here
+            height: isSmallScreen ? 80 : 100, // Increased logo size here
           ),
         ),
         toolbarHeight:
@@ -38,9 +39,6 @@ Widget buildLoginUI({
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 70,
-          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
@@ -55,7 +53,7 @@ Widget buildLoginUI({
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: screenSize.height * 0.05),
+                      SizedBox(height: screenSize.height * 0.10),
                       Text(
                         "Sign In",
                         style: TextStyle(
@@ -207,7 +205,7 @@ Widget buildLoginUI({
           ClipPath(
             clipper: BottomWaveClipper(),
             child: Container(
-              height: 150,
+              height: 100,
               width: double.infinity,
               decoration: const BoxDecoration(color: Color(0xFFD7C19C)),
             ),

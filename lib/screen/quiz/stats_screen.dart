@@ -138,7 +138,7 @@ class StatisticsScreen extends StatelessWidget {
               'Score: $score/$totalQuestions',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.deepPurple,
+                    color: Colors.black,
                   ),
               semanticsLabel: 'Score: $score out of $totalQuestions',
             ),
@@ -147,7 +147,7 @@ class StatisticsScreen extends StatelessWidget {
               'Percentage: $percentage%',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w400,
-                    color: Colors.deepPurple.shade700,
+                    color: Colors.black,
                   ),
               semanticsLabel: 'Percentage: $percentage percent',
             ),

@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:Learnbound/database/user_provider.dart';
-import 'package:Learnbound/screen/chat/message_title.dart';
-import 'package:Learnbound/screen/chat/questions_dialog.dart';
-import 'package:Learnbound/util/design/cs_snackbar.dart';
+import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/chat/message_title.dart';
+import 'package:learnbound/screen/chat/questions_dialog.dart';
+import 'package:learnbound/util/design/cs_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

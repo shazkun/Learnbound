@@ -1,9 +1,11 @@
 import 'dart:convert';
 
-import 'package:Learnbound/screen/host/app_styles.dart';
-import 'package:Learnbound/util/design/cs_snackbar.dart';
-import 'package:Learnbound/util/design/wave.dart';
+import 'package:learnbound/screen/host/app_styles.dart';
+import 'package:learnbound/util/design/cs_snackbar.dart';
+import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
+import 'package:iconify_flutter/iconify_flutter.dart';
+import 'package:iconify_flutter/icons/mdi.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String lobbyState;
@@ -13,13 +15,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onBackSuccess;
 
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.lobbyState,
     required this.selectedMode,
     this.onSettingsPressed,
     required this.onBackPressed,
     this.onBackSuccess,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -94,12 +96,24 @@ class LobbyView extends StatelessWidget {
         Expanded(
           child: participants.isEmpty
               ? Center(
-                  child: Text(
-                    'Awaiting Participants...',
-                    style: AppStyles.awaitingText.copyWith(
-                      fontStyle: FontStyle.italic,
-                      color: Colors.black.withOpacity(0.5), // Low opacity
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Iconify(
+                        Mdi.account_group_outline,
+                        size: 48,
+                        color: Colors.black54,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Awaiting Participants...',
+                        style: AppStyles.titleText.copyWith(
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.normal, // Remove bold
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : ListView.builder(
@@ -133,21 +147,39 @@ class LobbyView extends StatelessWidget {
                 ),
         ),
         Padding(
-            padding: AppStyles.defaultPadding,
-            child: ElevatedButton(
-              onPressed: participants.isNotEmpty ? onStartSession : null,
-              style: AppStyles.elevatedButtonStyle.copyWith(
-                backgroundColor: WidgetStateProperty.all(
-                  participants.isEmpty
-                      ? Colors.grey.withOpacity(0.4) // Lower opacity gray
-                      : Colors.green[400],
+          padding: AppStyles.defaultPadding,
+          child: ElevatedButton(
+            onPressed: participants.isNotEmpty ? onStartSession : null,
+            style: AppStyles.elevatedButtonStyle.copyWith(
+              backgroundColor: WidgetStateProperty.all(
+                participants.isEmpty
+                    ? Colors.grey.withOpacity(0.4)
+                    : Colors.green[400],
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Iconify(
+                  participants.isEmpty ? Mdi.account_off : Mdi.play_circle,
+                  size: 24,
+                  color: participants.isEmpty
+                      ? Colors.black.withOpacity(0.5)
+                      : Colors.black,
                 ),
-              ),
-              child: Text(
-                'START SESSION',
-                style: AppStyles.buttonText.copyWith(color: Colors.black),
-              ),
-            )),
+                const SizedBox(width: 8),
+                Text(
+                  'START SESSION',
+                  style: participants.isEmpty
+                      ? AppStyles.buttonText
+                          .copyWith(color: Colors.black.withOpacity(0.5))
+                      : AppStyles.buttonText.copyWith(color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -164,7 +196,7 @@ class SessionView extends StatelessWidget {
   final VoidCallback onShowSticky;
 
   const SessionView({
-    Key? key,
+    super.key,
     required this.selectedMode,
     required this.messages,
     required this.multipleChoiceResponses,
@@ -173,7 +205,7 @@ class SessionView extends StatelessWidget {
     required this.onSendQuestion,
     required this.onShowMultipleChoiceDialog,
     required this.onShowSticky,
-  }) : super(key: key);
+  });
 
   Widget _buildMessageTile(Map<String, dynamic> message, BuildContext context) {
     return FadeTransition(
@@ -376,8 +408,7 @@ class SessionView extends StatelessWidget {
 class ModeSelectorDialog extends StatelessWidget {
   final Function(String) onModeSelected;
 
-  const ModeSelectorDialog({Key? key, required this.onModeSelected})
-      : super(key: key);
+  const ModeSelectorDialog({super.key, required this.onModeSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -406,10 +437,10 @@ class MultipleChoiceDialog extends StatefulWidget {
   final Function(String, List<String>) onSend;
 
   const MultipleChoiceDialog({
-    Key? key,
+    super.key,
     required this.questionController,
     required this.onSend,
-  }) : super(key: key);
+  });
 
   @override
   _MultipleChoiceDialogState createState() => _MultipleChoiceDialogState();

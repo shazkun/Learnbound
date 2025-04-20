@@ -1,4 +1,4 @@
-import 'package:Learnbound/screen/auth/login/login_screen.dart';
+import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:flutter/material.dart';
 
 class StartScreen extends StatefulWidget {

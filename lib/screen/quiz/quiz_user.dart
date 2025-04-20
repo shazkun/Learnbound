@@ -1,5 +1,5 @@
-import 'package:Learnbound/screen/quiz/question_model.dart';
-import 'package:Learnbound/screen/quiz/stats_screen.dart';
+import 'package:learnbound/screen/quiz/question_model.dart';
+import 'package:learnbound/screen/quiz/stats_screen.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +18,7 @@ class QuizTakingScreen extends StatefulWidget {
 class _QuizTakingScreenState extends State<QuizTakingScreen> {
   int currentQuestionIndex = 0;
   int? selectedOption;
-  List<bool> selectedOptions = List.filled(5, false);
+  List<bool> selectedOptions = [];
   bool showFeedback = false;
   bool isCorrect = false;
   int score = 0;
@@ -35,6 +35,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
     super.initState();
     userAnswers = List.generate(widget.questions.length, (_) => {});
     answeredCorrectly = List.filled(widget.questions.length, false);
+    resetAnswer(); // Initialize selectedOptions based on the first question
   }
 
   @override
@@ -44,9 +45,10 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
   }
 
   void resetAnswer() {
+    final question = widget.questions[currentQuestionIndex];
     shortAnswerController.clear();
     selectedOption = null;
-    selectedOptions = List.filled(5, false);
+    selectedOptions = List.filled(question.options.length, false);
     showFeedback = false;
     isCorrect = false;
     errorMessage = null;
@@ -145,18 +147,19 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
     setState(() {
       isReviewMode = true;
       currentQuestionIndex = 0;
+      loadUserAnswer();
     });
   }
 
   void loadUserAnswer() {
+    final question = widget.questions[currentQuestionIndex];
     final answer = userAnswers[currentQuestionIndex];
     shortAnswerController.text = answer['answer'] ?? '';
     selectedOption = answer['selectedOption'] as int?;
     selectedOptions = answer['selectedOptions'] != null
         ? List<bool>.from(answer['selectedOptions'])
-        : List.filled(5, false);
+        : List.filled(question.options.length, false);
 
-    final question = widget.questions[currentQuestionIndex];
     setState(() {
       showFeedback = true;
       if (question.type == QuestionType.shortAnswer) {
@@ -201,7 +204,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(isReviewMode ? 'Review Answers' : 'Assessment'),
-        backgroundColor: Color(0xFFD7C19C),
+        backgroundColor: const Color(0xFFD7C19C),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
@@ -310,7 +313,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
                                   : submitAnswer,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
-                                    Color.fromRGBO(211, 172, 112, 1.0),
+                                    const Color.fromRGBO(211, 172, 112, 1.0),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 32, vertical: 12),
                               ),
@@ -337,92 +340,72 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
                 ),
               ),
             ] else ...[
-              SingleChildScrollView(
-                child: Column(
-                  children: [
-                    // Other widgets you may have above the ListView
-                    Container(
-                      height: MediaQuery.of(context)
-                          .size
-                          .height, // Set height to fill the available space
-                      child: ListView.builder(
-                        physics:
-                            const NeverScrollableScrollPhysics(), // Disable scrolling
-                        itemCount: widget.questions.length,
-                        itemBuilder: (context, index) {
-                          final question = widget.questions[index];
-                          final answer = userAnswers[index];
-                          final isAnsweredCorrectly =
-                              answeredCorrectly[index] ?? false;
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: widget.questions.length,
+                itemBuilder: (context, index) {
+                  final question = widget.questions[index];
+                  final answer = userAnswers[index];
+                  final isAnsweredCorrectly = answeredCorrectly[index] ?? false;
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            elevation: 4,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Question ${index + 1}',
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    question.text,
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    isAnsweredCorrectly
-                                        ? 'Correct'
-                                        : 'Incorrect',
-                                    style: TextStyle(
-                                      color: isAnsweredCorrectly
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  if (question.type == QuestionType.shortAnswer)
-                                    Text(
-                                        'Your answer: ${answer['answer'] ?? 'No answer provided'}'),
-                                  if (question.type ==
-                                      QuestionType.multipleChoice)
-                                    Text(
-                                        'Your answer: ${answer['selectedOption'] != null ? question.options[answer['selectedOption']].text : 'No answer selected'}'),
-                                  if (question.type ==
-                                      QuestionType.selectMultiple)
-                                    Text(
-                                        'Your options: ${answer['selectedOptions'] != null ? List.generate(question.options.length, (i) => answer['selectedOptions'][i] ? question.options[i].text : '').where((text) => text.isNotEmpty).join(", ") : 'No options selected'}'),
-                                  if (question.type ==
-                                          QuestionType.shortAnswer &&
-                                      !isAnsweredCorrectly)
-                                    Text(
-                                        'Correct answer: ${question.correctAnswer}'),
-                                  if (question.type !=
-                                          QuestionType.shortAnswer &&
-                                      !isAnsweredCorrectly)
-                                    Text(
-                                      'Correct options: ${question.options.where((o) => o.isCorrect).map((o) => o.text).join(", ")}',
-                                    ),
-                                ],
-                              ),
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Question ${index + 1}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            question.text,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            isAnsweredCorrectly ? 'Correct' : 'Incorrect',
+                            style: TextStyle(
+                              color: isAnsweredCorrectly
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontSize: 14,
                             ),
-                          );
-                        },
+                          ),
+                          const SizedBox(height: 8),
+                          if (question.type == QuestionType.shortAnswer)
+                            Text(
+                                'Your answer: ${answer['answer'] ?? 'No answer provided'}'),
+                          if (question.type == QuestionType.multipleChoice)
+                            Text(
+                                'Your answer: ${answer['selectedOption'] != null ? question.options[answer['selectedOption']].text : 'No answer selected'}'),
+                          if (question.type == QuestionType.selectMultiple)
+                            Text(
+                                'Your options: ${answer['selectedOptions'] != null ? List.generate(question.options.length, (i) => answer['selectedOptions'][i] ? question.options[i].text : '').where((text) => text.isNotEmpty).join(", ") : 'No options selected'}'),
+                          if (question.type == QuestionType.shortAnswer &&
+                              !isAnsweredCorrectly)
+                            Text('Correct answer: ${question.correctAnswer}'),
+                          if (question.type != QuestionType.shortAnswer &&
+                              !isAnsweredCorrectly)
+                            Text(
+                              'Correct options: ${question.options.where((o) => o.isCorrect).map((o) => o.text).join(", ")}',
+                            ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: goToStatisticsScreen,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromRGBO(211, 172, 112, 1.0),
+                  backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 ),

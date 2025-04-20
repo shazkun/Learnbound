@@ -1,5 +1,5 @@
-import 'package:Learnbound/models/user.dart';
-import 'package:Learnbound/util/design/wave.dart';
+import 'package:learnbound/models/user.dart';
+import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -10,8 +10,6 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       {super.key, required this.user, required this.onBackPressed});
   @override
   Widget build(BuildContext context) {
-    final profilePicture = user?.profilePicture;
-
     return PreferredSize(
       preferredSize: const Size.fromHeight(120),
       child: ClipPath(

@@ -1,4 +1,4 @@
-import 'package:Learnbound/screen/auth/register/register_functions.dart';
+import 'package:learnbound/screen/auth/register/register_functions.dart';
 import 'package:flutter/material.dart';
 
 import 'register_ui.dart';

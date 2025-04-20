@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:Learnbound/screen/quiz/quiz_user.dart';
-import 'package:Learnbound/util/server.dart';
+import 'package:learnbound/screen/quiz/quiz_user.dart';
+import 'package:learnbound/util/server.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:filepicker_windows/filepicker_windows.dart' as windows_picker;
 import 'package:flutter/material.dart';
+import 'package:iconify_flutter/iconify_flutter.dart';
+import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'question_form.dart';
@@ -492,141 +494,164 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
         title: Text('Dashboard'),
         backgroundColor: Color(0xFFD7C19C),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Admin Controls',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Admin Controls',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
-            ),
-            SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                ElevatedButton.icon(
-                  icon: Icon(isBroadcasting ? Icons.stop : Icons.cast),
-                  label: Text(
-                      isBroadcasting ? 'Stop Broadcast' : 'Start Broadcast'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isBroadcasting ? Colors.red : Colors.amber,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  ElevatedButton.icon(
+                    icon: Iconify(
+                      isBroadcasting ? Mdi.stop_circle : Mdi.cast,
+                      size: 24,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                        isBroadcasting ? 'Stop Broadcast' : 'Start Broadcast'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isBroadcasting ? Colors.red : Colors.amber,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: toggleBroadcast,
                   ),
-                  onPressed: toggleBroadcast,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.connect_without_contact),
-                  label: Text('Connect to Server'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+                  ElevatedButton.icon(
+                    icon: const Iconify(Mdi.connection,
+                        size: 24, color: Colors.white),
+                    label: const Text('Connect to Server'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: _showServerList,
                   ),
-                  onPressed: _showServerList,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.add_circle),
-                  label: Text('Create Quiz'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+                  ElevatedButton.icon(
+                    icon: const Iconify(Mdi.plus_circle,
+                        size: 24, color: Colors.white),
+                    label: const Text('Create Quiz'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: _showCreateQuizDialog,
                   ),
-                  onPressed: _showCreateQuizDialog,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.folder_open),
-                  label: Text('Load Preset'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+                  ElevatedButton.icon(
+                    icon: const Iconify(Mdi.upload,
+                        size: 24, color: Colors.white),
+                    label: const Text('Import Questions'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: importQuestions,
                   ),
-                  onPressed: _showLoadPresetDialog,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.shuffle),
-                  label: Text('Randomize Questions'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+                  ElevatedButton.icon(
+                    icon: const Iconify(Mdi.shuffle,
+                        size: 24, color: Colors.white),
+                    label: const Text('Randomize Questions'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: questions.isNotEmpty ? randomizeQuestions : null,
                   ),
-                  onPressed: questions.isNotEmpty ? randomizeQuestions : null,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.save),
-                  label: Text('Save Preset'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+                  ElevatedButton.icon(
+                    icon: const Iconify(Mdi.content_save,
+                        size: 24, color: Colors.white),
+                    label: const Text('Save Preset'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed:
+                        questions.isNotEmpty ? () => savePreset(context) : null,
                   ),
-                  onPressed:
-                      questions.isNotEmpty ? () => savePreset(context) : null,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.upload_file),
-                  label: Text('Import Questions'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+                  ElevatedButton.icon(
+                    icon: const Iconify(Mdi.folder_open,
+                        size: 24, color: Colors.white),
+                    label: const Text('Load Preset'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: _showLoadPresetDialog,
                   ),
-                  onPressed: importQuestions,
-                ),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.play_arrow),
-                  label: Text('Start Quiz'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    textStyle: TextStyle(fontSize: 16),
+                  ElevatedButton.icon(
+                    icon: const Iconify(Mdi.play_circle,
+                        size: 24, color: Colors.white),
+                    label: const Text('Start Quiz'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: questions.isNotEmpty ? _showQuizDialog : null,
                   ),
-                  onPressed: questions.isNotEmpty ? _showQuizDialog : null,
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Quiz Questions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+                ],
               ),
-            ),
-            SizedBox(height: 16),
-            Expanded(
-              child: Container(
+              const SizedBox(height: 24),
+              const Text(
+                'Quiz Questions',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                height: 500,
+                width: double.infinity,
                 margin: const EdgeInsets.all(12),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.blueGrey, width: 2),
                   borderRadius: BorderRadius.circular(12),
-                  color: Color(0xFFD7C19C), // Add background color here
+                  color: const Color(0xFFD7C19C),
                 ),
                 child: questions.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Text(
                           'No questions added yet.',
                           style: TextStyle(
@@ -642,8 +667,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         onDelete: (index) => deleteQuestion(index),
                       ),
               ),
-            )
-          ],
+            ],
+          ),
         ),
       ),
     );

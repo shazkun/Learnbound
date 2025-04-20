@@ -54,36 +54,3 @@ class User {
 
   String get nickname => username; // Default to username if nickname not set
 }
-// class User {
-//   String uid; // Firebase UID instead of local ID
-//   String username;
-//   String email;
-//   String? profilePicture;
-
-//   User({
-//     required this.uid,
-//     required this.username,
-//     required this.email,
-//     this.profilePicture,
-//   });
-
-//   /// **Convert User object to Map for Firestore**
-//   Map<String, dynamic> toMap() {
-//     return {
-//       'uid': uid,
-//       'username': username,
-//       'email': email,
-//       'profile_picture': profilePicture,
-//     };
-//   }
-
-//   /// **Create User object from Firestore Map**
-//   factory User.fromMap(Map<String, dynamic> map) {
-//     return User(
-//       uid: map['uid'],
-//       username: map['username'],
-//       email: map['email'],
-//       profilePicture: map['profile_picture'],
-//     );
-//   }
-// }
