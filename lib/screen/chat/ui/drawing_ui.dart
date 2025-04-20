@@ -1,16 +1,30 @@
-
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 class DrawingUI extends StatelessWidget {
   final VoidCallback onOpenDrawingCanvas;
+  final String? imagePath; // Add this to show the drawing
 
-  const DrawingUI({super.key, required this.onOpenDrawingCanvas});
+  const DrawingUI({
+    super.key,
+    required this.onOpenDrawingCanvas,
+    this.imagePath,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(child: Center(child: Text("Drawing Mode", style: TextStyle(color: Colors.white)))),
+        Expanded(
+          child: Center(
+            child: imagePath != null
+                ? Image.file(File(imagePath!)) // Show the drawing
+                : Text(
+                    "Drawing Mode",
+                    style: TextStyle(color: Colors.white),
+                  ),
+          ),
+        ),
         Padding(
           padding: EdgeInsets.all(16),
           child: FloatingActionButton(

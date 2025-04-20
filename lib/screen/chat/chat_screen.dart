@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:learnbound/database/user_provider.dart';
-import 'package:learnbound/screen/chat/drawing.dart';
+import 'package:learnbound/screen/chat/ui/drawing_ui.dart';
 import 'package:learnbound/screen/drawing_screen.dart';
 import 'package:learnbound/screen/server_list_screen.dart';
 import 'package:flutter/foundation.dart';
@@ -41,6 +41,8 @@ class _ChatScreenState extends State<ChatScreen>
   String _changeScreen = "S_LIST";
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  String? _latestDrawingPath;
+  String? _latestImagePath;
 
   @override
   void initState() {
@@ -65,18 +67,25 @@ class _ChatScreenState extends State<ChatScreen>
 
     void processNextMessage() {
       if (messageQueue.isEmpty || !mounted) return;
+
       final messageData = messageQueue.removeFirst();
-      setState(() => _messages.add(
-          {'text': messageData['text'], 'isImage': messageData['isImage']}));
+      setState(() {
+        _messages.add(
+            {'text': messageData['text'], 'isImage': messageData['isImage']});
+      });
+
       if (messageQueue.isNotEmpty) {
         Future.delayed(Duration(milliseconds: 50), processNextMessage);
       }
     }
 
     try {
+      // Parse server info
       final parts = serverInfo.split(':');
       final ip = parts[0];
       final port = int.parse(parts[1]);
+
+      // Connect to server
       _clientSocket =
           await Socket.connect(ip, port).timeout(Duration(seconds: 3));
       _clientSocket!.write("Nickname:${user?.username}");
@@ -88,60 +97,54 @@ class _ChatScreenState extends State<ChatScreen>
         _currentMode = "Chat";
       });
 
+      // Listen for messages
       _clientSocket!.listen(
         (data) {
           final message = String.fromCharCodes(data).trim();
           if (!mounted) return;
 
           if (message.startsWith("Mode:")) {
-            if (mounted) setState(() => _currentMode = message.substring(5));
+            setState(() => _currentMode = message.substring(5));
           } else if (message.startsWith("Question:")) {
-            if (mounted) setState(() => _questions.add(message.substring(9)));
+            setState(() => _questions.add(message.substring(9)));
           } else if (message.startsWith("MC:")) {
             final parts = message.substring(3).split("|");
             final question = parts[0];
             final options = parts.sublist(1);
-            if (mounted) {
-              setState(() => _multipleChoiceQuestions[question] = options);
-            }
+            setState(() => _multipleChoiceQuestions[question] = options);
           } else if (message.startsWith("Host Disconnected")) {
-            if (mounted) {
-              setState(() {
-                _messages.clear();
-                _questions.clear();
-                _multipleChoiceQuestions.clear();
-                _selectedAnswers.clear();
-                _confirmedAnswers.clear();
-                _changeScreen = "S_LIST";
-                _isStarted = false;
-                _messages.add({'system': true, 'text': 'Host disconnected.'});
-                ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Host disconnected.")));
-              });
-            }
+            setState(() {
+              _messages.clear();
+              _questions.clear();
+              _multipleChoiceQuestions.clear();
+              _selectedAnswers.clear();
+              _confirmedAnswers.clear();
+              _changeScreen = "S_LIST";
+              _isStarted = false;
+
+              _messages.add({'system': true, 'text': 'Host disconnected.'});
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text("Host disconnected.")));
+            });
           } else if (message.startsWith("Removed:")) {
             final question = message.substring(8).trim();
-            if (mounted) {
-              setState(() {
-                _questions.remove(question);
-                _multipleChoiceQuestions.remove(question);
-                _selectedAnswers.remove(question);
-                _confirmedAnswers.remove(question);
-                print(
-                    'Removed: $question, Remaining: ${_multipleChoiceQuestions.keys}');
-              });
-            }
+            setState(() {
+              _questions.remove(question);
+              _multipleChoiceQuestions.remove(question);
+              _selectedAnswers.remove(question);
+              _confirmedAnswers.remove(question);
+              print(
+                  'Removed: $question, Remaining: ${_multipleChoiceQuestions.keys}');
+            });
           } else if (message.startsWith("Session started:")) {
-            if (mounted) {
-              setState(() {
-                _messages.add({
-                  'system': true,
-                  'text': 'The host has started the session.'
-                });
-                _currentMode = "Chat";
-                _isStarted = true;
+            setState(() {
+              _messages.add({
+                'system': true,
+                'text': 'The host has started the session.'
               });
-            }
+              _currentMode = "Chat";
+              _isStarted = true;
+            });
           } else if (message.startsWith("Image:")) {
             messageQueue.add({'text': message.substring(6), 'isImage': true});
             if (messageQueue.length == 1) processNextMessage();
@@ -152,8 +155,10 @@ class _ChatScreenState extends State<ChatScreen>
         },
         onError: (error) {
           if (mounted) {
-            setState(() => _messages
-                .add({'system': true, 'text': 'Connection error: $error'}));
+            setState(() => _messages.add({
+                  'system': true,
+                  'text': 'Connection error: $error',
+                }));
           }
         },
         onDone: () {
@@ -174,7 +179,7 @@ class _ChatScreenState extends State<ChatScreen>
         setState(() => _messages.add({
               'system': true,
               'text':
-                  'Connection failed: Failed to connect, server does not exist.'
+                  'Connection failed: Failed to connect, server does not exist.',
             }));
       }
     }
@@ -191,7 +196,9 @@ class _ChatScreenState extends State<ChatScreen>
   Future<void> _pickAndSendImage() async {
     try {
       final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
       if (pickedFile == null) return;
+
       final imageFile = File(pickedFile.path);
       final base64Image = base64Encode(await imageFile.readAsBytes());
       if (_clientSocket != null) {
@@ -200,13 +207,15 @@ class _ChatScreenState extends State<ChatScreen>
       }
       setState(() => _messages
           .add({'text': 'Image sent', 'isImage': true, 'image': imageFile}));
+
+      setState(() => _latestImagePath = imageFile.path); // <- store the path
     } catch (e) {
       debugPrint('Error sending image: $e');
     }
   }
 
   Future<void> _openDrawingCanvas() async {
-    final userProvider = Provider.of<UserProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final user = userProvider.user;
     final drawing = await Navigator.push(
         context, MaterialPageRoute(builder: (context) => DrawingCanvas()));
@@ -217,6 +226,10 @@ class _ChatScreenState extends State<ChatScreen>
       _clientSocket!.flush();
       setState(() => _messages.add(
           {'nickname': user?.username, 'image': imgFile, 'isImage': true}));
+    }
+
+    if (drawing != null) {
+      setState(() => _latestDrawingPath = drawing); // <- store the path
     }
   }
 
@@ -355,9 +368,13 @@ class _ChatScreenState extends State<ChatScreen>
           onStateUpdate: setState,
         );
       case "Picture":
-        return PictureUI(onPickAndSendImage: _pickAndSendImage);
+        return PictureUI(
+            onPickAndSendImage: _pickAndSendImage, imagePath: _latestImagePath);
       case "Drawing":
-        return DrawingUI(onOpenDrawingCanvas: _openDrawingCanvas);
+        return DrawingUI(
+          onOpenDrawingCanvas: _openDrawingCanvas,
+          imagePath: _latestDrawingPath,
+        );
       default:
         return Center(
             child: Text("Unknown mode", style: TextStyle(color: Colors.white)));

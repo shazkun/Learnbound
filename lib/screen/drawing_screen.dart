@@ -114,6 +114,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     await File(imagePath).writeAsBytes(pngBytes);
     if (mounted) {
       Navigator.pop(context, imagePath);
+      
     }
   }
 
@@ -121,23 +122,52 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Draw Something'),
+        title: const Text(
+          'Draw Something',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blueAccent, Colors.purpleAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveDrawing,
+          Tooltip(
+            message: 'Save Drawing',
+            child: IconButton(
+              icon: const Icon(Icons.save, color: Colors.white),
+              onPressed: _saveDrawing,
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: _clear,
+          Tooltip(
+            message: 'Clear Canvas',
+            child: IconButton(
+              icon: const Icon(Icons.clear, color: Colors.white),
+              onPressed: _clear,
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.undo),
-            onPressed: _undo,
+          Tooltip(
+            message: 'Undo',
+            child: IconButton(
+              icon: const Icon(Icons.undo, color: Colors.white),
+              onPressed: _undo,
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.redo),
-            onPressed: _redo,
+          Tooltip(
+            message: 'Redo',
+            child: IconButton(
+              icon: const Icon(Icons.redo, color: Colors.white),
+              onPressed: _redo,
+            ),
           ),
         ],
       ),
@@ -145,176 +175,206 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
         children: [
           // Toolbar for selecting tools
           Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey[200], // Light background color
-              borderRadius: BorderRadius.circular(16), // Rounded corners
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
-                  offset: Offset(0, 4), // Subtle shadow
+                  spreadRadius: 2,
                 ),
               ],
+              // Glassmorphism effect
+              // Using a blurred background
+              // Note: BackdropFilter can be performance-heavy on some devices
+              // Comment out if performance is an issue
+              // Alternatively, adjust blur sigma values
+              // backdropFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             ),
-            margin:
-                const EdgeInsets.all(16), // Margin around the tools container
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 8), // Padding inside
             child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal, // Allow horizontal scrolling
+              scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   // Color picker
-                  DropdownButton<Color>(
-                    value: selectedColor,
-                    items: [
-                      DropdownMenuItem(
-                        value: Colors.black,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.black),
-                            const SizedBox(width: 8),
-                            const Text("Black"),
-                          ],
-                        ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: isErasing
+                          ? Colors.grey.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<Color>(
+                        value: selectedColor,
+                        icon: const Icon(Icons.arrow_drop_down,
+                            color: Colors.black87),
+                        items: [
+                          _buildColorMenuItem(Colors.black, 'Black'),
+                          _buildColorMenuItem(Colors.red, 'Red'),
+                          _buildColorMenuItem(Colors.green, 'Green'),
+                          _buildColorMenuItem(Colors.blue, 'Blue'),
+                          _buildColorMenuItem(Colors.yellow, 'Yellow'),
+                          _buildColorMenuItem(Colors.pink, 'Pink'),
+                          _buildColorMenuItem(Colors.purple, 'Purple'),
+                        ],
+                        onChanged: (Color? newValue) {
+                          setState(() {
+                            isErasing = false; // Disable eraser mode
+                            selectedColor = newValue!;
+                          });
+                        },
                       ),
-                      DropdownMenuItem(
-                        value: Colors.red,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.red),
-                            const SizedBox(width: 8),
-                            const Text("Red"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: Colors.green,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.green),
-                            const SizedBox(width: 8),
-                            const Text("Green"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: Colors.blue,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            const Text("Blue"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: Colors.yellow,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.yellow),
-                            const SizedBox(width: 8),
-                            const Text("Yellow"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: Colors.pink,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.pink),
-                            const SizedBox(width: 8),
-                            const Text("Pink"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: Colors.purple,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.purple),
-                            const SizedBox(width: 8),
-                            const Text("Purple"),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onChanged: (Color? newValue) {
-                      setState(() {
-                        isErasing = false; // Ensure eraser mode is disabled
-                        selectedColor = newValue!;
-                      });
-                    },
+                    ),
                   ),
 
-                  const SizedBox(width: 12), // Space between elements
+                  const SizedBox(width: 12),
 
                   // Stroke width slider
-                  Slider(
-                    value: strokeWidth,
-                    min: 1.0,
-                    max: 10.0,
-                    divisions: 9,
-                    label: strokeWidth.round().toString(),
-                    onChanged: (double value) {
-                      setState(() {
-                        strokeWidth = value;
-                      });
-                    },
+                  Container(
+                    width: 150,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 4,
+                        thumbColor: Colors.blueAccent,
+                        activeTrackColor: Colors.blueAccent,
+                        inactiveTrackColor: Colors.grey[300],
+                        thumbShape:
+                            const RoundSliderThumbShape(enabledThumbRadius: 8),
+                        overlayShape:
+                            const RoundSliderOverlayShape(overlayRadius: 16),
+                      ),
+                      child: Slider(
+                        value: strokeWidth,
+                        min: 1.0,
+                        max: 10.0,
+                        divisions: 9,
+                        label: strokeWidth.round().toString(),
+                        onChanged: (double value) {
+                          setState(() {
+                            strokeWidth = value;
+                          });
+                        },
+                      ),
+                    ),
                   ),
 
-                  const SizedBox(width: 12), // Space between elements
+                  const SizedBox(width: 12),
 
                   // Eraser toggle button
-                  IconButton(
-                    icon: Icon(
-                      isErasing ? Icons.create : Icons.create_outlined,
-                      color: isErasing ? Colors.grey : Colors.black,
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isErasing
+                          ? Colors.blueAccent.withOpacity(0.8)
+                          : Colors.white.withOpacity(0.8),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        isErasing = !isErasing; // Toggle eraser mode
-                      });
-                    },
+                    child: IconButton(
+                      icon: Icon(
+                        isErasing ? Icons.brush_rounded : Icons.brush_outlined,
+                        color: isErasing ? Colors.white : Colors.black87,
+                      ),
+                      tooltip: isErasing ? 'Switch to Pen' : 'Switch to Eraser',
+                      onPressed: () {
+                        setState(() {
+                          isErasing = !isErasing; // Toggle eraser mode
+                        });
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
+          // Drawing area
           Expanded(
-            child: RepaintBoundary(
-              key: _globalKey,
-              child: ClipRect(
-                // Ensure drawing is restricted to the visible area
-                child: GestureDetector(
-                  onPanStart: (details) {
-                    if (_isWithinBounds(details.localPosition)) {
-                      _startNewStroke(details.localPosition);
-                    }
-                  },
-                  onPanUpdate: (details) {
-                    if (_isWithinBounds(details.localPosition)) {
-                      _addPoint(details.localPosition);
-                    }
-                  },
-                  onPanEnd: (details) {
-                    _endStroke();
-                  },
-                  child: CustomPaint(
-                    painter: DrawingPainter(
-                      strokes,
-                      currentStrokePoints,
-                      isErasing ? Colors.white : selectedColor,
-                      strokeWidth,
+            child: Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.grey[50]!,
+                    Colors.white,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: RepaintBoundary(
+                key: _globalKey,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: GestureDetector(
+                    onPanStart: (details) {
+                      if (_isWithinBounds(details.localPosition)) {
+                        _startNewStroke(details.localPosition);
+                      }
+                    },
+                    onPanUpdate: (details) {
+                      if (_isWithinBounds(details.localPosition)) {
+                        _addPoint(details.localPosition);
+                      }
+                    },
+                    onPanEnd: (details) {
+                      _endStroke();
+                    },
+                    child: CustomPaint(
+                      painter: DrawingPainter(
+                        strokes,
+                        currentStrokePoints,
+                        isErasing ? Colors.white : selectedColor,
+                        strokeWidth,
+                      ),
+                      child: Container(),
                     ),
-                    child: Container(
-                        // Background color for the drawing area
-                        ),
                   ),
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  DropdownMenuItem<Color> _buildColorMenuItem(Color color, String name) {
+    return DropdownMenuItem(
+      value: color,
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+              border: Border.all(color: Colors.black12),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            name,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

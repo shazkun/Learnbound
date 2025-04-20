@@ -492,12 +492,25 @@ class _MultipleChoiceDialogState extends State<MultipleChoiceDialog> {
                   .map((c) => c.text)
                   .where((text) => text.isNotEmpty)
                   .toList();
+
+              // Check if there are any duplicate options
+              final hasDuplicates = options.toSet().length != options.length;
+
               if (question.isNotEmpty && options.length >= 2) {
-                widget.onSend(question, options);
-                for (var c in optionControllers) {
-                  c.clear();
+                if (hasDuplicates) {
+                  // Show error message if duplicate options exist
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Options must be unique'),
+                    ),
+                  );
+                } else {
+                  widget.onSend(question, options);
+                  for (var c in optionControllers) {
+                    c.clear();
+                  }
+                  Navigator.pop(context);
                 }
-                Navigator.pop(context);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

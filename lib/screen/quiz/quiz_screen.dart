@@ -456,7 +456,7 @@ class _QuizScreenState extends State<QuizScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Create Quiz'),
+        title: Text('Create Question'),
         content: QuestionForm(
           onAddOrUpdate: addOrUpdateQuestion,
           onEdit: editQuestion,
@@ -552,7 +552,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   ElevatedButton.icon(
                     icon: const Iconify(Mdi.plus_circle,
                         size: 24, color: Colors.white),
-                    label: const Text('Create Quiz'),
+                    label: const Text('Add Question'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,

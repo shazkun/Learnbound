@@ -171,6 +171,9 @@ Widget buildLoginUI({
                         children: [
                           Text(
                             "Don't have an account? ",
+                            softWrap: true,
+                            maxLines: 2,
+                            overflow: TextOverflow.fade,
                             style: TextStyle(
                               fontSize: isSmallScreen ? 14 : 16,
                               color: Colors.grey[600],
@@ -187,6 +190,9 @@ Widget buildLoginUI({
                             },
                             child: Text(
                               "Sign up",
+                              softWrap: true,
+                              maxLines: 2,
+                              overflow: TextOverflow.fade,
                               style: TextStyle(
                                 color: Colors.orange,
                                 fontWeight: FontWeight.bold,
