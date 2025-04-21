@@ -52,7 +52,7 @@ lib/
 ├── providers/             # State management (e.g., using Provider)
 └── utils/                 # Helpers, constants, and utilities
 ```bash
-git clone https://github.com/yourusername/learnbound_flutter.git
+git clone https://github.com/shazkun/Learnbound
 cd learnbound_flutter
 flutter pub get
 flutter run
