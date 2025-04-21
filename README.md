@@ -1,16 +1,67 @@
-# learnbound_flutter
+LearnBound Flutter
+LearnBound is an interactive, LAN-based educational quiz application built with Flutter. It is designed as a collaborative tool for classrooms, study groups, or remote learning environments.
 
-A new Flutter project.
+✨ Features
+📡 Local Host/Join System
+Create or join quiz sessions over a local network with no need for internet access.
 
-## Getting Started
+🧠 Quiz Management (CRUD)
+Import, create, update, and delete quizzes with full control over your educational content.
 
-This project is a starting point for a Flutter application.
+📤 Import/Export Quizzes
+Easily share quizzes via files or through local peer-to-peer connections.
 
-A few resources to get you started if this is your first Flutter project:
+📲 Real-time Interactivity
+Participate in quizzes in real-time, with support for peer-to-peer LAN communication.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+🔒 Offline & Secure
+All interactions stay within the local network, ensuring a secure and internet-independent environment.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+🔔 Sound Effects
+Integrated audio feedback using the audioplayers package to make learning more engaging.
+
+🧩 Use Cases
+Classroom quiz games and exercises
+
+Study group challenges
+
+Review sessions with real-time feedback
+
+Local training tools without internet
+
+🚀 Getting Started
+Prerequisites
+Flutter SDK
+
+Dart SDK
+
+Android Studio or VSCode with Flutter extensions
+
+Setup
+bash
+Copy
+Edit
+git clone https://github.com/yourusername/learnbound_flutter.git
+cd learnbound_flutter
+flutter pub get
+flutter run
+📂 Folder Structure
+plaintext
+Copy
+Edit
+lib/
+│
+├── main.dart              # Entry point
+├── screens/               # UI screens (host, join, quiz management, etc.)
+├── models/                # Quiz and user data models
+├── services/              # LAN socket handling, data sync, quiz logic
+├── providers/             # State management (e.g., using Provider)
+└── utils/                 # Helpers, constants, and utilities
+📚 Resources
+Flutter Docs
+
+LAN Communication in Flutter
+
+State Management: Provider
+
+Audio Feedback: audioplayers
