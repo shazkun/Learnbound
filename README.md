@@ -49,7 +49,60 @@ LAN Communication in Flutter
 State Management: Provider
 
 Audio Feedback: audioplayers
+<details> <summary>📄 Question Format JSON (click to expand)</summary>
+[
+  {
+    "id": "{id}",  
+    "text": "{question_text}",  
+    "type": "shortAnswer",  
+    "correctAnswer": "{correct_answer}"  
+  },
+]
+  
+</details>
+<details> <summary>📄 Question Format JSON (click to expand)</summary>
+[
+ {
+  "id": "{id}",
+  "text": "{question_text}",
+  "type": "selectMultiple",
+  "options": [
+    { "text": "{option_1}", "isCorrect": true },
+    { "text": "{option_2}", "isCorrect": false },
+    { "text": "{option_3}", "isCorrect": true },
+    { "text": "{option_4}", "isCorrect": false }
+  ]
+}
 
+]
+<details> <summary>📄 Question Format JSON (click to expand)</summary>
+[
+{
+  "id": "{id}",
+  "text": "{question_text}",
+  "type": "selectMultiple",
+  "options": [
+    { "text": "{option_1}", "isCorrect": true },
+    { "text": "{option_2}", "isCorrect": false },
+    { "text": "{option_3}", "isCorrect": true },
+    { "text": "{option_4}", "isCorrect": false }
+  ]
+}
+
+
+]
+  
+</details>
+<details> <summary>📄 Question Format JSON (click to expand)</summary>
+  
+</details>
+
+✅ Supported Question Types
+"shortAnswer" – open-ended questions with a single correct answer
+
+"multipleChoice" – one correct answer out of several options
+
+"selectMultiple" – multiple correct answers allowed
 
 bash
 ```bash
