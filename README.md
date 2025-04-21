@@ -91,7 +91,7 @@ Audio Feedback: audioplayers
 
 
 ]
-  
+  <details>
 
 
 ✅ Supported Question Types
