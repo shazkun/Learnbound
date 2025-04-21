@@ -35,9 +35,20 @@
 
 - Flutter SDK
 - Dart SDK
+- Android SDK
+- Windows SDK (preferable windows 10)
 - Android Studio or VSCode with Flutter extensions
 
 ### Setup
+📚 Resources
+
+Flutter Docs
+
+LAN Communication in Flutter
+
+State Management: Provider
+
+Audio Feedback: audioplayers
 
 📂 Folder Structure
 bash
@@ -58,12 +69,5 @@ flutter pub get
 flutter run
 
 
-📚 Resources
-Flutter Docs
 
-LAN Communication in Flutter
-
-State Management: Provider
-
-Audio Feedback: audioplayers
 
