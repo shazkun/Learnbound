@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:learnbound/screen/quiz/question_model.dart';
 import 'package:learnbound/screen/quiz/stats_screen.dart';
 import 'package:animate_do/animate_do.dart';
@@ -24,22 +25,53 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
   int score = 0;
   bool isReviewMode = false;
   String? errorMessage;
+  bool isSoundEnabled = true; // Added for sound toggle
 
   List<bool> answeredCorrectly = [];
   List<Map<String, dynamic>> userAnswers = [];
 
   final TextEditingController shortAnswerController = TextEditingController();
+  final AudioPlayer _bgMusicPlayer = AudioPlayer();
+  final AudioPlayer _sfxPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
+
+    if (widget.questions.isEmpty) return;
+
     userAnswers = List.generate(widget.questions.length, (_) => {});
     answeredCorrectly = List.filled(widget.questions.length, false);
-    resetAnswer(); // Initialize selectedOptions based on the first question
+    resetAnswer();
+
+    if (isSoundEnabled) {
+      playBackgroundMusic();
+    }
+  }
+
+  Future<void> playBackgroundMusic() async {
+    await _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
+
+    if (!isReviewMode) {
+      _bgMusicPlayer.play(AssetSource('audio/quiz-bg.mp3'));
+    } else if (isReviewMode) {
+      _bgMusicPlayer.play(AssetSource('audio/lobby.mp3'));
+    } else {
+      stopBackgroundMusic(); // Only if there's a third condition
+    }
+  }
+
+  Future<void> stopBackgroundMusic() async {
+    await _bgMusicPlayer.stop();
+  }
+
+  Future<void> playSfx(String fileName) async {
+    await _sfxPlayer.play(AssetSource(fileName));
   }
 
   @override
   void dispose() {
+    stopBackgroundMusic();
     shortAnswerController.dispose();
     super.dispose();
   }
@@ -65,7 +97,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
     }
   }
 
-  void submitAnswer() {
+  Future<void> submitAnswer() async {
     if (!hasAnswered()) {
       setState(
           () => errorMessage = 'Please provide an answer before submitting.');
@@ -100,6 +132,21 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
         answeredCorrectly[currentQuestionIndex] = true;
       }
     });
+
+    // Play sound if enabled (placeholder)
+    if (isSoundEnabled) {
+      await stopBackgroundMusic(); // Pause background music
+
+      if (isCorrect) {
+        await playSfx('audio/correct.mp3');
+      } else {
+        await playSfx('audio/incorrect.mp3'); // If you have an incorrect sound
+      }
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      await playBackgroundMusic(); // Resume music
+    }
   }
 
   void nextQuestion() {
@@ -128,6 +175,11 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
         enterReviewMode();
       }
     }
+
+    // Play sound if enabled (placeholder)
+    if (isSoundEnabled) {
+      // Add navigation sound effect logic here
+    }
   }
 
   void previousQuestion() {
@@ -140,6 +192,11 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
           resetAnswer();
         }
       });
+    }
+
+    // Play sound if enabled (placeholder)
+    if (isSoundEnabled) {
+      // Add navigation sound effect logic here
     }
   }
 
@@ -177,7 +234,10 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
 
   void goToStatisticsScreen() {
     if (!mounted) return;
-    Navigator.pushReplacement(
+    stopBackgroundMusic();
+    _sfxPlayer.stop(); // Optional, if SFX is still playing
+    playSfx("audio/finish.mp3");
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StatisticsScreen(
@@ -189,12 +249,39 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
     );
   }
 
+  void toggleSound() {
+    setState(() {
+      isSoundEnabled = !isSoundEnabled;
+    });
+
+    if (isSoundEnabled) {
+      playBackgroundMusic();
+    } else {
+      stopBackgroundMusic();
+      _sfxPlayer.stop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.questions.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Quiz')),
-        body: const Center(child: Text('No questions available')),
+        appBar: AppBar(
+          title: const Text('Quiz'),
+          backgroundColor: const Color(0xFFD7C19C),
+          centerTitle: true,
+          elevation: 0,
+        ),
+        body: const Center(
+          child: Text(
+            'No questions available.',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+        ),
       );
     }
 
@@ -207,6 +294,16 @@ class _QuizTakingScreenState extends State<QuizTakingScreen> {
         backgroundColor: const Color(0xFFD7C19C),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: Icon(
+              isSoundEnabled ? Icons.volume_up : Icons.volume_off,
+              color: Colors.black,
+            ),
+            onPressed: toggleSound,
+            tooltip: isSoundEnabled ? 'Mute Sound' : 'Unmute Sound',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

@@ -15,7 +15,8 @@ void main() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-
+  // SharedPreferences prefs = await SharedPreferences.getInstance();
+  // await prefs.clear();
   runApp(
     MultiProvider(
       providers: [
@@ -75,12 +76,12 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       home: _isLoading
-          ? LoadingScreen()
+          ? LoadingAnimation()
           : FutureBuilder<bool>(
               future: isFirstTime(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return LoadingScreen();
+                  return LoadingAnimation();
                 } else {
                   final firstTime = snapshot.data ?? true;
                   return firstTime ? StartScreen() : LoginScreen();

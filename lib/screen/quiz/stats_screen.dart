@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learnbound/screen/home_screen.dart';
 
 class StatisticsScreen extends StatelessWidget {
   final int score;
@@ -71,8 +72,10 @@ class StatisticsScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () =>
-                        Navigator.pop(context), // Assuming Exit should go back
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                    ), // Assuming Exit should go back
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),

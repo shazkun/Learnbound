@@ -1,5 +1,5 @@
-import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:learnbound/screen/auth/login/login_screen.dart';
 
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key});
@@ -8,89 +8,160 @@ class StartScreen extends StatefulWidget {
   _StartScreenState createState() => _StartScreenState();
 }
 
-class _StartScreenState extends State<StartScreen>
-    with SingleTickerProviderStateMixin {
-  //final DatabaseHelper db = DatabaseHelper();
+class _StartScreenState extends State<StartScreen> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
 
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  final List<Map<String, String>> _pages = [
+    {
+      'image': 'assets/applogo.png',
+      'text': 'Welcome to LearnBound!\nYour journey to knowledge starts here.',
+    },
+    {
+      'image': 'assets/applogo.png',
+      'text': 'Learn interactively\nTrack your progress and stay motivated.',
+    },
+    {
+      'image': 'assets/applogo.png',
+      'text': 'Ready to begin?\nLet\'s start learning!',
+    },
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-
-    _controller =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 500));
-
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _controller.forward(); // Start the animation
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentPage = index;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the width and height of the screen
-    final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      body: FadeTransition(
-        opacity: _animation,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFFD3A97D).withOpacity(1), // Start color
-                Color(0xFFEBE1C8).withOpacity(1), // End color
-              ],
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFD3A97D),
+              Color(0xFFEBE1C8),
+            ],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Centered logo at the top
-                Spacer(),
-                Center(
-                  child: Image.asset(
-                    'assets/applogo.png', // Path to your logo asset
-                    height: screenHeight * 0.3, // Responsive height
-                    width: screenWidth * 0.6, // Responsive width
-                  ),
-                ),
-                SizedBox(
-                    height:
-                        screenHeight * 0.05), // Space between logo and button
-                ElevatedButton(
-                  onPressed: () {
-                    // db.updateFlagStatus('first_time', 1);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 15), // Adjust horizontal padding
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _pages.length,
+                onPageChanged: _onPageChanged,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Spacer(),
+                        Image.asset(
+                          _pages[index]['image']!,
+                          height: screenHeight * 0.3,
+                          width: screenWidth * 0.6,
+                        ),
+                        SizedBox(height: screenHeight * 0.04),
+                        Text(
+                          _pages[index]['text']!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Spacer(),
+                      ],
                     ),
-                    backgroundColor: Colors.white,
-                  ),
-                  child: Text(
-                    'Start Learning!',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-
-                SizedBox(height: screenHeight * 0.02), // Space below button
-                Spacer(), // Push content to center vertically
-              ],
+                  );
+                },
+              ),
             ),
-          ),
+
+            // Page indicators
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_pages.length, (index) {
+                return AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  margin: EdgeInsets.symmetric(horizontal: 4),
+                  height: 8,
+                  width: _currentPage == index ? 24 : 8,
+                  decoration: BoxDecoration(
+                    color:
+                        _currentPage == index ? Colors.black : Colors.black54,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
+            ),
+
+            SizedBox(height: 20),
+
+            // Next and Back buttons
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back button
+                  TextButton(
+                    onPressed: _currentPage == 0
+                        ? null
+                        : () {
+                            _pageController.previousPage(
+                              duration: Duration(milliseconds: 400),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                    child: Text(
+                      _currentPage > 0 ? 'Back' : '',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color:
+                            _currentPage == 0 ? Colors.black38 : Colors.black,
+                      ),
+                    ),
+                  ),
+
+                  // Next or Start Learning
+                  TextButton(
+                    onPressed: () {
+                      if (_currentPage == _pages.length - 1) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => LoginScreen()),
+                        );
+                      } else {
+                        _pageController.nextPage(
+                          duration: Duration(milliseconds: 400),
+                          curve: Curves.easeInOut,
+                        );
+                      }
+                    },
+                    child: Text(
+                      _currentPage == _pages.length - 1
+                          ? 'Start Learning!'
+                          : 'Next',
+                      style: TextStyle(fontSize: 16, color: Colors.black),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 40),
+          ],
         ),
       ),
     );

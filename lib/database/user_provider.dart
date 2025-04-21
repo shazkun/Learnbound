@@ -1,5 +1,6 @@
 import 'package:learnbound/database/helper/sqlite_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:learnbound/util/pass_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user.dart';
@@ -12,7 +13,9 @@ class UserProvider with ChangeNotifier {
 
   /// **Login**
   Future<bool> loginUser(String email, String password) async {
-    final userId = await _dbHelper.getUserIdByEmailAndPassword(email, password);
+    final hashedPassword = hashPassword(password);
+    final userId =
+        await _dbHelper.getUserIdByEmailAndPassword(email, hashedPassword);
     if (userId != null) {
       _user = await _dbHelper.getUser(email);
       notifyListeners();
@@ -23,6 +26,7 @@ class UserProvider with ChangeNotifier {
 
   /// **Register user (Ignore if Exists)**
   Future<void> registerUser(User user) async {
+    user.password = hashPassword(user.password);
     await _dbHelper.insertUser(user);
     _user = user;
     notifyListeners();
@@ -61,14 +65,14 @@ class UserProvider with ChangeNotifier {
   Future<bool> changePassword(
       String currentPassword, String newPassword) async {
     if (_user != null) {
-      // Check if the current password matches the stored one
-      if (_user!.password == currentPassword) {
-        await _dbHelper.updatePassword(_user!.id!, newPassword);
-        _user!.password = newPassword;
+      final currentHashed = hashPassword(currentPassword);
+      if (_user!.password == currentHashed) {
+        final newHashed = hashPassword(newPassword);
+        await _dbHelper.updatePassword(_user!.id!, newHashed);
+        _user!.password = newHashed;
         notifyListeners();
         return true;
       } else {
-        // Current password incorrect
         return false;
       }
     }

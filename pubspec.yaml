@@ -49,6 +49,8 @@ dependencies:
   animate_do: ^3.1.2
   filepicker_windows: ^2.1.0
   iconify_flutter: ^0.0.7
+  crypto: ^3.0.2
+  audioplayers: ^6.4.0
 
   # supabase_flutter: ^2.8.4
 
@@ -83,6 +85,13 @@ flutter:
     - assets/logoonly.png
     - assets/arrow.svg
     - assets/back-arrow.png
+
+    # AUDIO
+    - assets/audio/quiz-bg.mp3
+    - assets/audio/correct.mp3
+    - assets/audio/incorrect.mp3
+    - assets/audio/lobby.mp3
+    - assets/audio/finish.mp3
 
   fonts:
     - family: Poppins
