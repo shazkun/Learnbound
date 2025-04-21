@@ -92,10 +92,7 @@ Audio Feedback: audioplayers
 
 ]
   
-</details>
-<details> <summary>📄 Question Format JSON (click to expand)</summary>
-  
-</details>
+
 
 ✅ Supported Question Types
 "shortAnswer" – open-ended questions with a single correct answer
