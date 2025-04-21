@@ -57,11 +57,9 @@ Audio Feedback: audioplayers
     "type": "shortAnswer",  
     "correctAnswer": "{correct_answer}"  
   },
-]
+
   
-</details>
-<details> <summary>📄 Question Format JSON (click to expand)</summary>
-[
+
  {
   "id": "{id}",
   "text": "{question_text}",
@@ -74,9 +72,7 @@ Audio Feedback: audioplayers
   ]
 }
 
-]
-<details> <summary>📄 Question Format JSON (click to expand)</summary>
-[
+
 {
   "id": "{id}",
   "text": "{question_text}",
@@ -91,7 +87,7 @@ Audio Feedback: audioplayers
 
 
 ]
-  <details>
+  </details>
 
 
 ✅ Supported Question Types
