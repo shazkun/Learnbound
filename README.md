@@ -51,7 +51,7 @@ State Management: Provider
 Audio Feedback: audioplayers
 
 📂 Folder Structure
-bash
+
 Copy
 Edit
 lib/
@@ -62,6 +62,8 @@ lib/
 ├── services/              # LAN socket handling, data sync, quiz logic
 ├── providers/             # State management (e.g., using Provider)
 └── utils/                 # Helpers, constants, and utilities
+
+bash
 ```bash
 git clone https://github.com/shazkun/Learnbound
 cd learnbound_flutter
