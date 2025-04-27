@@ -35,12 +35,7 @@ class _ServerListState extends State<ServerList>
     _fadeAnimation =
         CurvedAnimation(parent: _animationController, curve: Curves.easeInOut);
     _animationController.forward();
-    // _startServerTesting();
   }
-
-  // Future<void> _startServerTesting() async {
-  //   _serverSocket = await ServerSocket.bind('0.0.0.0', 4040);
-  // }
 
   Future<void> _initializeLocalIp() async {
     _localIp = await _getLocalIp();
@@ -205,7 +200,6 @@ class _ServerListState extends State<ServerList>
                                   color: Colors.black, // White text color
                                   fontWeight: FontWeight.bold, // Bold text
                                   fontSize: 18, // Larger font size
-                                  fontFamily: 'Roboto', // Modern font family
                                 ),
                               ),
                             ),

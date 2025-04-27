@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:learnbound/models/question.dart';
+import 'package:learnbound/screen/quiz/quiz_server.dart';
 import 'package:learnbound/screen/quiz/quiz_user.dart';
 import 'package:learnbound/util/server.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,9 +12,8 @@ import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'question_form.dart';
-import 'question_list.dart';
-import 'question_model.dart';
+import 'question_creator.dart';
+import 'question_widget.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -36,7 +37,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void initializeBroadcastServer() {
     broadcastServer = BroadcastServer();
-    broadcastServer!.setBroadcastName('QUZZIZ');
+    broadcastServer!.setBroadcastName('QUIZ-PAD');
   }
 
   Future<void> initializeServerSocket() async {
@@ -97,9 +98,11 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<String> getPresetsDirectoryPath() async {
     final dir = await getApplicationDocumentsDirectory();
     final presetDir = Directory('${dir.path}/quiz_presets');
-    if (!presetDir.existsSync()) {
-      presetDir.createSync(recursive: true);
+
+    if (!await presetDir.exists()) {
+      await presetDir.create(recursive: true);
     }
+
     return presetDir.path;
   }
 
@@ -378,7 +381,7 @@ class _QuizScreenState extends State<QuizScreen> {
               final match = ipRegex.firstMatch(serverInfo);
               if (match != null) {
                 final ip = match.group(1)!;
-                if (serverInfo.contains('QUZZIZ')) {
+                if (serverInfo.contains('QUIZ-PAD')) {
                   _connectToQuizServer('$ip:4041');
                 } else {
                   _connectToOtherServer('$ip:4041');
@@ -670,78 +673,6 @@ class _QuizScreenState extends State<QuizScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class ServerList extends StatefulWidget {
-  final Function(String) onSelectServer;
-
-  const ServerList({super.key, required this.onSelectServer});
-
-  @override
-  _ServerListState createState() => _ServerListState();
-}
-
-class _ServerListState extends State<ServerList> {
-  List<String> servers = [];
-  RawDatagramSocket? socket;
-
-  @override
-  void initState() {
-    super.initState();
-    _startListeningForServers();
-  }
-
-  Future<void> _startListeningForServers() async {
-    try {
-      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 4040);
-      socket!.listen((event) {
-        if (event == RawSocketEvent.read) {
-          final datagram = socket!.receive();
-          if (datagram != null) {
-            final message = utf8.decode(datagram.data);
-            if (!servers.contains(message)) {
-              setState(() => servers.add(message));
-            }
-          }
-        }
-      });
-    } catch (e) {
-      print('Error listening for servers: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    socket?.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Available Servers',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          servers.isEmpty
-              ? Text('No servers found')
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: servers.length,
-                  itemBuilder: (context, index) => ListTile(
-                    title: Text(servers[index]),
-                    onTap: () => widget.onSelectServer(servers[index]),
-                  ),
-                ),
-        ],
       ),
     );
   }

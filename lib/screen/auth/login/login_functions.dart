@@ -1,6 +1,6 @@
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/home_screen.dart';
-import 'package:learnbound/util/design/cs_snackbar.dart';
+import 'package:learnbound/util/design/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';

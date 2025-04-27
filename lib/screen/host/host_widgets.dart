@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:learnbound/screen/host/app_styles.dart';
-import 'package:learnbound/util/design/cs_snackbar.dart';
+import 'package:learnbound/util/design/custom_snackbar.dart';
 import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';

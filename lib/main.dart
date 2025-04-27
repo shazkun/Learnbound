@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -11,10 +11,11 @@ import 'screen/loading_screen.dart';
 import 'screen/start_screen.dart';
 
 void main() async {
-  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+  if (Platform.isWindows) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
+
   // SharedPreferences prefs = await SharedPreferences.getInstance();
   // await prefs.clear();
   runApp(

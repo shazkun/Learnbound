@@ -1,7 +1,7 @@
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/models/user.dart';
 import 'package:learnbound/screen/auth/login/login_screen.dart';
-import 'package:learnbound/util/design/cs_snackbar.dart';
+import 'package:learnbound/util/design/custom_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';

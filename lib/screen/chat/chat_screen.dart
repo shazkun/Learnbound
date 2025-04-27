@@ -5,10 +5,11 @@ import 'dart:io';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/chat/ui/drawing_ui.dart';
 import 'package:learnbound/screen/drawing_screen.dart';
-import 'package:learnbound/screen/server_list_screen.dart';
+import 'package:learnbound/screen/multi_server.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:learnbound/util/back_dialog.dart';
 import 'package:provider/provider.dart';
 
 import 'chat_app_bar.dart';
@@ -309,7 +310,9 @@ class _ChatScreenState extends State<ChatScreen>
     final user = userProvider.user;
 
     return WillPopScope(
-      onWillPop: _onBackPressed,
+      onWillPop: () async {
+        return CustomExitDialog.show(context);
+      },
       child: _changeScreen == "S_CHAT"
           ? Scaffold(
               extendBodyBehindAppBar: true,

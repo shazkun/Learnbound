@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/host/app_styles.dart';
 import 'package:learnbound/screen/host/host_widgets.dart';
+import 'package:learnbound/util/back_dialog.dart';
 import 'package:learnbound/util/server.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -221,29 +222,6 @@ class _HostScreenState extends State<HostScreen>
     }
   }
 
-  Future<bool> _onBackPressed() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: AppStyles.dialogShape,
-            title: const Text('Exit Session?',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text('All connections will be terminated.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child:
-                    const Text('Cancel', style: TextStyle(color: Colors.grey)),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Exit', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
 
   void _showModeSelector() {
     if (_participants.isEmpty) {
@@ -322,14 +300,18 @@ class _HostScreenState extends State<HostScreen>
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _onBackPressed,
+      onWillPop: () async {
+        return CustomExitDialog.show(context);
+      },
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: CustomAppBar(
           lobbyState: _lobbyState,
           selectedMode: _selectedMode,
           onSettingsPressed: _showModeSelector,
-          onBackPressed: _onBackPressed,
+          onBackPressed: () async {
+            return CustomExitDialog.show(context);
+          },
           onBackSuccess: () => _serverSocket?.close(),
         ),
         body: Container(

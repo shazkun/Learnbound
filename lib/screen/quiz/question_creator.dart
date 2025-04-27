@@ -1,7 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 
-import 'question_model.dart';
+import '../../models/question.dart';
 
 class QuestionForm extends StatefulWidget {
   final Function(Question) onAddOrUpdate;
@@ -24,9 +24,10 @@ class QuestionForm extends StatefulWidget {
 class _QuestionFormState extends State<QuestionForm> {
   final TextEditingController _questionController = TextEditingController();
   final TextEditingController _answerController = TextEditingController();
-  final List<TextEditingController> _optionControllers =
-      List.generate(5, (_) => TextEditingController());
-  List<bool> _correctOptions = List.filled(5, false);
+  List<TextEditingController> _optionControllers =
+      List.generate(4, (_) => TextEditingController());
+  List<bool> _correctOptions =
+      List<bool>.from([false, false, false, false]); // Growable list
   int? editingIndex;
   QuestionType _selectedType = QuestionType.shortAnswer;
 
@@ -37,16 +38,27 @@ class _QuestionFormState extends State<QuestionForm> {
       _questionController.text = widget.questionToEdit!.text;
       _selectedType = widget.questionToEdit!.type;
       _answerController.text = widget.questionToEdit!.correctAnswer;
-      _optionControllers.asMap().forEach((i, controller) {
-        controller.text = '';
-        _correctOptions[i] = false;
-      });
-      widget.questionToEdit!.options.asMap().forEach((i, option) {
-        if (i < 5) {
-          _optionControllers[i].text = option.text;
-          _correctOptions[i] = option.isCorrect;
-        }
-      });
+
+      // Initialize options based on question to edit
+      int optionCount = widget.questionToEdit!.options.length > 4
+          ? widget.questionToEdit!.options.length
+          : 4;
+      _optionControllers = List.generate(
+        optionCount,
+        (i) => TextEditingController(
+          text: i < widget.questionToEdit!.options.length
+              ? widget.questionToEdit!.options[i].text
+              : '',
+        ),
+      );
+      _correctOptions = List<bool>.from(
+        List.generate(
+          optionCount,
+          (i) => i < widget.questionToEdit!.options.length
+              ? widget.questionToEdit!.options[i].isCorrect
+              : false,
+        ),
+      );
     }
   }
 
@@ -56,6 +68,23 @@ class _QuestionFormState extends State<QuestionForm> {
     _answerController.dispose();
     _optionControllers.forEach((c) => c.dispose());
     super.dispose();
+  }
+
+  void addOption() {
+    setState(() {
+      _optionControllers.add(TextEditingController());
+      _correctOptions.add(false);
+    });
+  }
+
+  void deleteOption(int index) {
+    if (_optionControllers.length <= 2)
+      return; // Prevent deleting below 2 options
+    setState(() {
+      _optionControllers[index].dispose();
+      _optionControllers.removeAt(index);
+      _correctOptions.removeAt(index);
+    });
   }
 
   void addOrUpdateQuestion() {
@@ -78,9 +107,9 @@ class _QuestionFormState extends State<QuestionForm> {
       int optionCount =
           _optionControllers.where((c) => c.text.isNotEmpty).length;
       int correctCount = _correctOptions.where((c) => c).length;
-      if (optionCount < 2 || optionCount > 5) {
+      if (optionCount < 2) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please provide 2-5 options')),
+          SnackBar(content: Text('Please provide at least 2 options')),
         );
         return;
       }
@@ -135,8 +164,8 @@ class _QuestionFormState extends State<QuestionForm> {
     setState(() {
       _questionController.clear();
       _answerController.clear();
-      _optionControllers.forEach((c) => c.clear());
-      _correctOptions = List.filled(5, false);
+      _optionControllers = List.generate(4, (_) => TextEditingController());
+      _correctOptions = List<bool>.from([false, false, false, false]);
       _selectedType = QuestionType.shortAnswer;
       editingIndex = null;
     });
@@ -148,16 +177,27 @@ class _QuestionFormState extends State<QuestionForm> {
       _questionController.text = widget.questions[index].text;
       _selectedType = widget.questions[index].type;
       _answerController.text = widget.questions[index].correctAnswer;
-      _optionControllers.forEach((c) => c.clear());
-      _correctOptions = List.filled(5, false);
-      if (widget.questions[index].options.isNotEmpty) {
-        widget.questions[index].options.asMap().forEach((i, option) {
-          if (i < 5) {
-            _optionControllers[i].text = option.text;
-            _correctOptions[i] = option.isCorrect;
-          }
-        });
-      }
+
+      // Initialize options for editing
+      int optionCount = widget.questions[index].options.length > 4
+          ? widget.questions[index].options.length
+          : 4;
+      _optionControllers = List.generate(
+        optionCount,
+        (i) => TextEditingController(
+          text: i < widget.questions[index].options.length
+              ? widget.questions[index].options[i].text
+              : '',
+        ),
+      );
+      _correctOptions = List<bool>.from(
+        List.generate(
+          optionCount,
+          (i) => i < widget.questions[index].options.length
+              ? widget.questions[index].options[i].isCorrect
+              : false,
+        ),
+      );
     });
     widget.onEdit(index);
   }
@@ -183,6 +223,7 @@ class _QuestionFormState extends State<QuestionForm> {
               ),
               SizedBox(height: 16),
               TextField(
+                maxLength: 100,
                 controller: _questionController,
                 decoration: InputDecoration(
                   labelText: 'Question',
@@ -215,14 +256,17 @@ class _QuestionFormState extends State<QuestionForm> {
                 onChanged: (value) {
                   setState(() {
                     _selectedType = value!;
-                    _optionControllers.forEach((c) => c.clear());
-                    _correctOptions = List.filled(5, false);
+                    _optionControllers =
+                        List.generate(4, (_) => TextEditingController());
+                    _correctOptions =
+                        List<bool>.from([false, false, false, false]);
                   });
                 },
               ),
               SizedBox(height: 16),
               if (_selectedType == QuestionType.shortAnswer)
                 TextField(
+                  maxLength: 100,
                   controller: _answerController,
                   decoration: InputDecoration(
                     labelText: 'Correct Answer',
@@ -233,7 +277,7 @@ class _QuestionFormState extends State<QuestionForm> {
                 ),
               if (_selectedType != QuestionType.shortAnswer) ...[
                 Text(
-                  'Options (2-5 required)',
+                  'Options (at least 2 required)',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -242,7 +286,7 @@ class _QuestionFormState extends State<QuestionForm> {
                 ),
                 SizedBox(height: 8),
                 ...List.generate(
-                  5,
+                  _optionControllers.length,
                   (index) => Padding(
                     padding: EdgeInsets.only(top: 8.0),
                     child: Row(
@@ -267,8 +311,29 @@ class _QuestionFormState extends State<QuestionForm> {
                             });
                           },
                         ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete,
+                            color: _optionControllers.length > 2
+                                ? Colors.red
+                                : Colors.grey,
+                          ),
+                          onPressed: _optionControllers.length > 2
+                              ? () => deleteOption(index)
+                              : null,
+                          tooltip: 'Delete Option',
+                        ),
                       ],
                     ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: Icon(Icons.add_circle, color: Colors.deepPurple),
+                    onPressed: addOption,
+                    tooltip: 'Add Option',
                   ),
                 ),
               ],

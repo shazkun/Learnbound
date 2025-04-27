@@ -1,7 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 
-import 'question_model.dart';
+import '../../models/question.dart';
 
 class QuestionList extends StatefulWidget {
   final List<Question> questions;

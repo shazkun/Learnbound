@@ -209,7 +209,7 @@ Widget buildLoginUI({
             ),
           ),
           ClipPath(
-            clipper: BottomWaveClipper(),
+            clipper: BottomClipper(),
             child: Container(
               height: 100,
               width: double.infinity,

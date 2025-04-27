@@ -4,14 +4,14 @@ import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:learnbound/screen/chat/chat_screen.dart';
 import 'package:learnbound/screen/host/host_screen.dart';
-import 'package:learnbound/screen/quiz/quiz_screen.dart';
+import 'package:learnbound/screen/quiz/quiz_home.dart';
 import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:provider/provider.dart';
 
-import '../util/design/cs_snackbar.dart';
+import '../util/design/custom_snackbar.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -228,7 +228,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
                 // Footer
                 ClipPath(
-                  clipper: BottomWaveClipper(),
+                  clipper: BottomClipper(),
                   child: Container(
                     height: screenSize.height * 0.20,
                     width: double.infinity,
