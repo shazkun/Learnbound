@@ -24,9 +24,9 @@
 
 ## 🧩 Use Cases
 
-- Classroom quiz games and exercises  
-- Study group challenges  
-- Review sessions with real-time feedback  
+- Classroom quiz games and exercises
+- Study group challenges
+- Review sessions with real-time feedback
 - Local training tools without internet
 
 ## 🚀 Getting Started
@@ -40,6 +40,7 @@
 - Android Studio or VSCode with Flutter extensions
 
 ### Setup
+
 📚 Resources
 
 Flutter Docs
@@ -49,6 +50,7 @@ LAN Communication in Flutter
 State Management: Provider
 
 Audio Feedback: audioplayers
+
 <details> <summary>📄 Question Format JSON (click to expand)</summary>
 [
   {
@@ -58,37 +60,33 @@ Audio Feedback: audioplayers
     "correctAnswer": "{correct_answer}"  
   },
 
-  
-
- {
-  "id": "{id}",
-  "text": "{question_text}",
-  "type": "selectMultiple",
-  "options": [
-    { "text": "{option_1}", "isCorrect": true },
-    { "text": "{option_2}", "isCorrect": false },
-    { "text": "{option_3}", "isCorrect": true },
-    { "text": "{option_4}", "isCorrect": false }
-  ]
+{
+"id": "{id}",
+"text": "{question_text}",
+"type": "selectMultiple",
+"options": [
+{ "text": "{option_1}", "isCorrect": true },
+{ "text": "{option_2}", "isCorrect": false },
+{ "text": "{option_3}", "isCorrect": true },
+{ "text": "{option_4}", "isCorrect": false }
+]
 }
-
 
 {
-  "id": "{id}",
-  "text": "{question_text}",
-  "type": "selectMultiple",
-  "options": [
-    { "text": "{option_1}", "isCorrect": true },
-    { "text": "{option_2}", "isCorrect": false },
-    { "text": "{option_3}", "isCorrect": true },
-    { "text": "{option_4}", "isCorrect": false }
-  ]
+"id": "{id}",
+"text": "{question_text}",
+"type": "selectMultiple",
+"options": [
+{ "text": "{option_1}", "isCorrect": true },
+{ "text": "{option_2}", "isCorrect": false },
+{ "text": "{option_3}", "isCorrect": true },
+{ "text": "{option_4}", "isCorrect": false }
+]
 }
 
-
 ]
-  </details>
 
+  </details>
 
 ✅ Supported Question Types
 "shortAnswer" – open-ended questions with a single correct answer
@@ -98,6 +96,7 @@ Audio Feedback: audioplayers
 "selectMultiple" – multiple correct answers allowed
 
 bash
+
 ```bash
 git clone https://github.com/shazkun/Learnbound
 cd learnbound_flutter
@@ -107,3 +106,4 @@ flutter run
 
 
 
+```
