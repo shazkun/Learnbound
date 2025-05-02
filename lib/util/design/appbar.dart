@@ -1,54 +1,75 @@
 import 'package:flutter/material.dart';
+import 'package:learnbound/models/user.dart';
 import 'package:learnbound/util/design/wave.dart';
 
-class AppBarCustom {
-  static PreferredSizeWidget buildAppBar({
-    required BuildContext context,
-    required String title, // Title for the app bar
-    required bool enableBackButton,
-  }) {
-    final screenSize = MediaQuery.of(context).size;
+class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
+  final User? user;
+  final Future<bool> Function()? onBackPressed;
+  final bool showBackButton;
+  final String titleText;
+  final Color titleColor;
+  final Color backgroundColor;
+  final List<Widget>? actions; // <-- new field
 
+  const AppBarCustom({
+    super.key,
+    this.user,
+    this.onBackPressed,
+    this.showBackButton = true,
+    this.titleText = "Student",
+    this.titleColor = Colors.black,
+    this.backgroundColor = const Color(0xFFD7C19C),
+    this.actions, // <-- include in constructor
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return PreferredSize(
-      preferredSize: Size.fromHeight(
-          screenSize.height * 0.15), // Set the height of the app bar
-      child: AppBar(
-        centerTitle: true,
-        title: Text(
-          title,
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w700,
-            fontSize: 24,
+      preferredSize: preferredSize,
+      child: ClipPath(
+        clipper: TopClipper(),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          leading: showBackButton
+              ? IconButton(
+                  icon: Image.asset(
+                    'assets/back-arrow.png',
+                    height: 24,
+                    width: 24,
+                  ),
+                  onPressed: () {
+                    if (onBackPressed != null) {
+                      onBackPressed!().then((shouldPop) {
+                        if (shouldPop) Navigator.pop(context);
+                      });
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                )
+              : null,
+          centerTitle: true,
+          title: Text(
+            titleText,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: titleColor,
+            ),
           ),
-        ),
-        leading: enableBackButton
-            ? IconButton(
-                icon: Image.asset(
-                  'assets/back-arrow.png',
-                  height: 24,
-                  width: 24,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              )
-            : null, // If backButton is false, leading is set to null
-        automaticallyImplyLeading:
-            enableBackButton, // Optional, if you don't want a back button
-        backgroundColor: Colors
-            .transparent, // Make background transparent to show custom design
-        elevation: 0, // Removes the default shadow
-        flexibleSpace: ClipPath(
-          clipper:
-              TopClipper(), // Assuming you have a TopClipper defined elsewhere
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFFD7C19C), // Background color of the app bar
+          actions: actions, // <-- inject custom action buttons
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              color: backgroundColor,
             ),
           ),
         ),
       ),
     );
   }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(120);
 }

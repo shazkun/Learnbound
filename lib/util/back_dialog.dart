@@ -8,10 +8,10 @@ class CustomExitDialog {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             title: const Text(
-              'Exit Session?',
+              'Exit?',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            content: const Text('All connections will be terminated.'),
+            content: const Text('All progress and links will be lost.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),

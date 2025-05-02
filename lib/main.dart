@@ -15,7 +15,7 @@ void main() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-
+  //
   // SharedPreferences prefs = await SharedPreferences.getInstance();
   // await prefs.clear();
   runApp(

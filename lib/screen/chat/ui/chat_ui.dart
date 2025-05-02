@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/chat/message_title.dart';
 import 'package:learnbound/screen/chat/questions_dialog.dart';
-import 'package:learnbound/util/design/custom_snackbar.dart';
+import 'package:learnbound/util/design/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

@@ -1,17 +1,18 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:iconify_flutter/iconify_flutter.dart';
+import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:learnbound/screen/chat/chat_screen.dart';
 import 'package:learnbound/screen/host/host_screen.dart';
-import 'package:learnbound/screen/quiz/quiz_home.dart';
+import 'package:learnbound/screen/log_screen.dart';
+import 'package:learnbound/screen/quiz/quiz_main.dart';
 import 'package:learnbound/util/design/wave.dart';
-import 'package:flutter/material.dart';
-import 'package:iconify_flutter/iconify_flutter.dart';
-import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:provider/provider.dart';
 
-import '../util/design/custom_snackbar.dart';
+import '../util/design/snackbar.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -174,6 +175,16 @@ class _HomeScreenWidget extends State<HomeScreen> {
                 },
               ),
               ListTile(
+                leading: Icon(Icons.history), // More appropriate for logs
+                title: Text('Logs'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SessionLogScreen()),
+                  );
+                },
+              ),
+              ListTile(
                 leading: Icon(Icons.exit_to_app),
                 title: Text('Logout'),
                 onTap: _logout,
@@ -181,66 +192,67 @@ class _HomeScreenWidget extends State<HomeScreen> {
             ],
           ),
         ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            bool isPortrait = constraints.maxHeight > constraints.maxWidth;
-            double imageSize = isPortrait ? 300 : 250;
-            double buttonWidth = isPortrait ? 200.0 : 250.0;
-
-            return Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // your content here
-                        Padding(
-                          padding: EdgeInsets.only(bottom: imagePaddingBottom),
-                          child: Image.asset(
-                            'assets/logoonly.png',
-                            height: imageSize,
-                            width: imageSize,
-                          ),
-                        ),
-                        SizedBox(height: buttonSpacing),
-                        _buildButton('Host', buttonWidth, () {
-                          _createHost(context);
-                        },
-                            icon: const Iconify(Mdi.account_multiple,
-                                size: 24, color: Colors.black)),
-                        SizedBox(height: buttonSpacing),
-                        _buildButton('Join', buttonWidth, () {
-                          _joinChat(context);
-                        },
-                            icon: const Iconify(Mdi.lan_connect,
-                                size: 24, color: Colors.black)),
-                        SizedBox(height: buttonSpacing),
-                        _buildButton('Quiz-PAD', buttonWidth, () {
-                          _joinQuiz(context);
-                        },
-                            icon: const Iconify(Mdi.assignment,
-                                size: 24, color: Colors.black)),
-                      ],
-                    ),
-                  ),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Your content here
+              Padding(
+                padding: EdgeInsets.only(bottom: imagePaddingBottom),
+                child: Image.asset(
+                  'assets/logoonly.png',
+                  height: 300,
+                  width: 250,
                 ),
+              ),
+              SizedBox(height: buttonSpacing),
+              _buildButton('Host', 200, () {
+                _createHost(context);
+              },
+                  icon: const Iconify(Mdi.account_multiple,
+                      size: 24, color: Colors.black)),
+              SizedBox(height: buttonSpacing),
+              _buildButton('Join', 200, () {
+                _joinChat(context);
+              },
+                  icon: const Iconify(Mdi.lan_connect,
+                      size: 24, color: Colors.black)),
+              SizedBox(height: buttonSpacing),
+              _buildButton('Quiz-PAD', 200, () {
+                _joinQuiz(context);
+              },
+                  icon: const Iconify(Mdi.assignment,
+                      size: 24, color: Colors.black)),
 
-                // Footer
-                ClipPath(
-                  clipper: BottomClipper(),
-                  child: Container(
-                    height: screenSize.height * 0.20,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(color: Color(0xFFD7C19C)),
-                  ),
+              // Footer
+              ClipPath(
+                clipper: BottomClipper(),
+                child: Container(
+                  height: _getFooterHeight(
+                      context), // Calculate dynamic footer height
+                  width: double.infinity,
+                  decoration: const BoxDecoration(color: Color(0xFFD7C19C)),
                 ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  double _getFooterHeight(BuildContext context) {
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    if (screenHeight < 600) {
+      // For small devices like phones
+      return screenHeight * 0.25; // 25% of screen height
+    } else if (screenHeight >= 600 && screenHeight < 900) {
+      // For medium devices like small tablets
+      return screenHeight * 0.30; // 30% of screen height
+    } else {
+      // For large devices like tablets and large screens
+      return screenHeight * 0.35; // 35% of screen height
+    }
   }
 
   Widget _buildButton(

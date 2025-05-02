@@ -1,17 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:learnbound/models/question.dart';
-import 'package:learnbound/screen/quiz/quiz_server.dart';
-import 'package:learnbound/screen/quiz/quiz_take.dart';
-import 'package:learnbound/util/design/appbar.dart';
-import 'package:learnbound/util/design/snackbar.dart';
-import 'package:learnbound/util/server.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:filepicker_windows/filepicker_windows.dart' as windows_picker;
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
+import 'package:learnbound/models/question.dart';
+import 'package:learnbound/screen/quiz/quiz_server.dart';
+import 'package:learnbound/screen/quiz/quiz_take.dart';
+import 'package:learnbound/util/back_dialog.dart';
+import 'package:learnbound/util/design/appbar.dart';
+import 'package:learnbound/util/design/snackbar.dart';
+import 'package:learnbound/util/server.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'question_creator.dart';
@@ -118,12 +119,24 @@ class _QuizScreenState extends State<QuizScreen> {
       final file = File('$path/preset_$timestamp.json');
 
       await file.writeAsString(jsonString);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Preset saved: ${file.path}')),
+
+      CustomSnackBar.show(
+        context,
+        'Preset saved: ${file.path}',
+        backgroundColor: Colors.green,
+        icon: Icons.save,
+        iconColor: Colors.white,
+        textColor: Colors.white,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving preset: $e')),
+      CustomSnackBar.show(
+        context,
+        'Error saving preset: $e',
+        isSuccess: false,
+        backgroundColor: Colors.red,
+        icon: Icons.error,
+        iconColor: Colors.white,
+        textColor: Colors.white,
       );
     }
   }
@@ -134,6 +147,107 @@ class _QuizScreenState extends State<QuizScreen> {
     final files =
         dir.listSync().where((f) => f.path.endsWith('.json')).toList();
     return files;
+  }
+
+  Future<void> savePreset(BuildContext context) async {
+    TextEditingController fileNameController = TextEditingController();
+
+    // Show dialog to ask for file name
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Enter File Name"),
+          content: TextField(
+            controller: fileNameController,
+            decoration: InputDecoration(hintText: 'Enter a name for your file'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // Close the dialog without saving
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Get the file name from the TextField
+                String fileName = fileNameController.text.trim();
+
+                if (fileName.isEmpty) {
+                  // If the file name is empty, show an error
+                  CustomSnackBar.show(
+                    context,
+                    'Please enter a valid file name.',
+                    backgroundColor: Colors.orange,
+                    icon: Icons.warning,
+                    iconColor: Colors.white,
+                    textColor: Colors.white,
+                  );
+                  return;
+                }
+
+                try {
+                  // Get the directory to save the file in (app's documents directory)
+                  final directory = await getApplicationDocumentsDirectory();
+                  final filePath =
+                      '${directory.path}/quiz_presets/$fileName.json';
+                  final file = File(filePath);
+
+                  // Check if the file already exists
+                  if (await file.exists()) {
+                    // If the file exists, show a warning snackbar
+                    CustomSnackBar.show(
+                      context,
+                      'A file with this name already exists.',
+                      backgroundColor: Colors.orange,
+                      icon: Icons.warning,
+                      iconColor: Colors.white,
+                      textColor: Colors.white,
+                    );
+                    return;
+                  }
+
+                  // Convert your questions to JSON
+                  final jsonQuestions =
+                      questions.map((q) => q.toJson()).toList();
+                  final jsonString = jsonEncode(jsonQuestions);
+
+                  // Save the file with the custom name
+                  await file.writeAsString(jsonString);
+
+                  // Notify the user of successful save
+                  CustomSnackBar.show(
+                    context,
+                    'Preset saved successfully as $fileName.json',
+                    backgroundColor: Colors.green,
+                    icon: Icons.save,
+                    iconColor: Colors.white,
+                    textColor: Colors.white,
+                  );
+
+                  // Close the dialog
+                  Navigator.pop(context);
+                } catch (e) {
+                  // Handle any errors during file saving
+                  CustomSnackBar.show(
+                    context,
+                    'Error saving preset: $e',
+                    isSuccess: false,
+                    backgroundColor: Colors.red,
+                    icon: Icons.error,
+                    iconColor: Colors.white,
+                    textColor: Colors.white,
+                  );
+                }
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showLoadPresetDialog() async {
@@ -160,27 +274,53 @@ class _QuizScreenState extends State<QuizScreen> {
                         setState(() {
                           questions.clear();
                         });
-                        Future.delayed(Duration(milliseconds: 500));
 
-                        // Clear the list after the delay
+                        // Delay before clearing the list
+                        await Future.delayed(Duration(milliseconds: 500));
 
-                        final content = await File(file.path).readAsString();
-                        final jsonData = jsonDecode(content);
-                        if (jsonData is List) {
-                          final loadedQuestions = jsonData
-                              .map((e) => Question.fromJson(e))
-                              .toList();
-                          setState(() {
-                            questions =
-                                loadedQuestions; // Assign the new questions
-                          });
+                        try {
+                          final content = await File(file.path).readAsString();
+                          final jsonData = jsonDecode(content);
 
+                          if (jsonData is List) {
+                            final loadedQuestions = jsonData
+                                .map((e) => Question.fromJson(e))
+                                .toList();
+
+                            setState(() {
+                              questions = loadedQuestions;
+                            });
+
+                            if (mounted) {
+                              Future.delayed(Duration.zero, () {
+                                if (mounted) {
+                                  CustomSnackBar.show(
+                                    context,
+                                    'Preset loaded successfully',
+                                    backgroundColor: Colors.green,
+                                    icon: Icons.check_circle,
+                                    iconColor: Colors.white,
+                                    textColor: Colors.white,
+                                  );
+                                }
+                              });
+                            }
+                          } else {
+                            throw FormatException('Invalid file format');
+                          }
+                        } catch (e) {
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Preset loaded successfully'),
-                              ),
-                            );
+                            Future.delayed(Duration.zero, () {
+                              if (mounted) {
+                                CustomSnackBar.show(
+                                  context,
+                                  'Failed to load preset: ${e.toString()}',
+                                  backgroundColor: Colors.red,
+                                  iconColor: Colors.white,
+                                  textColor: Colors.white,
+                                );
+                              }
+                            });
                           }
                         }
                       },
@@ -282,83 +422,16 @@ class _QuizScreenState extends State<QuizScreen> {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error importing questions: $e')),
+      CustomSnackBar.show(
+        context,
+        'Error importing questions: $e',
+        isSuccess: false,
+        backgroundColor: Colors.red,
+        icon: Icons.error,
+        iconColor: Colors.white,
+        textColor: Colors.white,
       );
     }
-  }
-
-  Future<void> savePreset(BuildContext context) async {
-    TextEditingController fileNameController = TextEditingController();
-
-    // Show dialog to ask for file name
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Enter File Name"),
-          content: TextField(
-            controller: fileNameController,
-            decoration: InputDecoration(hintText: 'Enter a name for your file'),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                // Close the dialog without saving
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                // Get the file name from the TextField
-                String fileName = fileNameController.text.trim();
-
-                if (fileName.isEmpty) {
-                  // If the file name is empty, show an error
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Please enter a valid file name.')),
-                  );
-                  return;
-                }
-
-                try {
-                  // Convert your questions to JSON
-                  final jsonQuestions =
-                      questions.map((q) => q.toJson()).toList();
-                  final jsonString = jsonEncode(jsonQuestions);
-
-                  // Get the directory to save the file in (app's documents directory)
-                  final directory = await getApplicationDocumentsDirectory();
-                  final filePath =
-                      '${directory.path}/quiz_presets/$fileName.json';
-
-                  // Save the file with the custom name
-                  final file = File(filePath);
-                  await file.writeAsString(jsonString);
-
-                  // Notify the user of successful save
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            'Preset saved successfully as $fileName.json')),
-                  );
-
-                  // Close the dialog
-                  Navigator.pop(context);
-                } catch (e) {
-                  // Handle any errors during file saving
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error saving preset: $e')),
-                  );
-                }
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void addOrUpdateQuestion(Question question) {
@@ -461,30 +534,51 @@ class _QuizScreenState extends State<QuizScreen> {
               throw FormatException('Expected a JSON list, got: $jsonData');
             }
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error parsing questions: $e')),
-            );
+            CustomSnackBar.show(context, 'Error parsing questions: $e',
+                isSuccess: false,
+                backgroundColor: Colors.red,
+                icon: Icons.error,
+                iconColor: Colors.white,
+                textColor: Colors.white);
           } finally {
             socket.close();
           }
         },
         onError: (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Connection error: $e')),
+          CustomSnackBar.show(
+            context,
+            'Connection error: $e',
+            isSuccess: false,
+            backgroundColor: Colors.redAccent,
+            icon: Icons.signal_wifi_off,
+            iconColor: Colors.white,
+            textColor: Colors.white,
           );
+
           socket.close();
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to connect to server: $e')),
+      CustomSnackBar.show(
+        context,
+        'Failed to connect to server: $e',
+        isSuccess: false,
+        backgroundColor: Colors.redAccent,
+        icon: Icons.signal_wifi_off,
+        iconColor: Colors.white,
+        textColor: Colors.white,
       );
     }
   }
 
   void _connectToOtherServer(String address) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Connected to non-QUZZIZ server at $address')),
+    CustomSnackBar.show(
+      context,
+      'Connected to non-QUZZIZ server at $address',
+      backgroundColor: Colors.blue, // optional: choose a color you like
+      icon: Icons.wifi, // optional: better matching icon
+      iconColor: Colors.white,
+      textColor: Colors.white,
     );
   }
 
@@ -529,8 +623,13 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarCustom.buildAppBar(
-          context: context, title: "Dashboard", enableBackButton: true),
+      appBar: AppBarCustom(
+        titleText: "Dashboard",
+        showBackButton: true,
+        onBackPressed: () async {
+          return CustomExitDialog.show(context);
+        },
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),

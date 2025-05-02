@@ -1,6 +1,8 @@
-import 'package:learnbound/screen/auth/register/register_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:learnbound/screen/auth/register/register_functions.dart';
+import 'package:learnbound/util/design/appbar.dart';
 
+import '../../../util/back_dialog.dart';
 import 'register_ui.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -26,7 +28,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: RegisterUI.buildAppBar(context, isSmallScreen),
+      appBar: AppBarCustom(
+        titleText: "Sign Up",
+        showBackButton: false,
+        onBackPressed: () async {
+          return CustomExitDialog.show(context);
+        },
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -46,6 +54,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: screenSize.height * 0.03),
                       RegisterUI.buildTextField(
+                        TextInputType.emailAddress,
                         "Email",
                         Icons.email,
                         logic.emailController,
@@ -53,6 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: screenSize.height * 0.02),
                       RegisterUI.buildTextField(
+                        TextInputType.name,
                         "Username",
                         Icons.person,
                         logic.usernameController,
@@ -60,6 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: screenSize.height * 0.02),
                       RegisterUI.buildTextField(
+                        TextInputType.visiblePassword,
                         "Password",
                         Icons.lock,
                         logic.passwordController,
@@ -71,6 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: screenSize.height * 0.02),
                       RegisterUI.buildTextField(
+                        TextInputType.visiblePassword,
                         "Confirm Password",
                         Icons.lock,
                         logic.confirmPasswordController,

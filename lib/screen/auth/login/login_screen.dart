@@ -1,5 +1,5 @@
 
-import 'package:learnbound/screen/auth/login/login_ui.dart';
+import 'package:learnbound/screen/auth/login/login_widget.dart';
 import 'package:flutter/material.dart';
 
 import 'login_functions.dart';

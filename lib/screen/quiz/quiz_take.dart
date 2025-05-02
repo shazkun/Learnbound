@@ -277,8 +277,13 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
   Widget build(BuildContext context) {
     if (widget.questions.isEmpty) {
       return Scaffold(
-        appBar: AppBarCustom.buildAppBar(
-            context: context, title: "Assessment", enableBackButton: true),
+        appBar: AppBarCustom(
+          titleText: "Assessment",
+          showBackButton: true,
+          onBackPressed: () async {
+            return CustomExitDialog.show(context);
+          },
+        ),
         body: const Center(
           child: Text(
             'No questions available.',
@@ -300,12 +305,14 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
         return CustomExitDialog.show(context);
       },
       child: Scaffold(
-          appBar: AppBar(
-            centerTitle: true,
-            title: Text(isReviewMode ? 'Review Answers' : 'Assessment'),
+          appBar: AppBarCustom(
+            onBackPressed: () {
+              return CustomExitDialog.show(context);
+            },
+            titleText: isReviewMode ? 'Review Answers' : 'Assessment',
             backgroundColor: const Color(0xFFD7C19C),
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
+            titleColor: Colors.black,
+            showBackButton: true, // or false depending on your needs
             actions: [
               IconButton(
                 icon: Icon(

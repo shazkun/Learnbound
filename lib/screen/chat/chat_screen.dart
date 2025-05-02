@@ -2,13 +2,13 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/chat/ui/drawing_ui.dart';
 import 'package:learnbound/screen/drawing_screen.dart';
 import 'package:learnbound/screen/multi_server.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:learnbound/util/back_dialog.dart';
 import 'package:provider/provider.dart';
 

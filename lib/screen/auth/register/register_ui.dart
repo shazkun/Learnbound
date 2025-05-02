@@ -67,6 +67,7 @@ class RegisterUI {
   }
 
   static Widget buildTextField(
+    TextInputType keyboardType,
     String label,
     IconData icon,
     TextEditingController controller, {
@@ -76,6 +77,7 @@ class RegisterUI {
     bool isPassword = false,
   }) {
     return TextFormField(
+      keyboardType: keyboardType,
       controller: controller,
       obscureText: obscureText,
       validator: validator,

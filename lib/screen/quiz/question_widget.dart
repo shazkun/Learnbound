@@ -21,17 +21,62 @@ class QuestionList extends StatefulWidget {
 
 class _QuestionListState extends State<QuestionList> {
   int _currentIndex = 0;
-
   bool _isListView = true; // Toggle between list and slide view
+  final TextEditingController _searchController = TextEditingController();
+  List<Question> _filteredQuestions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredQuestions = widget.questions;
+    _searchController.addListener(_filterQuestions);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterQuestions() {
+    setState(() {
+      _filteredQuestions = widget.questions
+          .where((question) => question.text
+              .toLowerCase()
+              .contains(_searchController.text.toLowerCase()))
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final question = widget.questions[_currentIndex];
+    // Ensure that filteredQuestions isn't empty before accessing an element
+    final question = _filteredQuestions.isNotEmpty &&
+            _currentIndex < _filteredQuestions.length
+        ? _filteredQuestions[_currentIndex]
+        : null;
 
     return Stack(
       children: [
         Column(
           children: [
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'Search Questions',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.black),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+
             // View Toggle (Icons for list and slide view)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -59,18 +104,18 @@ class _QuestionListState extends State<QuestionList> {
             ),
             SizedBox(height: 16),
 
-            if (!_isListView)
+            if (!_isListView && _filteredQuestions.isNotEmpty)
               Text(
-                "${_currentIndex + 1} / ${widget.questions.length}",
+                "${_currentIndex + 1} / ${_filteredQuestions.length}",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
 
             Expanded(
               child: _isListView
                   ? ListView.builder(
-                      itemCount: widget.questions.length,
+                      itemCount: _filteredQuestions.length,
                       itemBuilder: (context, index) {
-                        final question = widget.questions[index];
+                        final question = _filteredQuestions[index];
 
                         return FadeInUp(
                           delay: Duration(milliseconds: index * 100),
@@ -78,19 +123,21 @@ class _QuestionListState extends State<QuestionList> {
                         );
                       },
                     )
-                  : SingleChildScrollView(
-                      child: FadeInUp(
-                        delay: Duration(milliseconds: _currentIndex * 100),
-                        child: buildQuestionCard(question, _currentIndex),
-                      ),
-                    ),
+                  : (_filteredQuestions.isNotEmpty
+                      ? SingleChildScrollView(
+                          child: FadeInUp(
+                            delay: Duration(milliseconds: _currentIndex * 100),
+                            child: buildQuestionCard(question!, _currentIndex),
+                          ),
+                        )
+                      : Center(child: Text('No questions found'))),
             ),
             SizedBox(height: 60), // Reserve space for the arrows
           ],
         ),
 
         // Only show arrows in Slide View
-        if (!_isListView)
+        if (!_isListView && _filteredQuestions.isNotEmpty)
           Positioned(
             bottom: 10,
             left: 0,
@@ -112,10 +159,10 @@ class _QuestionListState extends State<QuestionList> {
                 SizedBox(width: 20),
                 IconButton(
                   icon: Icon(Icons.arrow_forward_ios_rounded,
-                      color: _currentIndex < widget.questions.length - 1
+                      color: _currentIndex < _filteredQuestions.length - 1
                           ? Colors.black
                           : Colors.grey),
-                  onPressed: _currentIndex < widget.questions.length - 1
+                  onPressed: _currentIndex < _filteredQuestions.length - 1
                       ? () {
                           setState(() {
                             _currentIndex++;

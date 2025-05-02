@@ -13,7 +13,7 @@ class ServerList extends StatefulWidget {
 }
 
 class _ServerListState extends State<ServerList> {
-  List<String> servers = [];
+  List<String> servers = ["192.168.193.252 - ROBERT", "192.168.193.160 - SEAN"];
   RawDatagramSocket? socket;
 
   @override
