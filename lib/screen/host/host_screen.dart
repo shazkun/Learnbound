@@ -185,6 +185,7 @@ class _HostScreenState extends State<HostScreen>
 
   void _handleClientDisconnect(Socket client, String clientId) {
     if (!mounted) return;
+    
     final nickname = _clientNicknames[client] ?? client.remoteAddress.address;
     _addSystemMessage('$nickname disconnected.');
     _clientsNotifier.value =

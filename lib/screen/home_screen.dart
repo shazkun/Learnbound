@@ -98,7 +98,6 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
     const double imagePaddingBottom = 20.0;
     const double buttonSpacing = 10.0;
 

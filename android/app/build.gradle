@@ -7,11 +7,14 @@ plugins {
 android {
     namespace = "com.example.learnbound_flutter"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973" // You can specify the exact NDK version you want to use here, or keep it as flutter.ndkVersion
 
     defaultConfig {
-        
-        minSdkVersion 30  // ✅ Corrected from "mindSdkVersion"
+        applicationId = "com.example.learnbound_flutter"
+        minSdkVersion 30  // Corrected minSdkVersion, API Level 30 (Android 12)
+        targetSdkVersion 33 // Optional: Make sure your targetSdk is aligned with the current Android versions
+        versionCode flutter.versionCode.toInteger()  // Ensure versionCode is set
+        versionName flutter.versionName  // Ensure versionName is set
     }
 
     compileOptions {
@@ -25,13 +28,12 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // Configure signing config for release (replace with actual signing config when ready)
+            signingConfig = signingConfigs.debug  // For development, but should be replaced with proper release config
         }
     }
 }
 
 flutter {
-    source = "../.."
+    source = "../.."  // Make sure the relative path is correct for your project
 }
