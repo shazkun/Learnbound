@@ -2,6 +2,7 @@ import 'package:learnbound/screen/auth/register/register_screen.dart'
     show RegisterScreen;
 import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Widget buildLoginUI({
   required BuildContext context,
@@ -104,14 +105,15 @@ Widget buildLoginUI({
                             borderRadius: BorderRadius.circular(15),
                             borderSide: BorderSide.none,
                           ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              isPasswordVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                            ),
-                            onPressed: togglePasswordVisibility,
-                          ),
+                          suffixIcon: !rememberMe
+                              ? IconButton(
+                                  icon: Icon(
+                                    isPasswordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                  ),
+                                  onPressed: togglePasswordVisibility)
+                              : null,
                           contentPadding: EdgeInsets.symmetric(
                             vertical: isSmallScreen ? 12 : 16,
                             horizontal: 10,
@@ -130,10 +132,21 @@ Widget buildLoginUI({
                               borderRadius: BorderRadius.circular(5),
                             ),
                             activeColor: Colors.grey,
-                            onChanged: toggleRememberMe,
+                            onChanged: (value) async {
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setBool('rememberMe', value ?? false);
+                              toggleRememberMe(value);
+                            },
                           ),
                           GestureDetector(
-                            onTap: () => toggleRememberMe(!rememberMe),
+                            onTap: () async {
+                              final newValue = !rememberMe;
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setBool('rememberMe', newValue);
+                              toggleRememberMe(newValue);
+                            },
                             child: Text(
                               "Remember Me",
                               style: TextStyle(

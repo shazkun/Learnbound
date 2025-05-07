@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:learnbound/models/question.dart';
+import 'package:learnbound/screen/home_screen.dart';
 import 'package:learnbound/screen/quiz/quiz_server.dart';
 import 'package:learnbound/screen/quiz/quiz_take.dart';
 import 'package:learnbound/util/back_dialog.dart';
@@ -94,44 +95,219 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void randomizeQuestions() {
     setState(() {
-      questions.shuffle(); // Shuffle the list of questions
+      questions.shuffle();
     });
   }
 
   Future<String> getPresetsDirectoryPath() async {
     final dir = await getApplicationDocumentsDirectory();
     final presetDir = Directory('${dir.path}/quiz_presets');
-
     if (!await presetDir.exists()) {
       await presetDir.create(recursive: true);
     }
-
     return presetDir.path;
   }
 
-  Future<void> savePresetToFolder() async {
+  Future<void> savePreset(BuildContext context) async {
+    final TextEditingController fileNameController = TextEditingController();
+    bool overwriteFile = false;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Save Quiz Preset',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 24),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: fileNameController,
+                      decoration: InputDecoration(
+                        hintText: 'Enter preset name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.description),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: overwriteFile,
+                          onChanged: (value) {
+                            setDialogState(() {
+                              overwriteFile = value ?? false;
+                            });
+                          },
+                        ),
+                        const Text('Overwrite if exists'),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed: () async {
+                            final fileName = fileNameController.text.trim();
+                            if (fileName.isEmpty) {
+                              CustomSnackBar.show(
+                                context,
+                                'Please enter a valid file name',
+                                backgroundColor: Colors.orange,
+                                icon: Icons.warning,
+                                iconColor: Colors.white,
+                                textColor: Colors.white,
+                              );
+                              return;
+                            }
+
+                            try {
+                              final directory =
+                                  await getApplicationDocumentsDirectory();
+                              final filePath =
+                                  '${directory.path}/quiz_presets/$fileName.json';
+                              final file = File(filePath);
+
+                              if (await file.exists() && !overwriteFile) {
+                                CustomSnackBar.show(
+                                  context,
+                                  'File already exists. Check overwrite option.',
+                                  backgroundColor: Colors.orange,
+                                  icon: Icons.warning,
+                                  iconColor: Colors.white,
+                                  textColor: Colors.white,
+                                );
+                                return;
+                              }
+
+                              final jsonQuestions =
+                                  questions.map((q) => q.toJson()).toList();
+                              final jsonString = jsonEncode(jsonQuestions);
+                              await file.writeAsString(jsonString);
+
+                              CustomSnackBar.show(
+                                context,
+                                'Preset saved as $fileName.json',
+                                backgroundColor: Colors.green,
+                                icon: Icons.save,
+                                iconColor: Colors.white,
+                                textColor: Colors.white,
+                              );
+
+                              Navigator.pop(context);
+                            } catch (e) {
+                              CustomSnackBar.show(
+                                context,
+                                'Error saving preset: $e',
+                                isSuccess: false,
+                                backgroundColor: Colors.red,
+                                icon: Icons.error,
+                                iconColor: Colors.white,
+                                textColor: Colors.white,
+                              );
+                            }
+                          },
+                          child: const Text(
+                            'Save',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> deletePreset(String filePath) async {
     try {
-      final jsonQuestions = questions.map((q) => q.toJson()).toList();
-      final jsonString = jsonEncode(jsonQuestions);
-
-      final path = await getPresetsDirectoryPath();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final file = File('$path/preset_$timestamp.json');
-
-      await file.writeAsString(jsonString);
-
-      CustomSnackBar.show(
-        context,
-        'Preset saved: ${file.path}',
-        backgroundColor: Colors.green,
-        icon: Icons.save,
-        iconColor: Colors.white,
-        textColor: Colors.white,
-      );
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+        CustomSnackBar.show(
+          context,
+          'Preset deleted successfully',
+          backgroundColor: Colors.green,
+          icon: Icons.delete,
+          iconColor: Colors.white,
+          textColor: Colors.white,
+        );
+      } else {
+        CustomSnackBar.show(
+          context,
+          'Preset not found',
+          backgroundColor: Colors.orange,
+          icon: Icons.warning,
+          iconColor: Colors.white,
+          textColor: Colors.white,
+        );
+      }
     } catch (e) {
       CustomSnackBar.show(
         context,
-        'Error saving preset: $e',
+        'Error deleting preset: $e',
         isSuccess: false,
         backgroundColor: Colors.red,
         icon: Icons.error,
@@ -149,191 +325,150 @@ class _QuizScreenState extends State<QuizScreen> {
     return files;
   }
 
-  Future<void> savePreset(BuildContext context) async {
-    TextEditingController fileNameController = TextEditingController();
-
-    // Show dialog to ask for file name
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Enter File Name"),
-          content: TextField(
-            controller: fileNameController,
-            decoration: InputDecoration(hintText: 'Enter a name for your file'),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                // Close the dialog without saving
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                // Get the file name from the TextField
-                String fileName = fileNameController.text.trim();
-
-                if (fileName.isEmpty) {
-                  // If the file name is empty, show an error
-                  CustomSnackBar.show(
-                    context,
-                    'Please enter a valid file name.',
-                    backgroundColor: Colors.orange,
-                    icon: Icons.warning,
-                    iconColor: Colors.white,
-                    textColor: Colors.white,
-                  );
-                  return;
-                }
-
-                try {
-                  // Get the directory to save the file in (app's documents directory)
-                  final directory = await getApplicationDocumentsDirectory();
-                  final filePath =
-                      '${directory.path}/quiz_presets/$fileName.json';
-                  final file = File(filePath);
-
-                  // Check if the file already exists
-                  if (await file.exists()) {
-                    // If the file exists, show a warning snackbar
-                    CustomSnackBar.show(
-                      context,
-                      'A file with this name already exists.',
-                      backgroundColor: Colors.orange,
-                      icon: Icons.warning,
-                      iconColor: Colors.white,
-                      textColor: Colors.white,
-                    );
-                    return;
-                  }
-
-                  // Convert your questions to JSON
-                  final jsonQuestions =
-                      questions.map((q) => q.toJson()).toList();
-                  final jsonString = jsonEncode(jsonQuestions);
-
-                  // Save the file with the custom name
-                  await file.writeAsString(jsonString);
-
-                  // Notify the user of successful save
-                  CustomSnackBar.show(
-                    context,
-                    'Preset saved successfully as $fileName.json',
-                    backgroundColor: Colors.green,
-                    icon: Icons.save,
-                    iconColor: Colors.white,
-                    textColor: Colors.white,
-                  );
-
-                  // Close the dialog
-                  Navigator.pop(context);
-                } catch (e) {
-                  // Handle any errors during file saving
-                  CustomSnackBar.show(
-                    context,
-                    'Error saving preset: $e',
-                    isSuccess: false,
-                    backgroundColor: Colors.red,
-                    icon: Icons.error,
-                    iconColor: Colors.white,
-                    textColor: Colors.white,
-                  );
-                }
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showLoadPresetDialog() async {
     final files = await getAllPresets();
 
+    if (!mounted) return;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Select a Preset'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: files.isEmpty
-              ? Text('No presets found.')
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: files.length,
-                  itemBuilder: (context, index) {
-                    final file = files[index];
-                    final fileName = file.path.split('/').last;
-                    return ListTile(
-                      title: Text(fileName),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        setState(() {
-                          questions.clear();
-                        });
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Load Preset',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 24),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.maxFinite,
+                child: files.isEmpty
+                    ? const Text(
+                        'No presets found.',
+                        style: TextStyle(fontSize: 16),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: files.length,
+                        itemBuilder: (context, index) {
+                          final file = files[index];
+                          final fileName = file.path.split('/').last;
+                          return ListTile(
+                            title: Text(fileName),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Confirm Delete'),
+                                    content: Text(
+                                        'Are you sure you want to delete $fileName?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await deletePreset(file.path);
+                                  if (!mounted) return;
+                                  Navigator.pop(context);
+                                  _showLoadPresetDialog();
+                                }
+                              },
+                            ),
+                            onTap: () async {
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              setState(() {
+                                questions.clear();
+                              });
+                              CustomSnackBar.show(
+                                  context, 'Preset loaded successfully',
+                                  backgroundColor: Colors.green,
+                                  icon: Icons.check_circle,
+                                  iconColor: Colors.white,
+                                  textColor: Colors.white);
 
-                        // Delay before clearing the list
-                        await Future.delayed(Duration(milliseconds: 500));
+                              await Future.delayed(Duration(milliseconds: 500));
 
-                        try {
-                          final content = await File(file.path).readAsString();
-                          final jsonData = jsonDecode(content);
+                              try {
+                                final content =
+                                    await File(file.path).readAsString();
+                                final jsonData = jsonDecode(content);
 
-                          if (jsonData is List) {
-                            final loadedQuestions = jsonData
-                                .map((e) => Question.fromJson(e))
-                                .toList();
+                                if (jsonData is List) {
+                                  final loadedQuestions = jsonData
+                                      .map((e) => Question.fromJson(e))
+                                      .toList();
 
-                            setState(() {
-                              questions = loadedQuestions;
-                            });
-
-                            if (mounted) {
-                              Future.delayed(Duration.zero, () {
+                                  if (!mounted) return;
+                                  setState(() {
+                                    questions = loadedQuestions;
+                                  });
+                                } else {
+                                  throw FormatException('Invalid file format');
+                                }
+                              } catch (e) {
                                 if (mounted) {
                                   CustomSnackBar.show(
                                     context,
-                                    'Preset loaded successfully',
-                                    backgroundColor: Colors.green,
-                                    icon: Icons.check_circle,
+                                    'Failed to load preset: ${e.toString()}',
+                                    backgroundColor: Colors.red,
                                     iconColor: Colors.white,
                                     textColor: Colors.white,
                                   );
                                 }
-                              });
-                            }
-                          } else {
-                            throw FormatException('Invalid file format');
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            Future.delayed(Duration.zero, () {
-                              if (mounted) {
-                                CustomSnackBar.show(
-                                  context,
-                                  'Failed to load preset: ${e.toString()}',
-                                  backgroundColor: Colors.red,
-                                  iconColor: Colors.white,
-                                  textColor: Colors.white,
-                                );
                               }
-                            });
-                          }
-                        }
-                      },
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -361,12 +496,10 @@ class _QuizScreenState extends State<QuizScreen> {
 
         List<Question> tempQuestions = [];
 
-        // If it's a JSON file
         if (filePath.endsWith('.json')) {
           List<dynamic> jsonData = jsonDecode(content);
           tempQuestions = jsonData.map((e) => Question.fromJson(e)).toList();
         } else {
-          // If it's a text file
           List<String> lines = content.split('\n');
           tempQuestions = lines
               .where((line) => line.contains('|'))
@@ -403,19 +536,14 @@ class _QuizScreenState extends State<QuizScreen> {
               .toList();
         }
 
-        // Process the questions in chunks of 10
         int chunkSize = 10;
         for (int i = 0; i < tempQuestions.length; i += chunkSize) {
           int end = (i + chunkSize < tempQuestions.length)
               ? i + chunkSize
               : tempQuestions.length;
 
-          // Create a batch of questions to add to the UI
           List<Question> chunk = tempQuestions.sublist(i, end);
-
-          // Wait for 50ms (or adjust based on your needs) to avoid lag
           await Future.delayed(Duration(milliseconds: 50));
-
           setState(() {
             questions.addAll(chunk);
           });
@@ -554,7 +682,6 @@ class _QuizScreenState extends State<QuizScreen> {
             iconColor: Colors.white,
             textColor: Colors.white,
           );
-
           socket.close();
         },
       );
@@ -575,8 +702,8 @@ class _QuizScreenState extends State<QuizScreen> {
     CustomSnackBar.show(
       context,
       'Connected to non-QUZZIZ server at $address',
-      backgroundColor: Colors.blue, // optional: choose a color you like
-      icon: Icons.wifi, // optional: better matching icon
+      backgroundColor: Colors.blue,
+      icon: Icons.wifi,
       iconColor: Colors.white,
       textColor: Colors.white,
     );
@@ -627,7 +754,8 @@ class _QuizScreenState extends State<QuizScreen> {
         titleText: "Dashboard",
         showBackButton: true,
         onBackPressed: () async {
-          return CustomExitDialog.show(context);
+          return CustomExitDialog.show(context,
+              usePushReplacement: true, targetPage: HomeScreen());
         },
       ),
       body: SafeArea(
@@ -668,38 +796,6 @@ class _QuizScreenState extends State<QuizScreen> {
                     onPressed: toggleBroadcast,
                   ),
                   ElevatedButton.icon(
-                    icon: Iconify(
-                      Mdi.clear,
-                      size: 24,
-                      color: Colors.white,
-                    ),
-                    label: Text('Clear'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
-                      textStyle: const TextStyle(fontSize: 16),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        if (questions.isNotEmpty) {
-                          questions.clear();
-                        } else {
-                          CustomSnackBar.show(
-                            context,
-                            'Question list is empty.',
-                            backgroundColor: Colors.amber,
-                            icon: Icons
-                                .warning, // <-- use only IconData like this
-                            iconColor: Colors.black,
-                            textColor: Colors.black,
-                          );
-                        }
-                      });
-                    },
-                  ),
-                  ElevatedButton.icon(
                     icon: const Iconify(Mdi.connection,
                         size: 24, color: Colors.white),
                     label: const Text('Connect to Server'),
@@ -737,6 +833,28 @@ class _QuizScreenState extends State<QuizScreen> {
                       textStyle: const TextStyle(fontSize: 16),
                     ),
                     onPressed: importQuestions,
+                  ),
+                  ElevatedButton.icon(
+                    icon: Iconify(
+                      Mdi.clear,
+                      size: 24,
+                      color: Colors.white,
+                    ),
+                    label: Text('Clear'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: questions.isNotEmpty
+                        ? () => setState(() {
+                              questions.clear();
+                              CustomSnackBar.show(
+                                  context, "Questions cleared.");
+                            })
+                        : null,
                   ),
                   ElevatedButton.icon(
                     icon: const Iconify(Mdi.shuffle,

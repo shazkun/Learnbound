@@ -12,6 +12,8 @@ import 'package:learnbound/util/server.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../home_screen.dart';
+
 class HostScreen extends StatefulWidget {
   const HostScreen({super.key});
 
@@ -65,28 +67,12 @@ class _HostScreenState extends State<HostScreen>
     _animationController.forward();
   }
 
-  Future<String?> _getLocalIp() async {
-    try {
-      final interfaces = await NetworkInterface.list();
-      return interfaces
-          .expand((i) => i.addresses)
-          .firstWhere(
-            (addr) => addr.type == InternetAddressType.IPv4 && !addr.isLoopback,
-            orElse: () => InternetAddress('localhost'),
-          )
-          .address;
-    } catch (e) {
-      print('Error getting local IP: $e');
-      return 'localhost';
-    }
-  }
-
   Future<void> _startServer() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _broadcast.setBroadcastName(userProvider.user?.username ?? "Host");
     try {
       _serverSocket = await ServerSocket.bind('0.0.0.0', 4040, shared: true);
-      final localIp = await _getLocalIp();
+      final localIp = await _broadcast.getLocalIp();
       _addSystemMessage('Server started at $localIp:4040');
       _serverSocket!.listen(
         _handleClientConnection,
@@ -185,7 +171,7 @@ class _HostScreenState extends State<HostScreen>
 
   void _handleClientDisconnect(Socket client, String clientId) {
     if (!mounted) return;
-    
+
     final nickname = _clientNicknames[client] ?? client.remoteAddress.address;
     _addSystemMessage('$nickname disconnected.');
     _clientsNotifier.value =
@@ -391,39 +377,41 @@ class _HostScreenState extends State<HostScreen>
 
   Future<void> _saveSessionLog() async {
     try {
-      final endTime = DateTime.now().toUtc();
-      final participantsLog = _participants.keys.map((nickname) {
-        final startTime =
-            _participantConnectionTimes[nickname] ?? _sessionStartTime;
-        final duration = endTime.difference(startTime).inSeconds;
-        return {
-          'nickname': nickname,
-          'connection_duration_seconds': duration,
+      if (_lobbyState == "start") {
+        final endTime = DateTime.now().toUtc();
+        final participantsLog = _participants.keys.map((nickname) {
+          final startTime =
+              _participantConnectionTimes[nickname] ?? _sessionStartTime;
+          final duration = endTime.difference(startTime).inSeconds;
+          return {
+            'nickname': nickname,
+            'connection_duration_seconds': duration,
+          };
+        }).toList();
+
+        final log = {
+          'session': {
+            'start_time': _sessionStartTime.toIso8601String(),
+            'end_time': endTime.toIso8601String(),
+            'mode': _selectedMode,
+          },
+          'messages': _messagesNotifier.value,
+          'sticky_questions': _stickyQuestions,
+          'multiple_choice_responses': _multipleChoiceResponses,
+          'participants': participantsLog,
         };
-      }).toList();
 
-      final log = {
-        'session': {
-          'start_time': _sessionStartTime.toIso8601String(),
-          'end_time': endTime.toIso8601String(),
-          'mode': _selectedMode,
-        },
-        'messages': _messagesNotifier.value,
-        'sticky_questions': _stickyQuestions,
-        'multiple_choice_responses': _multipleChoiceResponses,
-        'participants': participantsLog,
-      };
-
-      final tempDir = await getTemporaryDirectory();
-      final timestamp = endTime
-          .toIso8601String()
-          .replaceAll(':', '')
-          .replaceAll('-', '')
-          .split('.')
-          .first;
-      final file = File('${tempDir.path}/session_$timestamp.json');
-      await file.writeAsString(jsonEncode(log), flush: true);
-      print('Session log saved to ${file.path}');
+        final tempDir = await getTemporaryDirectory();
+        final timestamp = endTime
+            .toIso8601String()
+            .replaceAll(':', '')
+            .replaceAll('-', '')
+            .split('.')
+            .first;
+        final file = File('${tempDir.path}/session_$timestamp.json');
+        await file.writeAsString(jsonEncode(log), flush: true);
+        print('Session log saved to ${file.path}');
+      }
     } catch (e) {
       print('Error saving session log: $e');
     }
@@ -441,7 +429,9 @@ class _HostScreenState extends State<HostScreen>
     _saveSessionLog();
     _questionController.dispose();
     _animationController.dispose();
-    _clientStreams.values.forEach((controller) => controller.close());
+    for (var controller in _clientStreams.values) {
+      controller.close();
+    }
     _messagesNotifier.dispose();
     _clientsNotifier.dispose();
     super.dispose();
@@ -451,7 +441,8 @@ class _HostScreenState extends State<HostScreen>
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        final shouldExit = await CustomExitDialog.show(context);
+        final shouldExit =
+            await CustomExitDialog.show(context, usePushReplacement: false);
         if (shouldExit) {
           await _saveSessionLog();
         }
@@ -464,7 +455,8 @@ class _HostScreenState extends State<HostScreen>
           selectedMode: _selectedMode,
           onSettingsPressed: _showModeSelector,
           onBackPressed: () async {
-            final shouldExit = await CustomExitDialog.show(context);
+            final shouldExit = await CustomExitDialog.show(context,
+                usePushReplacement: true, targetPage: HomeScreen());
             if (shouldExit) {
               await _saveSessionLog();
               _serverSocket?.close();

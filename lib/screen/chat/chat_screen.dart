@@ -10,6 +10,7 @@ import 'package:learnbound/screen/chat/ui/drawing_ui.dart';
 import 'package:learnbound/screen/drawing_screen.dart';
 import 'package:learnbound/screen/multi_server.dart';
 import 'package:learnbound/util/back_dialog.dart';
+import 'package:learnbound/util/design/snackbar.dart';
 import 'package:provider/provider.dart';
 
 import 'chat_app_bar.dart';
@@ -124,8 +125,8 @@ class _ChatScreenState extends State<ChatScreen>
               _isStarted = false;
 
               _messages.add({'system': true, 'text': 'Host disconnected.'});
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text("Host disconnected.")));
+              CustomSnackBar.show(context, "Host disconnected.",
+                  isSuccess: false);
             });
           } else if (message.startsWith("Removed:")) {
             final question = message.substring(8).trim();
@@ -252,10 +253,9 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   void _showHostWaitSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text("Please wait for the host to start this session.")),
-    );
+    CustomSnackBar.show(
+        context, "Please wait for the host to start this session.",
+        isSuccess: false);
   }
 
   @override
@@ -311,7 +311,7 @@ class _ChatScreenState extends State<ChatScreen>
 
     return WillPopScope(
       onWillPop: () async {
-        return CustomExitDialog.show(context);
+        return CustomExitDialog.show(context, usePushReplacement: false);
       },
       child: _changeScreen == "S_CHAT"
           ? Scaffold(

@@ -32,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         titleText: "Sign Up",
         showBackButton: false,
         onBackPressed: () async {
-          return CustomExitDialog.show(context);
+          return CustomExitDialog.show(context, usePushReplacement: false);
         },
       ),
       body: SafeArea(

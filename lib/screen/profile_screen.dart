@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:learnbound/database/user_provider.dart';
-import 'package:learnbound/screen/auth/login/login_screen.dart';
-import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/auth/login/login_screen.dart';
+import 'package:learnbound/util/design/appbar.dart';
 import 'package:provider/provider.dart';
 
 import '../util/design/snackbar.dart';
@@ -297,33 +297,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final user = userProvider.user;
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(120), // Match the original height
-        child: ClipPath(
-          clipper: TopClipper(),
-          child: AppBar(
-            backgroundColor: Color(0xFFD7C19C),
-            leading: IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Image.asset(
-                'assets/back-arrow.png',
-                height: 24,
-                width: 24,
-              ),
-            ),
-            title: Text(
-              "Profile",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            centerTitle:
-                true, // Align title similar to the original positioning
-            elevation: 0, // Remove shadow for a cleaner look
-          ),
-        ),
+      appBar: AppBarCustom(
+        showBackButton: true,
+        titleText: 'Profile',
       ),
       body: Container(
         color: Colors.white,

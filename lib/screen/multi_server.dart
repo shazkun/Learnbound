@@ -109,9 +109,9 @@ class _ServerListState extends State<ServerList>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(120), // Increased height for wave design
+        preferredSize: Size.fromHeight(120), 
         child: ClipPath(
-          clipper: TopClipper(), // Custom clipper for wave shape
+          clipper: TopClipper(),
           child: AppBar(
             centerTitle: true,
             backgroundColor: Colors.white,

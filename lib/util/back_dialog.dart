@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 class CustomExitDialog {
-  static Future<bool> show(BuildContext context) async {
-    return await showDialog<bool>(
+  static Future<bool> show(
+    BuildContext context, {
+    bool usePushReplacement = false,
+    Widget? targetPage,
+  }) async {
+    // Show the dialog
+    bool result = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             shape:
@@ -31,5 +36,23 @@ class CustomExitDialog {
           ),
         ) ??
         false;
+
+    // Perform navigation based on result and usePushReplacement parameter
+    if (result) {
+      if (usePushReplacement) {
+        if (targetPage == null) {
+          throw ArgumentError(
+              'targetPage is required when usePushReplacement is true');
+        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => targetPage),
+        );
+      } else {
+        Navigator.pop(context);
+      }
+    }
+
+    return result;
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CustomSnackBar {
-  static bool _isShowing = false; // <-- ADD THIS
+  static bool _isShowing = false;
 
   static void show(
     BuildContext context,
@@ -13,9 +13,12 @@ class CustomSnackBar {
     IconData? icon,
     Duration duration = const Duration(seconds: 2),
   }) {
-    if (_isShowing) return; // <-- PREVENT SPAMMING
+    if (_isShowing) {
+      // Clear any existing SnackBar before showing a new one
+      ScaffoldMessenger.of(context).clearSnackBars();
+    }
 
-    _isShowing = true; // <-- SET TO TRUE
+    _isShowing = true;
 
     final snackBar = SnackBar(
       content: Row(
@@ -48,7 +51,7 @@ class CustomSnackBar {
     );
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar).closed.then((_) {
-      _isShowing = false; // <-- RESET AFTER SNACKBAR IS CLOSED
+      _isShowing = false;
     });
   }
 }

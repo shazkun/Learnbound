@@ -1,6 +1,6 @@
 import 'package:animate_do/animate_do.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:learnbound/models/question.dart';
 import 'package:learnbound/screen/quiz/quiz_stats.dart';
 import 'package:learnbound/util/back_dialog.dart';
@@ -28,15 +28,15 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
   int score = 0;
   bool isReviewMode = false;
   String? errorMessage;
-  bool isSoundEnabled = true; // Added for sound toggle
-  bool isSoundPlaying = false; // Added for sound toggle
+  bool isSoundEnabled = true;
+  bool isSoundPlaying = false;
 
   List<bool> answeredCorrectly = [];
   List<Map<String, dynamic>> userAnswers = [];
 
   final TextEditingController shortAnswerController = TextEditingController();
-  final AudioPlayer _bgMusicPlayer = AudioPlayer();
-  final AudioPlayer _sfxPlayer = AudioPlayer();
+  final AudioPlayer _bgMusicPlayer = AudioPlayer(); // just_audio AudioPlayer
+  final AudioPlayer _sfxPlayer = AudioPlayer(); // just_audio AudioPlayer
 
   @override
   void initState() {
@@ -54,39 +54,67 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
   }
 
   Future<void> playBackgroundMusic() async {
-    await _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
-    setState(() {
-      isSoundPlaying = !isSoundPlaying;
-    });
+    try {
+      // Set loop mode for background music
+      await _bgMusicPlayer.setLoopMode(LoopMode.all);
+      setState(() {
+        isSoundPlaying = !isSoundPlaying;
+      });
 
-    if (!isReviewMode) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      _bgMusicPlayer.play(AssetSource('audio/quiz-bg.mp3'));
-    } else if (isReviewMode) {
-      await _bgMusicPlayer.stop();
-      await Future.delayed(const Duration(milliseconds: 700));
-      _bgMusicPlayer.play(AssetSource('audio/lobby.mp3'));
-    } else {
-      stopBackgroundMusic(); // Only if there's a third condition
+      if (!isReviewMode) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        await _bgMusicPlayer.setAsset('assets/audio/quiz-bg.mp3');
+        if (isSoundEnabled) {
+          await _bgMusicPlayer.play();
+        }
+      } else if (isReviewMode) {
+        await _bgMusicPlayer.stop();
+        await Future.delayed(const Duration(milliseconds: 700));
+        await _bgMusicPlayer.setAsset('assets/audio/lobby.mp3');
+        if (isSoundEnabled) {
+          await _bgMusicPlayer.play();
+        }
+      } else {
+        await stopBackgroundMusic();
+      }
+    } catch (e) {
+      // Handle errors (e.g., asset not found)
+      debugPrint('Error playing background music: $e');
     }
   }
 
   Future<void> stopBackgroundMusic() async {
-    await _bgMusicPlayer.stop();
+    try {
+      await _bgMusicPlayer.stop();
+      setState(() {
+        isSoundPlaying = false;
+      });
+    } catch (e) {
+      debugPrint('Error stopping background music: $e');
+    }
   }
 
   Future<void> pauseBackgroundMusic() async {
-    await _bgMusicPlayer.pause();
+    try {
+      await _bgMusicPlayer.pause();
+    } catch (e) {
+      debugPrint('Error pausing background music: $e');
+    }
   }
 
   Future<void> playSfx(String fileName) async {
-    await _sfxPlayer.play(AssetSource(fileName));
+    try {
+      await _sfxPlayer.setAsset('assets/$fileName');
+      await _sfxPlayer.play();
+    } catch (e) {
+      debugPrint('Error playing SFX: $e');
+    }
   }
 
   @override
   void dispose() {
-    _bgMusicPlayer.stop();
-    stopBackgroundMusic();
+    _bgMusicPlayer.dispose(); // Dispose just_audio player
+    _sfxPlayer.dispose(); // Dispose just_audio player
     shortAnswerController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -149,21 +177,19 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
       }
     });
 
-    // Play sound if enabled (placeholder)
     if (isSoundEnabled) {
-      await pauseBackgroundMusic(); // Pause background music
+      await pauseBackgroundMusic();
 
       if (isCorrect) {
         await playSfx('audio/correct.mp3');
       } else {
-        await playSfx('audio/incorrect.mp3'); // If you have an incorrect sound
+        await playSfx('audio/incorrect.mp3');
       }
 
       await Future.delayed(const Duration(milliseconds: 700));
-
-      await _bgMusicPlayer.resume(); // Resume music
-      await Future.delayed(const Duration(milliseconds: 700));
-      await playBackgroundMusic();
+      if (isSoundEnabled) {
+        await _bgMusicPlayer.play();
+      }
     }
   }
 
@@ -215,6 +241,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
       currentQuestionIndex = 0;
       loadUserAnswer();
     });
+    playBackgroundMusic(); // Update music for review mode
   }
 
   void loadUserAnswer() {
@@ -244,7 +271,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
   void goToStatisticsScreen() {
     if (!mounted) return;
     stopBackgroundMusic();
-    _sfxPlayer.stop(); // Optional, if SFX is still playing
+    _sfxPlayer.stop();
     playSfx("audio/finish.mp3");
     Navigator.push(
       context,
@@ -265,8 +292,6 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
 
     if (isSoundEnabled) {
       playBackgroundMusic();
-
-      _bgMusicPlayer.pause();
     } else {
       pauseBackgroundMusic();
       _sfxPlayer.stop();
@@ -281,7 +306,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
           titleText: "Assessment",
           showBackButton: true,
           onBackPressed: () async {
-            return CustomExitDialog.show(context);
+            return CustomExitDialog.show(context, usePushReplacement: false);
           },
         ),
         body: const Center(
@@ -305,32 +330,169 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
         return CustomExitDialog.show(context);
       },
       child: Scaffold(
-          appBar: AppBarCustom(
-            onBackPressed: () {
-              return CustomExitDialog.show(context);
-            },
-            titleText: isReviewMode ? 'Review Answers' : 'Assessment',
-            backgroundColor: const Color(0xFFD7C19C),
-            titleColor: Colors.black,
-            showBackButton: true, // or false depending on your needs
-            actions: [
-              IconButton(
-                icon: Icon(
-                  isSoundEnabled ? Icons.volume_up : Icons.volume_off,
-                  color: Colors.black,
-                ),
-                onPressed: toggleSound,
-                tooltip: isSoundEnabled ? 'Mute Sound' : 'Unmute Sound',
+        appBar: AppBarCustom(
+          onBackPressed: () {
+            return CustomExitDialog.show(context);
+          },
+          titleText: isReviewMode ? 'Review Answers' : 'Assessment',
+          backgroundColor: const Color(0xFFD7C19C),
+          titleColor: Colors.black,
+          showBackButton: true,
+          actions: [
+            IconButton(
+              icon: Icon(
+                isSoundEnabled ? Icons.volume_up : Icons.volume_off,
+                color: Colors.black,
               ),
-            ],
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                if (!isReviewMode) ...[
-                  FadeInDown(
-                    child: Card(
+              onPressed: toggleSound,
+              tooltip: isSoundEnabled ? 'Mute Sound' : 'Unmute Sound',
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              if (!isReviewMode) ...[
+                FadeInDown(
+                  child: Card(
+                    elevation: 4,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Question ${currentQuestionIndex + 1}/${widget.questions.length}',
+                            style: const TextStyle(
+                                fontSize: 16, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            question.text,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+                          if (question.type == QuestionType.shortAnswer)
+                            TextField(
+                              controller: shortAnswerController,
+                              enabled: !(showFeedback || isReviewMode),
+                              decoration: const InputDecoration(
+                                labelText: 'Your Answer',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          if (question.type == QuestionType.multipleChoice)
+                            ...question.options.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final option = entry.value;
+                              return RadioListTile<int>(
+                                title: Text(option.text),
+                                value: index,
+                                groupValue: selectedOption,
+                                onChanged: (showFeedback || isReviewMode)
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          selectedOption = value;
+                                          errorMessage = null;
+                                        });
+                                      },
+                              );
+                            }),
+                          if (question.type == QuestionType.selectMultiple)
+                            ...question.options.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final option = entry.value;
+                              return CheckboxListTile(
+                                title: Text(option.text),
+                                value: selectedOptions[index],
+                                onChanged: (showFeedback || isReviewMode)
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          selectedOptions[index] = value!;
+                                          errorMessage = null;
+                                        });
+                                      },
+                              );
+                            }),
+                          if (errorMessage != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              errorMessage!,
+                              style: const TextStyle(
+                                  color: Colors.red, fontSize: 14),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          if (showFeedback) ...[
+                            Text(
+                              isCorrect ? 'Correct!' : 'Incorrect',
+                              style: TextStyle(
+                                  color: isCorrect ? Colors.green : Colors.red,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            if (!isCorrect &&
+                                question.type == QuestionType.shortAnswer)
+                              Text('Correct Answer: ${question.correctAnswer}'),
+                            if (question.type != QuestionType.shortAnswer)
+                              Text(
+                                'Correct Options: ${question.options.where((o) => o.isCorrect).map((o) => o.text).join(", ")}',
+                              ),
+                          ],
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              ElevatedButton(
+                                onPressed: isReviewMode || showFeedback
+                                    ? nextQuestion
+                                    : submitAnswer,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      const Color.fromRGBO(211, 172, 112, 1.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 32, vertical: 12),
+                                ),
+                                child: Text(
+                                  isReviewMode
+                                      ? (currentQuestionIndex <
+                                              widget.questions.length - 1
+                                          ? 'Next'
+                                          : 'Finish')
+                                      : (showFeedback
+                                          ? (currentQuestionIndex <
+                                                  widget.questions.length - 1
+                                              ? 'Next'
+                                              : 'Review')
+                                          : 'Submit'),
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: widget.questions.length,
+                  itemBuilder: (context, index) {
+                    final question = widget.questions[index];
+                    final answer = userAnswers[index];
+                    final isAnsweredCorrectly =
+                        answeredCorrectly[index] ?? false;
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
                       elevation: 4,
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -338,204 +500,65 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Question ${currentQuestionIndex + 1}/${widget.questions.length}',
+                              'Question ${index + 1}',
                               style: const TextStyle(
-                                  fontSize: 16, color: Colors.grey),
+                                  fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               question.text,
-                              style: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 16),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 8),
+                            Text(
+                              isAnsweredCorrectly ? 'Correct' : 'Incorrect',
+                              style: TextStyle(
+                                color: isAnsweredCorrectly
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
                             if (question.type == QuestionType.shortAnswer)
-                              TextField(
-                                controller: shortAnswerController,
-                                enabled: !(showFeedback || isReviewMode),
-                                decoration: const InputDecoration(
-                                  labelText: 'Your Answer',
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
+                              Text(
+                                  'Your answer: ${answer['answer'] ?? 'No answer provided'}'),
                             if (question.type == QuestionType.multipleChoice)
-                              ...question.options.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final option = entry.value;
-                                return RadioListTile<int>(
-                                  title: Text(option.text),
-                                  value: index,
-                                  groupValue: selectedOption,
-                                  onChanged: (showFeedback || isReviewMode)
-                                      ? null
-                                      : (value) {
-                                          setState(() {
-                                            selectedOption = value;
-                                            errorMessage = null;
-                                          });
-                                        },
-                                );
-                              }),
+                              Text(
+                                  'Your answer: ${answer['selectedOption'] != null ? question.options[answer['selectedOption']].text : 'No answer selected'}'),
                             if (question.type == QuestionType.selectMultiple)
-                              ...question.options.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final option = entry.value;
-                                return CheckboxListTile(
-                                  title: Text(option.text),
-                                  value: selectedOptions[index],
-                                  onChanged: (showFeedback || isReviewMode)
-                                      ? null
-                                      : (value) {
-                                          setState(() {
-                                            selectedOptions[index] = value!;
-                                            errorMessage = null;
-                                          });
-                                        },
-                                );
-                              }),
-                            if (errorMessage != null) ...[
-                              const SizedBox(height: 8),
                               Text(
-                                errorMessage!,
-                                style: const TextStyle(
-                                    color: Colors.red, fontSize: 14),
-                              ),
-                            ],
-                            const SizedBox(height: 16),
-                            if (showFeedback) ...[
+                                  'Your options: ${answer['selectedOptions'] != null ? List.generate(question.options.length, (i) => answer['selectedOptions'][i] ? question.options[i].text : '').where((text) => text.isNotEmpty).join(", ") : 'No options selected'}'),
+                            if (question.type == QuestionType.shortAnswer &&
+                                !isAnsweredCorrectly)
+                              Text('Correct answer: ${question.correctAnswer}'),
+                            if (question.type != QuestionType.shortAnswer &&
+                                !isAnsweredCorrectly)
                               Text(
-                                isCorrect ? 'Correct!' : 'Incorrect',
-                                style: TextStyle(
-                                    color:
-                                        isCorrect ? Colors.green : Colors.red,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
+                                'Correct options: ${question.options.where((o) => o.isCorrect).map((o) => o.text).join(", ")}',
                               ),
-                              const SizedBox(height: 8),
-                              if (!isCorrect &&
-                                  question.type == QuestionType.shortAnswer)
-                                Text(
-                                    'Correct Answer: ${question.correctAnswer}'),
-                              if (question.type != QuestionType.shortAnswer)
-                                Text(
-                                  'Correct Options: ${question.options.where((o) => o.isCorrect).map((o) => o.text).join(", ")}',
-                                ),
-                            ],
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: isReviewMode || showFeedback
-                                      ? nextQuestion
-                                      : submitAnswer,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromRGBO(
-                                        211, 172, 112, 1.0),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 32, vertical: 12),
-                                  ),
-                                  child: Text(
-                                    isReviewMode
-                                        ? (currentQuestionIndex <
-                                                widget.questions.length - 1
-                                            ? 'Next'
-                                            : 'Finish')
-                                        : (showFeedback
-                                            ? (currentQuestionIndex <
-                                                    widget.questions.length - 1
-                                                ? 'Next'
-                                                : 'Review')
-                                            : 'Submit'),
-                                    style: const TextStyle(color: Colors.black),
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),
-                    ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: goToStatisticsScreen,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
                   ),
-                ] else ...[
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: widget.questions.length,
-                    itemBuilder: (context, index) {
-                      final question = widget.questions[index];
-                      final answer = userAnswers[index];
-                      final isAnsweredCorrectly =
-                          answeredCorrectly[index] ?? false;
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        elevation: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Question ${index + 1}',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                question.text,
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                isAnsweredCorrectly ? 'Correct' : 'Incorrect',
-                                style: TextStyle(
-                                  color: isAnsweredCorrectly
-                                      ? Colors.green
-                                      : Colors.red,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              if (question.type == QuestionType.shortAnswer)
-                                Text(
-                                    'Your answer: ${answer['answer'] ?? 'No answer provided'}'),
-                              if (question.type == QuestionType.multipleChoice)
-                                Text(
-                                    'Your answer: ${answer['selectedOption'] != null ? question.options[answer['selectedOption']].text : 'No answer selected'}'),
-                              if (question.type == QuestionType.selectMultiple)
-                                Text(
-                                    'Your options: ${answer['selectedOptions'] != null ? List.generate(question.options.length, (i) => answer['selectedOptions'][i] ? question.options[i].text : '').where((text) => text.isNotEmpty).join(", ") : 'No options selected'}'),
-                              if (question.type == QuestionType.shortAnswer &&
-                                  !isAnsweredCorrectly)
-                                Text(
-                                    'Correct answer: ${question.correctAnswer}'),
-                              if (question.type != QuestionType.shortAnswer &&
-                                  !isAnsweredCorrectly)
-                                Text(
-                                  'Correct options: ${question.options.where((o) => o.isCorrect).map((o) => o.text).join(", ")}',
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: goToStatisticsScreen,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 12),
-                    ),
-                    child: const Text('Finish',
-                        style: TextStyle(color: Colors.white)),
-                  ),
-                ],
+                  child: const Text('Finish',
+                      style: TextStyle(color: Colors.white)),
+                ),
               ],
-            ),
-          )),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
