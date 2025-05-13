@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:learnbound/database/user_provider.dart';
@@ -23,11 +23,8 @@ class HostScreen extends StatefulWidget {
 
 class _HostScreenState extends State<HostScreen>
     with SingleTickerProviderStateMixin {
-  static const int _maxMessages = 100; // Limit message history
-  static const int _maxImageQueueSize = 10; // Limit image queue
-
-  final _clientsNotifier = ValueNotifier<List<String>>([]);
-  final _messagesNotifier = ValueNotifier<List<Map<String, dynamic>>>([]);
+  List<String> _clients = [];
+  List<Map<String, dynamic>> _messages = [];
   final _stickyQuestions = <String>[];
   final _multipleChoiceResponses = <String, Map<String, int>>{};
   ServerSocket? _serverSocket;
@@ -36,15 +33,14 @@ class _HostScreenState extends State<HostScreen>
   final _connectedClients = <Socket>[];
   final _participants = <String, int>{};
   final _clientStreams = <Socket, StreamController<String>>{};
-  final _imageQueue = Queue<Map<String, dynamic>>();
   final _broadcast = BroadcastServer();
   final _participantConnectionTimes = <String, DateTime>{};
   String _lobbyState = "lobby";
   String _selectedMode = "Chat";
-  bool _isProcessingImage = false;
   late DateTime _sessionStartTime;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  final StringBuffer dataBuffer = StringBuffer();
 
   @override
   void initState() {
@@ -88,16 +84,79 @@ class _HostScreenState extends State<HostScreen>
 
   void _handleClientConnection(Socket client) {
     final clientId = '${client.remoteAddress.address}:${client.remotePort}';
-    final streamController = StreamController<String>();
-    _clientStreams[client] = streamController;
     _connectedClients.add(client);
-    _clientsNotifier.value = [..._clientsNotifier.value, clientId];
+    setState(() {
+      _clients = [..._clients, clientId];
+    });
 
     client.listen(
       (data) {
         try {
-          final message = utf8.decode(data).trim();
-          streamController.add(message);
+          String message = utf8.decode(data).trim();
+
+          if (message.isEmpty) {
+            client.add(utf8.encode('Error: Invalid message'));
+            return;
+          }
+
+          final nickname =
+              _clientNicknames[client] ?? client.remoteAddress.address;
+
+          if (!_clientNicknames.containsKey(client)) {
+            if (message.startsWith("Nickname:")) {
+              final newNickname = message.substring(9);
+              if (newNickname.isNotEmpty && newNickname.length <= 20) {
+                _clientNicknames[client] = newNickname;
+                _participants[newNickname] = 0;
+                _participantConnectionTimes[newNickname] =
+                    DateTime.now().toUtc();
+                _addSystemMessage('$newNickname connected.');
+              } else {
+                client.add(utf8.encode('Error: Invalid nickname'));
+              }
+            } else {
+              client.add(utf8.encode('Error: Send nickname first'));
+            }
+            return;
+          }
+
+          final timestamp = DateTime.now().toUtc().toIso8601String();
+
+          if (message.startsWith("Question:")) {
+            final question = message.substring(9);
+            _addMessage(question, nickname, timestamp);
+          } else if (_selectedMode == "Picture" || _selectedMode == "Drawing") {
+            dataBuffer.write(utf8.decode(data));
+            if (dataBuffer.toString().endsWith('\n')) {
+              String imageData = dataBuffer.toString().trim();
+
+              setState(() {
+                _messages = [
+                  ..._messages,
+                  {
+                    'nickname': nickname,
+                    'image': imageData,
+                    'isImage': true,
+                    'timestamp': timestamp,
+                  }
+                ];
+              });
+              dataBuffer.clear();
+            }
+          } else if (_selectedMode == "Multiple Choice" &&
+              message.startsWith("Answer:")) {
+            final answerData = message.substring(7).split("|");
+            if (answerData.length == 2) {
+              final question = answerData[0];
+              final option = answerData[1];
+              _multipleChoiceResponses.putIfAbsent(question, () => {});
+              _multipleChoiceResponses[question]![option] =
+                  (_multipleChoiceResponses[question]![option] ?? 0) + 1;
+              setState(() {});
+            }
+          } else if (_selectedMode == "Chat") {
+            _addMessage(message, nickname, timestamp);
+          }
         } catch (e) {
           print('Error decoding client data: $e');
         }
@@ -105,68 +164,6 @@ class _HostScreenState extends State<HostScreen>
       onDone: () => _handleClientDisconnect(client, clientId),
       onError: (e) => _addSystemMessage('Client error: $e'),
     );
-
-    streamController.stream
-        .listen((message) => _handleClientData(client, message));
-  }
-
-  void _handleClientData(Socket client, String message) {
-    if (message.isEmpty || message.length > 1000) {
-      client.add(utf8.encode('Error: Invalid message'));
-      return;
-    }
-
-    final nickname = _clientNicknames[client] ?? client.remoteAddress.address;
-
-    if (!_clientNicknames.containsKey(client)) {
-      if (message.startsWith("Nickname:")) {
-        final newNickname = message.substring(9);
-        if (newNickname.isNotEmpty && newNickname.length <= 20) {
-          _clientNicknames[client] = newNickname;
-          _participants[newNickname] = 0;
-          _participantConnectionTimes[newNickname] = DateTime.now().toUtc();
-          _addSystemMessage('$newNickname connected.');
-        } else {
-          client.add(utf8.encode('Error: Invalid nickname'));
-        }
-      } else {
-        client.add(utf8.encode('Error: Send nickname first'));
-      }
-      return;
-    }
-
-    final timestamp = DateTime.now().toUtc().toIso8601String();
-
-    if (message.startsWith("Question:")) {
-      final question = message.substring(9);
-      _addMessage(question, nickname, timestamp);
-    } else if (_selectedMode == "Picture" || _selectedMode == "Drawing") {
-      if (_imageQueue.length < _maxImageQueueSize) {
-        _imageQueue.add({
-          'nickname': nickname,
-          'image': message,
-          'timestamp': timestamp,
-        });
-        if (!_isProcessingImage) _processImageQueue();
-      } else {
-        client.add(utf8.encode('Error: Image queue full'));
-      }
-    } else if (_selectedMode == "Multiple Choice" &&
-        message.startsWith("Answer:")) {
-      final answerData = message.substring(7).split("|");
-      if (answerData.length == 2) {
-        final question = answerData[0];
-        final option = answerData[1];
-        _multipleChoiceResponses.putIfAbsent(question, () => {});
-        _multipleChoiceResponses[question]![option] =
-            (_multipleChoiceResponses[question]![option] ?? 0) + 1;
-        _messagesNotifier.value = [
-          ..._messagesNotifier.value
-        ]; // Trigger UI update
-      }
-    } else if (_selectedMode == "Chat") {
-      _addMessage(message, nickname, timestamp);
-    }
   }
 
   void _handleClientDisconnect(Socket client, String clientId) {
@@ -174,8 +171,9 @@ class _HostScreenState extends State<HostScreen>
 
     final nickname = _clientNicknames[client] ?? client.remoteAddress.address;
     _addSystemMessage('$nickname disconnected.');
-    _clientsNotifier.value =
-        _clientsNotifier.value.where((id) => id != clientId).toList();
+    setState(() {
+      _clients = _clients.where((id) => id != clientId).toList();
+    });
     _clientNicknames.remove(client);
     _participants.remove(nickname);
     _clientStreams.remove(client)?.close();
@@ -188,58 +186,31 @@ class _HostScreenState extends State<HostScreen>
 
   void _addSystemMessage(String text) {
     final timestamp = DateTime.now().toUtc().toIso8601String();
-    _messagesNotifier.value = [
-      ..._messagesNotifier.value,
-      {
-        'text': text,
-        'nickname': 'System',
-        'is_image': false,
-        'timestamp': timestamp,
-      }
-    ];
-    if (_messagesNotifier.value.length > _maxMessages) {
-      _messagesNotifier.value = _messagesNotifier.value.sublist(1);
-    }
+    setState(() {
+      _messages = [
+        ..._messages,
+        {
+          'text': text,
+          'nickname': 'System',
+          'isImage': false,
+          'timestamp': timestamp,
+        }
+      ];
+    });
   }
 
   void _addMessage(String text, String nickname, String timestamp) {
-    _messagesNotifier.value = [
-      ..._messagesNotifier.value,
-      {
-        'text': text,
-        'nickname': nickname,
-        'is_image': false,
-        'timestamp': timestamp,
-      }
-    ];
-    if (_messagesNotifier.value.length > _maxMessages) {
-      _messagesNotifier.value = _messagesNotifier.value.sublist(1);
-    }
-  }
-
-  Future<void> _processImageQueue() async {
-    if (_imageQueue.isEmpty) {
-      _isProcessingImage = false;
-      return;
-    }
-    _isProcessingImage = true;
-    final imageData = _imageQueue.removeFirst();
-    if (mounted) {
-      _messagesNotifier.value = [
-        ..._messagesNotifier.value,
+    setState(() {
+      _messages = [
+        ..._messages,
         {
-          'nickname': imageData['nickname'],
-          'image': imageData['image'],
-          'is_image': true,
-          'timestamp': imageData['timestamp'],
+          'text': text,
+          'nickname': nickname,
+          'isImage': false,
+          'timestamp': timestamp,
         }
       ];
-      if (_messagesNotifier.value.length > _maxMessages) {
-        _messagesNotifier.value = _messagesNotifier.value.sublist(1);
-      }
-    }
-    await Future.delayed(const Duration(milliseconds: 100));
-    _processImageQueue();
+    });
   }
 
   void _sendStickyQuestion(String question) {
@@ -330,7 +301,7 @@ class _HostScreenState extends State<HostScreen>
           child: ModeSelectorDialog(
             onModeSelected: (mode) {
               setState(() {
-                _messagesNotifier.value = [];
+                _messages = [];
                 _multipleChoiceResponses.clear();
                 _selectedMode = mode;
                 for (var client in _connectedClients) {
@@ -395,7 +366,13 @@ class _HostScreenState extends State<HostScreen>
             'end_time': endTime.toIso8601String(),
             'mode': _selectedMode,
           },
-          'messages': _messagesNotifier.value,
+          'messages': _messages.map((msg) {
+            final newMsg = Map<String, dynamic>.from(msg);
+            if (newMsg.containsKey('isImage') && newMsg['isImage'] is bool) {
+              newMsg['isImage'] = newMsg['isImage'].toString();
+            }
+            return newMsg;
+          }).toList(),
           'sticky_questions': _stickyQuestions,
           'multiple_choice_responses': _multipleChoiceResponses,
           'participants': participantsLog,
@@ -432,8 +409,6 @@ class _HostScreenState extends State<HostScreen>
     for (var controller in _clientStreams.values) {
       controller.close();
     }
-    _messagesNotifier.dispose();
-    _clientsNotifier.dispose();
     super.dispose();
   }
 
@@ -481,22 +456,19 @@ class _HostScreenState extends State<HostScreen>
                       });
                     },
                   )
-                : ValueListenableBuilder<List<Map<String, dynamic>>>(
-                    valueListenable: _messagesNotifier,
-                    builder: (context, messages, _) => SessionView(
-                      selectedMode: _selectedMode,
-                      messages: messages,
-                      multipleChoiceResponses: _multipleChoiceResponses,
-                      fadeAnimation: _fadeAnimation,
-                      questionController: _questionController,
-                      onSendQuestion: () {
-                        _sendStickyQuestion(_questionController.text);
-                        _questionController.clear();
-                        _animationController.forward(from: 0);
-                      },
-                      onShowMultipleChoiceDialog: _showMultipleChoiceDialog,
-                      onShowSticky: showStickyQuestionsDialog,
-                    ),
+                : SessionView(
+                    selectedMode: _selectedMode,
+                    messages: _messages,
+                    multipleChoiceResponses: _multipleChoiceResponses,
+                    fadeAnimation: _fadeAnimation,
+                    questionController: _questionController,
+                    onSendQuestion: () {
+                      _sendStickyQuestion(_questionController.text);
+                      _questionController.clear();
+                      _animationController.forward(from: 0);
+                    },
+                    onShowMultipleChoiceDialog: _showMultipleChoiceDialog,
+                    onShowSticky: showStickyQuestionsDialog,
                   ),
           ),
         ),

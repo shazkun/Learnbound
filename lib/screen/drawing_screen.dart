@@ -114,91 +114,24 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
     await File(imagePath).writeAsBytes(pngBytes);
     if (mounted) {
       Navigator.pop(context, imagePath);
-      
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Draw Something',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blueAccent, Colors.purpleAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0,
-        actions: [
-          Tooltip(
-            message: 'Save Drawing',
-            child: IconButton(
-              icon: const Icon(Icons.save, color: Colors.white),
-              onPressed: _saveDrawing,
-            ),
-          ),
-          Tooltip(
-            message: 'Clear Canvas',
-            child: IconButton(
-              icon: const Icon(Icons.clear, color: Colors.white),
-              onPressed: _clear,
-            ),
-          ),
-          Tooltip(
-            message: 'Undo',
-            child: IconButton(
-              icon: const Icon(Icons.undo, color: Colors.white),
-              onPressed: _undo,
-            ),
-          ),
-          Tooltip(
-            message: 'Redo',
-            child: IconButton(
-              icon: const Icon(Icons.redo, color: Colors.white),
-              onPressed: _redo,
-            ),
-          ),
-        ],
+  // Show tools in a bottom sheet
+  void _showToolsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      body: Column(
-        children: [
-          // Toolbar for selecting tools
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-              ],
-              // Glassmorphism effect
-              // Using a blurred background
-              // Note: BackdropFilter can be performance-heavy on some devices
-              // Comment out if performance is an issue
-              // Alternatively, adjust blur sigma values
-              // backdropFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Color picker
                   AnimatedContainer(
@@ -225,57 +158,68 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
                           _buildColorMenuItem(Colors.purple, 'Purple'),
                         ],
                         onChanged: (Color? newValue) {
-                          setState(() {
-                            isErasing = false; // Disable eraser mode
-                            selectedColor = newValue!;
+                          setModalState(() {
+                            setState(() {
+                              isErasing = false; // Disable eraser mode
+                              selectedColor = newValue!;
+                            });
                           });
                         },
                       ),
                     ),
                   ),
-
-                  const SizedBox(width: 12),
-
+                  const SizedBox(height: 12),
                   // Stroke width slider
-                  Container(
-                    width: 150,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 4,
-                        thumbColor: Colors.blueAccent,
-                        activeTrackColor: Colors.blueAccent,
-                        inactiveTrackColor: Colors.grey[300],
-                        thumbShape:
-                            const RoundSliderThumbShape(enabledThumbRadius: 8),
-                        overlayShape:
-                            const RoundSliderOverlayShape(overlayRadius: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Stroke Width:',
+                        style: TextStyle(fontSize: 14, color: Colors.black87),
                       ),
-                      child: Slider(
-                        value: strokeWidth,
-                        min: 1.0,
-                        max: 10.0,
-                        divisions: 9,
-                        label: strokeWidth.round().toString(),
-                        onChanged: (double value) {
-                          setState(() {
-                            strokeWidth = value;
-                          });
-                        },
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 150,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 4,
+                            thumbColor: Colors.black87,
+                            activeTrackColor: Colors.black87,
+                            inactiveTrackColor: Colors.grey[300],
+                            thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 8),
+                            overlayShape: const RoundSliderOverlayShape(
+                                overlayRadius: 16),
+                          ),
+                          child: Slider(
+                            value: strokeWidth,
+                            min: 1.0,
+                            max: 10.0,
+                            divisions: 9,
+                            label: strokeWidth.round().toString(),
+                            onChanged: (double value) {
+                              setModalState(() {
+                                setState(() {
+                                  strokeWidth = value;
+                                });
+                              });
+                            },
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-
-                  const SizedBox(width: 12),
-
+                  const SizedBox(height: 12),
                   // Eraser toggle button
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isErasing
-                          ? Colors.blueAccent.withOpacity(0.8)
+                          ? Colors.black87.withOpacity(0.8)
                           : Colors.white.withOpacity(0.8),
+                      border: Border.all(color: Colors.black12),
                     ),
                     child: IconButton(
                       icon: Icon(
@@ -284,17 +228,76 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
                       ),
                       tooltip: isErasing ? 'Switch to Pen' : 'Switch to Eraser',
                       onPressed: () {
-                        setState(() {
-                          isErasing = !isErasing; // Toggle eraser mode
+                        setModalState(() {
+                          setState(() {
+                            isErasing = !isErasing; // Toggle eraser mode
+                          });
                         });
                       },
                     ),
                   ),
                 ],
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Draw Something',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          Tooltip(
+            message: 'Save Drawing',
+            child: IconButton(
+              icon: const Icon(Icons.save, color: Colors.black87),
+              onPressed: _saveDrawing,
             ),
           ),
-
+          Tooltip(
+            message: 'Clear Canvas',
+            child: IconButton(
+              icon: const Icon(Icons.clear, color: Colors.black87),
+              onPressed: _clear,
+            ),
+          ),
+          Tooltip(
+            message: 'Undo',
+            child: IconButton(
+              icon: const Icon(Icons.undo, color: Colors.black87),
+              onPressed: _undo,
+            ),
+          ),
+          Tooltip(
+            message: 'Redo',
+            child: IconButton(
+              icon: const Icon(Icons.redo, color: Colors.black87),
+              onPressed: _redo,
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showToolsBottomSheet,
+        backgroundColor: Colors.white,
+        child: const Icon(Icons.brush, color: Colors.black87),
+        tooltip: 'Drawing Tools',
+      ),
+      body: Column(
+        children: [
           // Drawing area
           Expanded(
             child: Container(
@@ -302,21 +305,7 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.grey[50]!,
-                    Colors.white,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                border: Border.all(color: Colors.black12),
               ),
               child: RepaintBoundary(
                 key: _globalKey,

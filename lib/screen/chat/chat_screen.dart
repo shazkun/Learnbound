@@ -209,6 +209,7 @@ class _ChatScreenState extends State<ChatScreen>
       }
       setState(() => _messages
           .add({'text': 'Image sent', 'isImage': true, 'image': imageFile}));
+      print(base64Image);
 
       setState(() => _latestImagePath = imageFile.path); // <- store the path
     } catch (e) {
