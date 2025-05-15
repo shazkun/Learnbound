@@ -2,6 +2,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:learnbound/models/question.dart';
+import 'package:learnbound/screen/home_screen.dart';
 import 'package:learnbound/screen/quiz/quiz_stats.dart';
 import 'package:learnbound/util/back_dialog.dart';
 import 'package:learnbound/util/design/appbar.dart';
@@ -306,7 +307,8 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
           titleText: "Assessment",
           showBackButton: true,
           onBackPressed: () async {
-            return CustomExitDialog.show(context, usePushReplacement: false);
+            return CustomExitDialog.show(context,
+                usePushReplacement: true, targetPage: HomeScreen());
           },
         ),
         body: const Center(
@@ -331,13 +333,13 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
       },
       child: Scaffold(
         appBar: AppBarCustom(
+          showBackButton: false,
           onBackPressed: () {
-            return CustomExitDialog.show(context);
+            return CustomExitDialog.show(context, targetPage: HomeScreen());
           },
           titleText: isReviewMode ? 'Review Answers' : 'Assessment',
           backgroundColor: const Color(0xFFD7C19C),
           titleColor: Colors.black,
-          showBackButton: true,
           actions: [
             IconButton(
               icon: Icon(

@@ -1,9 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/models/user.dart';
 import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:learnbound/util/design/snackbar.dart';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class RegisterFunctions {
@@ -77,11 +77,14 @@ class RegisterFunctions {
           backgroundColor: Colors.green,
           icon: Icons.check_circle,
         );
-       Navigator.push(
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
         );
       }
+    } else {
+      // If form not valid, optionally clear invalid fields
+      clearInvalidFields();
     }
   }
 
@@ -119,6 +122,32 @@ class RegisterFunctions {
       return "Passwords do not match";
     }
     return null;
+  }
+
+  void clearInvalidFields() {
+    if (usernameController.text.isEmpty ||
+        !usernameRegex.hasMatch(usernameController.text)) {
+      usernameController.clear();
+    }
+    if (emailController.text.isEmpty ||
+        !emailRegex.hasMatch(emailController.text)) {
+      emailController.clear();
+    }
+    if (passwordController.text.isEmpty || passwordController.text.length < 6) {
+      passwordController.clear();
+    }
+    if (confirmPasswordController.text.isEmpty ||
+        confirmPasswordController.text != passwordController.text) {
+      confirmPasswordController.clear();
+    }
+  }
+
+  void clearFields() {
+    usernameController.clear();
+    emailController.clear();
+    passwordController.clear();
+    confirmPasswordController.clear();
+    profilePicture = null;
   }
 
   void dispose() {

@@ -1,0 +1,2 @@
+C:/Users/SHAKUZA/Desktop/Flutter/Learnbound/android/app/.cxx/RelWithDebInfo/2d4v1461/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/SHAKUZA/Desktop/Flutter/Learnbound/android/app/.cxx/RelWithDebInfo/2d4v1461/x86_64/CMakeFiles/rebuild_cache.dir

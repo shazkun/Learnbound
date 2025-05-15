@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';
@@ -234,24 +235,30 @@ class SessionView extends StatelessWidget {
   }
 
   Widget _buildImageThumbnail(String base64Image, BuildContext context) {
+    Uint8List decodedImage = base64Decode(base64Image);
     return GestureDetector(
       onTap: () => showDialog(
         context: context,
         builder: (_) => Dialog(
           shape: AppStyles.dialogShape,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.memory(base64Decode(base64Image)),
-          ),
+              borderRadius: BorderRadius.circular(20),
+              child: Image.memory(
+                decodedImage,
+                gaplessPlayback: true, // reduces flicker
+                filterQuality: FilterQuality.low, // improves speed
+              )),
         ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.memory(
-          base64Decode(base64Image),
+          decodedImage,
           width: 100,
           height: 100,
           fit: BoxFit.cover,
+          gaplessPlayback: true, // optional: smoother loading
+          filterQuality: FilterQuality.low, // optional: faster
         ),
       ),
     );

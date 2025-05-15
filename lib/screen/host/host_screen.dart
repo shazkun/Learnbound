@@ -146,12 +146,17 @@ class _HostScreenState extends State<HostScreen>
           } else if (_selectedMode == "Multiple Choice" &&
               message.startsWith("Answer:")) {
             final answerData = message.substring(7).split("|");
-            if (answerData.length == 2) {
+            if (answerData.length == 3) {
               final question = answerData[0];
               final option = answerData[1];
+              final username = answerData[2];
+
               _multipleChoiceResponses.putIfAbsent(question, () => {});
               _multipleChoiceResponses[question]![option] =
                   (_multipleChoiceResponses[question]![option] ?? 0) + 1;
+
+              print("Received answer from $username: $question - $option");
+
               setState(() {});
             }
           } else if (_selectedMode == "Chat") {
@@ -367,10 +372,13 @@ class _HostScreenState extends State<HostScreen>
             'mode': _selectedMode,
           },
           'messages': _messages.map((msg) {
-            final newMsg = Map<String, dynamic>.from(msg);
-            if (newMsg.containsKey('isImage') && newMsg['isImage'] is bool) {
-              newMsg['isImage'] = newMsg['isImage'].toString();
-            }
+            final newMsg = Map.fromEntries(msg.entries.where((entry) {
+              if (entry.key == 'image' || entry.key == 'isImage') return false;
+              if (entry.value is bool) {
+                entry = MapEntry(entry.key, entry.value.toString());
+              }
+              return true;
+            }));
             return newMsg;
           }).toList(),
           'sticky_questions': _stickyQuestions,

@@ -3,7 +3,7 @@ import 'package:learnbound/screen/auth/register/register_functions.dart';
 import 'package:learnbound/util/design/appbar.dart';
 
 import '../../../util/back_dialog.dart';
-import 'register_ui.dart';
+import 'register_widget.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

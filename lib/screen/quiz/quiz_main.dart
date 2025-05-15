@@ -15,7 +15,9 @@ import 'package:learnbound/util/design/appbar.dart';
 import 'package:learnbound/util/design/snackbar.dart';
 import 'package:learnbound/util/server.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
+import '../../database/user_provider.dart';
 import 'question_creator.dart';
 import 'question_widget.dart';
 
@@ -40,8 +42,10 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void initializeBroadcastServer() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
     broadcastServer = BroadcastServer();
-    broadcastServer!.setBroadcastName('QUIZ-PAD');
+    broadcastServer!.setBroadcastName('${user?.username} - QUIZ-PAD');
   }
 
   Future<void> initializeServerSocket() async {
@@ -649,7 +653,6 @@ class _QuizScreenState extends State<QuizScreen> {
               final fetchedQuestions =
                   jsonData.map((e) => Question.fromJson(e)).toList();
               setState(() => questions.addAll(fetchedQuestions));
-              Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(

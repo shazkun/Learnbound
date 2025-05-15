@@ -34,7 +34,7 @@ class StatisticsScreen extends StatelessWidget {
   AppBarCustom _buildAppBar(BuildContext context) {
     return AppBarCustom(
       titleText: "Result",
-      showBackButton: true,
+      showBackButton: false,
       onBackPressed: () async => CustomExitDialog.show(context,
           usePushReplacement: true, targetPage: HomeScreen()),
     );

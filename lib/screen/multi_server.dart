@@ -14,10 +14,7 @@ class ServerList extends StatefulWidget {
 
 class _ServerListState extends State<ServerList>
     with SingleTickerProviderStateMixin {
-  final Set<String> _serverList = {
-    "192.168.193.252 - ROBERT",
-    "192.168.193.160 - SEAN"
-  };
+  final Set<String> _serverList = {};
   RawDatagramSocket? _udpSocket;
   final int _udpPort = 4040;
   bool _isListening = false;
@@ -109,7 +106,7 @@ class _ServerListState extends State<ServerList>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(120), 
+        preferredSize: Size.fromHeight(120),
         child: ClipPath(
           clipper: TopClipper(),
           child: AppBar(

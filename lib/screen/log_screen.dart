@@ -398,7 +398,8 @@ class Message {
       nickname: json['nickname'] as String,
       text: json['text'] as String?,
       image: json['image'] as String?,
-      isImage: json['is_image'] as bool,
+      isImage:
+          json['isImage'] as bool? ?? false, // Provide a default value if null
       timestamp: DateTime.parse(json['timestamp']).toLocal(),
     );
   }

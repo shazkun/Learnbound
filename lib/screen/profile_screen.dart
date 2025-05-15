@@ -284,8 +284,52 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('LearnBound'),
-          content: Text('VERSION: 1.2'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'LearnBound',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: const Color(0xFFD7C19C),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Version: 1.2.2',
+                style: TextStyle(fontSize: 16),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'LearnBound is your smart study companion app to help students learn effectively.',
+                style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+              ),
+              SizedBox(height: 15),
+              Text(
+                'Contact:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'support@learnbound.com',
+                style: TextStyle(color: const Color(0xFFD7C19C)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black,
+                textStyle: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Close'),
+            ),
+          ],
         );
       },
     );
@@ -301,95 +345,102 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         showBackButton: true,
         titleText: 'Profile',
       ),
-      body: Container(
-        color: Colors.white,
-        child: Column(
-          children: [
-            SizedBox(height: 20),
-            GestureDetector(
-              onTap: () => showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('Profile Options'),
-                    content: Text('Choose an action for your profile picture:'),
-                    actions: [
-                      TextButton(
-                        onPressed: _changeProfilePicture,
-                        child: Text('Change Profile'),
-                      ),
-                      TextButton(
-                        onPressed: _deleteProfilePicture,
-                        child: Text('Delete Profile'),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey[200],
-                child: ClipOval(
-                  child: user?.profilePicture != null &&
-                          user!.profilePicture!.isNotEmpty
-                      ? Image.file(
-                          File(user.profilePicture!),
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/defaultprofile.png',
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        )
-                      : Image.asset(
-                          'assets/defaultprofile.png',
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
+      body: SingleChildScrollView(
+        child: Container(
+          color: Colors.white,
+          padding:
+              EdgeInsets.only(bottom: 20), // Add padding to avoid FAB overlap
+          child: Column(
+            children: [
+              SizedBox(height: 20),
+              GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Profile Options'),
+                      content:
+                          Text('Choose an action for your profile picture:'),
+                      actions: [
+                        TextButton(
+                          onPressed: _changeProfilePicture,
+                          child: Text('Change Profile'),
                         ),
+                        TextButton(
+                          onPressed: _deleteProfilePicture,
+                          child: Text('Delete Profile'),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey[200],
+                  child: ClipOval(
+                    child: user?.profilePicture != null &&
+                            user!.profilePicture!.isNotEmpty
+                        ? Image.file(
+                            File(user.profilePicture!),
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/defaultprofile.png',
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            'assets/defaultprofile.png',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              user?.username ?? "Name",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            SizedBox(height: 20),
-            Card(
-              margin: EdgeInsets.symmetric(horizontal: 30),
-              color: Color(0xFFEBE1C8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              SizedBox(height: 10),
+              Text(
+                user?.username ?? "Name",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: Iconify(Mdi.rename_box),
-                    title: Text('Change username'),
-                    onTap: () {
-                      _showChangeUsername(context);
-                    },
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.lock),
-                    title: Text('Change password'),
-                    onTap: () => _showChangePasswordDialog(context),
-                  ),
-                ],
+              SizedBox(height: 20),
+              Card(
+                margin: EdgeInsets.symmetric(horizontal: 30),
+                color: Color(0xFFEBE1C8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: Iconify(Mdi.rename_box),
+                      title: Text('Change username'),
+                      onTap: () {
+                        _showChangeUsername(context);
+                      },
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.lock),
+                      title: Text('Change password'),
+                      onTap: () => _showChangePasswordDialog(context),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              // Add extra space at the bottom to ensure all content is accessible
+              SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showAbout(); // make sure this function accepts BuildContext if needed
+          showAbout(); // Ensure this function accepts BuildContext if needed
         },
         hoverColor: Colors.grey,
         backgroundColor: Colors.white,

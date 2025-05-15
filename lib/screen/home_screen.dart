@@ -22,6 +22,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenWidget extends State<HomeScreen> {
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   void _logout() async {
     bool? shouldLogout = await showDialog<bool>(
       context: context,
@@ -103,6 +108,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
+
     if (user == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -111,7 +117,6 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        // Return `false` to disable the back button globally
         _logout();
         return false;
       },
@@ -124,9 +129,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
             padding: EdgeInsets.zero,
             children: <Widget>[
               DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Color(0xFFD7C19C),
-                ),
+                decoration: BoxDecoration(color: Color(0xFFD7C19C)),
                 child: Column(
                   children: [
                     SizedBox(height: 20),
@@ -168,13 +171,12 @@ class _HomeScreenWidget extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProfileSettingsScreen(),
-                    ),
+                        builder: (context) => ProfileSettingsScreen()),
                   );
                 },
               ),
               ListTile(
-                leading: Icon(Icons.history), // More appropriate for logs
+                leading: Icon(Icons.history),
                 title: Text('Logs'),
                 onTap: () {
                   Navigator.push(
@@ -191,77 +193,91 @@ class _HomeScreenWidget extends State<HomeScreen> {
             ],
           ),
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Your content here
-              Padding(
-                padding: EdgeInsets.only(bottom: imagePaddingBottom),
-                child: Image.asset(
-                  'assets/logoonly.png',
-                  height: 300,
-                  width: 250,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(bottom: imagePaddingBottom),
+                          child: Image.asset(
+                            'assets/logoonly.png',
+                            height: 300,
+                            width: 250,
+                          ),
+                        ),
+                        SizedBox(height: buttonSpacing),
+                        _buildButton(
+                          context,
+                          'Host',
+                          icon: const Iconify(Mdi.account_multiple,
+                              size: 24, color: Colors.black),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => HostScreen()),
+                            );
+                          },
+                        ),
+                        SizedBox(height: buttonSpacing),
+                        _buildButton(
+                          context,
+                          'Join',
+                          icon: const Iconify(Mdi.lan_connect,
+                              size: 24, color: Colors.black),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ChatScreen()),
+                            );
+                          },
+                        ),
+                        SizedBox(height: buttonSpacing),
+                        _buildButton(
+                          context,
+                          'Quiz-PAD',
+                          icon: const Iconify(Mdi.assignment,
+                              size: 24, color: Colors.black),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => QuizScreen()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    ClipPath(
+                      clipper: BottomClipper(),
+                      child: Container(
+                        height: constraints.maxHeight * 0.25,
+                        width: double.infinity,
+                        decoration:
+                            const BoxDecoration(color: Color(0xFFD7C19C)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: buttonSpacing),
-              _buildButton('Host', 200, () {
-                _createHost(context);
-              },
-                  icon: const Iconify(Mdi.account_multiple,
-                      size: 24, color: Colors.black)),
-              SizedBox(height: buttonSpacing),
-              _buildButton('Join', 200, () {
-                _joinChat(context);
-              },
-                  icon: const Iconify(Mdi.lan_connect,
-                      size: 24, color: Colors.black)),
-              SizedBox(height: buttonSpacing),
-              _buildButton('Quiz-PAD', 200, () {
-                _joinQuiz(context);
-              },
-                  icon: const Iconify(Mdi.assignment,
-                      size: 24, color: Colors.black)),
-
-              // Footer
-              ClipPath(
-                clipper: BottomClipper(),
-                child: Container(
-                  height: _getFooterHeight(
-                      context), // Calculate dynamic footer height
-                  width: double.infinity,
-                  decoration: const BoxDecoration(color: Color(0xFFD7C19C)),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  double _getFooterHeight(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-
-    if (screenHeight < 600) {
-      // For small devices like phones
-      return screenHeight * 0.25; // 25% of screen height
-    } else if (screenHeight >= 600 && screenHeight < 900) {
-      // For medium devices like small tablets
-      return screenHeight * 0.30; // 30% of screen height
-    } else {
-      // For large devices like tablets and large screens
-      return screenHeight * 0.35; // 35% of screen height
-    }
-  }
-
-  Widget _buildButton(
-    String text,
-    double buttonWidth,
-    VoidCallback onPressed, {
-    Widget? icon,
-  }) {
+  Widget _buildButton(BuildContext context, String text,
+      {required VoidCallback onPressed, Widget? icon}) {
     return SizedBox(
-      width: buttonWidth,
+      width: 200,
       height: 50.0,
       child: Tooltip(
         message: 'Click to $text',
@@ -293,33 +309,5 @@ class _HomeScreenWidget extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  void _joinChat(BuildContext context) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(),
-      ),
-    );
-  }
-
-  void _joinQuiz(BuildContext context) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QuizScreen(),
-      ),
-    );
-  }
-
-  void _createHost(BuildContext context) async {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => HostScreen()));
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

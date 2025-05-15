@@ -1,7 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:learnbound/screen/auth/register/register_screen.dart'
     show RegisterScreen;
 import 'package:learnbound/util/design/wave.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget buildLoginUI({
@@ -93,6 +93,7 @@ Widget buildLoginUI({
                       ),
                       SizedBox(height: screenSize.height * 0.025),
                       TextFormField(
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         controller: passwordController,
                         obscureText: !isPasswordVisible,
                         keyboardType: TextInputType.visiblePassword,

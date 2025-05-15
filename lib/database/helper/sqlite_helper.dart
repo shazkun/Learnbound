@@ -30,7 +30,7 @@ class DatabaseHelper {
     await db.execute('''
     CREATE TABLE $_userTable (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE,
+      username TEXT,
       email TEXT UNIQUE,
       password TEXT,
       profile_picture TEXT

@@ -1,7 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/home_screen.dart';
 import 'package:learnbound/util/design/snackbar.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -47,19 +47,37 @@ Future<void> login({
   required TextEditingController passwordController,
   required VoidCallback saveUserData,
 }) async {
+  String email = emailController.text.trim();
+  String password = passwordController.text;
+
+  if (email.isEmpty || password.isEmpty) {
+    CustomSnackBar.show(context, 'Please fill in all fields.',
+        isSuccess: false);
+    return;
+  }
+
+  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+  if (!emailRegex.hasMatch(email)) {
+    CustomSnackBar.show(context, 'Invalid email format.', isSuccess: false);
+    return;
+  }
+
+  if (password.length < 6) {
+    CustomSnackBar.show(context, 'Password must be at least 6 characters.',
+        isSuccess: false);
+    return;
+  }
+
   if (formKey.currentState?.validate() ?? false) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final prefs = await SharedPreferences.getInstance();
 
     try {
-      await userProvider.loginUser(
-        emailController.text,
-        passwordController.text,
-      );
+      bool success = await userProvider.loginUser(email, password);
 
       if (!context.mounted) return;
 
-      if (userProvider.user != null) {
+      if (success) {
         saveUserData();
         await prefs.setBool('isLoggedIn', true);
         CustomSnackBar.show(
@@ -75,11 +93,8 @@ Future<void> login({
           MaterialPageRoute(builder: (context) => HomeScreen()),
         );
       } else {
-        CustomSnackBar.show(
-          context,
-          'Invalid email or password',
-          isSuccess: false,
-        );
+        CustomSnackBar.show(context, 'Invalid email or password.',
+            isSuccess: false);
       }
     } catch (e) {
       CustomSnackBar.show(

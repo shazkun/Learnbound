@@ -119,6 +119,8 @@ class MultipleChoiceUI extends StatelessWidget {
                           clientSocket!.write(
                               "Answer:$question|$selectedAnswer|$username");
                           onStateUpdate(() => confirmedAnswers.add(question));
+                          print(
+                              "Answer sent: $question | $selectedAnswer | $username");
                         }
                       },
                       style: ElevatedButton.styleFrom(
