@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learnbound/screen/auth/login/reset/reset_screen.dart';
 import 'package:learnbound/screen/auth/register/register_screen.dart'
     show RegisterScreen;
 import 'package:learnbound/util/design/wave.dart';
@@ -153,6 +154,28 @@ Widget buildLoginUI({
                               style: TextStyle(
                                 fontSize: isSmallScreen ? 14 : 16,
                                 fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Container()), // takes remaining space
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ResetPasswordScreen(),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              "Forgot password? ",
+                              softWrap: true,
+                              maxLines: 2,
+                              overflow: TextOverflow.fade,
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 14 : 16,
+                                color: Colors.grey[600],
                               ),
                             ),
                           ),

@@ -32,7 +32,7 @@ dependencies:
   intl: ^0.18.0
   just_audio: ^0.9.41
   just_audio_windows: ^0.2.0
-  mockito: ^5.4.2
+  mailer: ^6.4.1
 
 flutter_launcher_icons:
   android: true
@@ -62,6 +62,9 @@ flutter:
     - assets/audio/incorrect.mp3
     - assets/audio/lobby.mp3
     - assets/audio/finish.mp3
+
+    #FILES
+    - googleapp.txt
 
   fonts:
     - family: Poppins

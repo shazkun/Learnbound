@@ -36,6 +36,7 @@ test/
 .pub/
 /build/
 /lib/oldfiles/
+googleapp.txt
 
 # Symbolication related
 app.*.symbols
