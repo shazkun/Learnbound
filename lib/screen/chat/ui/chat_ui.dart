@@ -1,10 +1,10 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/chat/message_tile.dart';
 import 'package:learnbound/screen/chat/questions_dialog.dart';
 import 'package:learnbound/util/design/snackbar.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ChatUI extends StatelessWidget {
@@ -14,11 +14,6 @@ class ChatUI extends StatelessWidget {
   final bool isStarted;
   final Function(String) onSendMessage;
   final VoidCallback onWaitSnackBar;
-
-  final List<String> questions;
-  final Map<String, List<String>> multipleChoiceQuestions;
-  final Map<String, String?> selectedAnswers;
-  final Set<String> confirmedAnswers;
   final Socket? clientSocket;
   final void Function(VoidCallback fn) onStateUpdate;
 
@@ -30,17 +25,12 @@ class ChatUI extends StatelessWidget {
     required this.isStarted,
     required this.onSendMessage,
     required this.onWaitSnackBar,
-    required this.questions,
-    required this.multipleChoiceQuestions,
-    required this.selectedAnswers,
-    required this.confirmedAnswers,
     required this.clientSocket,
     required this.onStateUpdate,
   });
 
   void _checkMaxLength(BuildContext context) {
     if (messageController.text.length == 100) {
-      // Show SnackBar when maxLength is reached
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Maximum character length reached!'),
@@ -103,11 +93,9 @@ class ChatUI extends StatelessWidget {
                 heroTag: 'send-Student',
                 onPressed: () {
                   if (messageController.text.trim().isEmpty) {
-                    // Show SnackBar if the message is blank
                     CustomSnackBar.show(context, "Input is empty.",
                         backgroundColor: Colors.orange, icon: Icons.info);
                   } else {
-                    // Send the message if it's not blank
                     isStarted
                         ? onSendMessage(messageController.text)
                         : onWaitSnackBar();
@@ -121,10 +109,6 @@ class ChatUI extends StatelessWidget {
                 heroTag: 'q-Student',
                 onPressed: () => showQuestionsDialog(
                   context: context,
-                  questions: questions,
-                  multipleChoiceQuestions: multipleChoiceQuestions,
-                  selectedAnswers: selectedAnswers,
-                  confirmedAnswers: confirmedAnswers,
                   fadeAnimation: fadeAnimation,
                   clientSocket: clientSocket,
                   onStateUpdate: onStateUpdate,

@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/host/host_styles.dart';
 import 'package:learnbound/screen/host/host_widgets.dart';
+import 'package:learnbound/screen/host/sticky_dialog.dart';
 import 'package:learnbound/util/back_dialog.dart';
 import 'package:learnbound/util/server.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../util/design/snackbar.dart';
 import '../home_screen.dart';
 
 class HostScreen extends StatefulWidget {
@@ -76,8 +77,10 @@ class _HostScreenState extends State<HostScreen>
       );
     } catch (e) {
       _addSystemMessage('Failed to start server: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Server failed to start: $e')),
+      CustomSnackBar.show(
+        context,
+        "Server failed to start: $e",
+        isSuccess: false,
       );
     }
   }
@@ -184,9 +187,9 @@ class _HostScreenState extends State<HostScreen>
     _clientStreams.remove(client)?.close();
     _connectedClients.remove(client);
     _participantConnectionTimes.remove(nickname);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$nickname disconnected')),
-    );
+
+    CustomSnackBar.show(context, "$nickname disconnected.",
+        isSuccess: false, backgroundColor: Colors.white12);
   }
 
   void _addSystemMessage(String text) {
@@ -262,9 +265,8 @@ class _HostScreenState extends State<HostScreen>
     if (question.trim().isEmpty ||
         options.isEmpty ||
         options.any((o) => o.trim().isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Question and options cannot be empty')),
-      );
+      CustomSnackBar.show(context, "Question and options cannot be empty.",
+          isSuccess: false, backgroundColor: Colors.orangeAccent);
       return;
     }
     final trimmedQuestion = question.trim();
@@ -289,9 +291,8 @@ class _HostScreenState extends State<HostScreen>
 
   void _showModeSelector() {
     if (_participants.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Waiting for participants...")),
-      );
+      CustomSnackBar.show(context, 'Waiting for participants...',
+          backgroundColor: Colors.white12);
       return;
     }
     showModalBottomSheet(
@@ -314,9 +315,9 @@ class _HostScreenState extends State<HostScreen>
                 }
                 _animationController.forward(from: 0);
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Mode switched to $mode")),
-              );
+
+              CustomSnackBar.show(context, "Mode switched to $mode",
+                  backgroundColor: Colors.brown, icon: Icons.info);
             },
           ),
         ),

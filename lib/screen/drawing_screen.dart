@@ -223,7 +223,9 @@ class _DrawingCanvasState extends State<DrawingCanvas> {
                     ),
                     child: IconButton(
                       icon: Icon(
-                        isErasing ? Icons.brush_rounded : Icons.brush_outlined,
+                        isErasing
+                            ? Icons.cleaning_services
+                            : Icons.brush_outlined,
                         color: isErasing ? Colors.white : Colors.black87,
                       ),
                       tooltip: isErasing ? 'Switch to Pen' : 'Switch to Eraser',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:learnbound/util/emergency_screen.dart';
 
 class CustomExitDialog {
   static Future<bool> show(
@@ -10,8 +11,9 @@ class CustomExitDialog {
     bool result = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             title: const Text(
               'Exit?',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -37,19 +39,27 @@ class CustomExitDialog {
         ) ??
         false;
 
-    // Perform navigation based on result and usePushReplacement parameter
+    // Handle result
     if (result) {
-      if (usePushReplacement) {
-        if (targetPage == null) {
-          throw ArgumentError(
-              'targetPage is required when usePushReplacement is true');
+      try {
+        if (usePushReplacement) {
+          if (targetPage == null) {
+            throw ArgumentError(
+                'targetPage is required when usePushReplacement is true');
+          }
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => targetPage),
+          );
+        } else {
+          Navigator.pop(context);
         }
+      } catch (e) {
+        // If any error happens, go to BackupScreen
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => targetPage),
+          MaterialPageRoute(builder: (context) => BackupScreen()),
         );
-      } else {
-        Navigator.pop(context);
       }
     }
 

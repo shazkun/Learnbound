@@ -144,6 +144,7 @@ class UserProvider with ChangeNotifier {
 
     // generate code and send email (same as before)
     final code = _generateResetCode();
+
     await _dbHelper.setResetCode(email, code);
     await _dbHelper.setResetTime(email, now);
 
@@ -151,7 +152,11 @@ class UserProvider with ChangeNotifier {
     final String? username = await loadEmail();
     final String? password = await loadPass();
 
-    final smtpServer = gmail(username!, password!);
+    if (username == null || password == null) {
+      return 'email is disabled please contact the developer';
+    }
+
+    final smtpServer = gmail(username, password);
 
     final message = Message()
       ..from = Address(username, 'Learnbound')

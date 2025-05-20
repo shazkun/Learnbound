@@ -1,8 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/auth/login/login_screen.dart';
-import 'package:learnbound/screen/auth/login/reset/reset_screen.dart';
+import 'package:learnbound/screen/chat/question_notifier.dart';
 import 'package:learnbound/screen/home_screen.dart';
 import 'package:learnbound/screen/loading_screen.dart';
 import 'package:learnbound/screen/start_screen.dart';
@@ -22,6 +23,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => QuestionsProvider()),
       ],
       child: const MyApp(),
     ),

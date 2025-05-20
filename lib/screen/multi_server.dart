@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:learnbound/util/design/wave.dart';
 import 'package:flutter/material.dart';
+import 'package:learnbound/util/design/wave.dart';
 
 class ServerList extends StatefulWidget {
   final Function(String serverInfo) onSelectServer;
@@ -14,7 +14,7 @@ class ServerList extends StatefulWidget {
 
 class _ServerListState extends State<ServerList>
     with SingleTickerProviderStateMixin {
-  final Set<String> _serverList = {};
+  final Set<String> _serverList = {'127.0.0.1'};
   RawDatagramSocket? _udpSocket;
   final int _udpPort = 4040;
   bool _isListening = false;

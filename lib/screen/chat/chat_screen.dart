@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:learnbound/database/user_provider.dart';
+import 'package:learnbound/screen/chat/question_notifier.dart';
 import 'package:learnbound/screen/chat/ui/drawing_ui.dart';
 import 'package:learnbound/screen/drawing_screen.dart';
 import 'package:learnbound/screen/multi_server.dart';
@@ -45,6 +46,7 @@ class _ChatScreenState extends State<ChatScreen>
   late Animation<double> _fadeAnimation;
   String? _latestDrawingPath;
   String? _latestImagePath;
+  bool hasNotifications = false;
 
   @override
   void initState() {
@@ -62,6 +64,8 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _connectToServer(String serverInfo) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final questionsProvider =
+        Provider.of<QuestionsProvider>(context, listen: false);
     final user = userProvider.user;
 
     _changeScreen = "S_CHAT";
@@ -82,12 +86,10 @@ class _ChatScreenState extends State<ChatScreen>
     }
 
     try {
-      // Parse server info
       final parts = serverInfo.split(':');
       final ip = parts[0];
       final port = int.parse(parts[1]);
 
-      // Connect to server
       _clientSocket =
           await Socket.connect(ip, port).timeout(Duration(seconds: 3));
       _clientSocket!.write("Nickname:${user?.username}");
@@ -99,7 +101,6 @@ class _ChatScreenState extends State<ChatScreen>
         _currentMode = "Chat";
       });
 
-      // Listen for messages
       _clientSocket!.listen(
         (data) {
           final message = String.fromCharCodes(data).trim();
@@ -108,7 +109,14 @@ class _ChatScreenState extends State<ChatScreen>
           if (message.startsWith("Mode:")) {
             setState(() => _currentMode = message.substring(5));
           } else if (message.startsWith("Question:")) {
-            setState(() => _questions.add(message.substring(9)));
+            // setState(() => _questions.add(message.substring(9)));
+            if (_questions.isEmpty) {
+              CustomSnackBar.show(context, 'Host has shared new questions.');
+            } else {
+              CustomSnackBar.show(context, 'More questions have been added.');
+            }
+
+            questionsProvider.addQuestion(message.substring(9));
           } else if (message.startsWith("MC:")) {
             final parts = message.substring(3).split("|");
             final question = parts[0];
@@ -130,14 +138,15 @@ class _ChatScreenState extends State<ChatScreen>
             });
           } else if (message.startsWith("Removed:")) {
             final question = message.substring(8).trim();
-            setState(() {
-              _questions.remove(question);
-              _multipleChoiceQuestions.remove(question);
-              _selectedAnswers.remove(question);
-              _confirmedAnswers.remove(question);
-              print(
-                  'Removed: $question, Remaining: ${_multipleChoiceQuestions.keys}');
-            });
+            questionsProvider.removeQuestion(question);
+            // setState(() {
+            //   _questions.remove(question);
+            //   _multipleChoiceQuestions.remove(question);
+            //   _selectedAnswers.remove(question);
+            //   _confirmedAnswers.remove(question);
+            //   print(
+            //       'Removed: $question, Remaining: ${_multipleChoiceQuestions.keys}');
+            // });
           } else if (message.startsWith("Session started:")) {
             setState(() {
               _messages.add({
@@ -172,6 +181,7 @@ class _ChatScreenState extends State<ChatScreen>
               _selectedAnswers.clear();
               _confirmedAnswers.clear();
             });
+            questionsProvider.clearAll();
           }
         },
         cancelOnError: true,
@@ -211,7 +221,7 @@ class _ChatScreenState extends State<ChatScreen>
           .add({'text': 'Image sent', 'isImage': true, 'image': imageFile}));
       print(base64Image);
 
-      setState(() => _latestImagePath = imageFile.path); // <- store the path
+      setState(() => _latestImagePath = imageFile.path);
     } catch (e) {
       debugPrint('Error sending image: $e');
     }
@@ -232,7 +242,7 @@ class _ChatScreenState extends State<ChatScreen>
     }
 
     if (drawing != null) {
-      setState(() => _latestDrawingPath = drawing); // <- store the path
+      setState(() => _latestDrawingPath = drawing);
     }
   }
 
@@ -286,7 +296,6 @@ class _ChatScreenState extends State<ChatScreen>
               ),
               TextButton(
                 onPressed: () {
-                  // Close the socket before confirming exit
                   _clientSocket?.destroy();
                   _clientSocket = null;
                   Navigator.pop(context, true);
@@ -322,8 +331,8 @@ class _ChatScreenState extends State<ChatScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFFF5F5F5), // Light grey (off-white)
-                      Color(0xFFFFFFFF), // Pure white
+                      Color(0xFFF5F5F5),
+                      Color(0xFFFFFFFF),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -355,10 +364,6 @@ class _ChatScreenState extends State<ChatScreen>
           isStarted: _isStarted,
           onSendMessage: _sendMessage,
           onWaitSnackBar: _showHostWaitSnackBar,
-          questions: _questions,
-          multipleChoiceQuestions: _multipleChoiceQuestions,
-          selectedAnswers: _selectedAnswers,
-          confirmedAnswers: _confirmedAnswers,
           clientSocket: _clientSocket,
           onStateUpdate: setState,
         );
@@ -373,11 +378,33 @@ class _ChatScreenState extends State<ChatScreen>
         );
       case "Picture":
         return PictureUI(
-            onPickAndSendImage: _pickAndSendImage, imagePath: _latestImagePath);
+          onPickAndSendImage: _pickAndSendImage,
+          imagePath: _latestImagePath,
+          messages: _messages,
+          fadeAnimation: _fadeAnimation,
+          messageController: _messageController,
+          isStarted: _isStarted,
+          onSendMessage: _sendMessage,
+          onWaitSnackBar: _showHostWaitSnackBar,
+          questions: _questions,
+          multipleChoiceQuestions: _multipleChoiceQuestions,
+          selectedAnswers: _selectedAnswers,
+          confirmedAnswers: _confirmedAnswers,
+          clientSocket: _clientSocket,
+          onStateUpdate: setState,
+        );
       case "Drawing":
         return DrawingUI(
           onOpenDrawingCanvas: _openDrawingCanvas,
           imagePath: _latestDrawingPath,
+          messages: _messages,
+          fadeAnimation: _fadeAnimation,
+          messageController: _messageController,
+          isStarted: _isStarted,
+          onSendMessage: _sendMessage,
+          onWaitSnackBar: _showHostWaitSnackBar,
+          clientSocket: _clientSocket,
+          onStateUpdate: setState,
         );
       default:
         return Center(

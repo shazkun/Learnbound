@@ -33,6 +33,7 @@ dependencies:
   just_audio: ^0.9.41
   just_audio_windows: ^0.2.0
   mailer: ^6.4.1
+  # showcaseview: ^4.0.1
 
 flutter_launcher_icons:
   android: true

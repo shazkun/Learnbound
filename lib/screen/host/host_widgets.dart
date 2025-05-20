@@ -110,7 +110,7 @@ class LobbyView extends StatelessWidget {
                         'Awaiting Participants...',
                         style: AppStyles.titleText.copyWith(
                           fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.normal, // Remove bold
+                          fontWeight: FontWeight.normal,
                           color: Colors.black.withOpacity(0.5),
                         ),
                       ),
@@ -245,8 +245,8 @@ class SessionView extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               child: Image.memory(
                 decodedImage,
-                gaplessPlayback: true, // reduces flicker
-                filterQuality: FilterQuality.low, // improves speed
+                gaplessPlayback: true,
+                filterQuality: FilterQuality.low,
               )),
         ),
       ),
@@ -257,8 +257,8 @@ class SessionView extends StatelessWidget {
           width: 100,
           height: 100,
           fit: BoxFit.cover,
-          gaplessPlayback: true, // optional: smoother loading
-          filterQuality: FilterQuality.low, // optional: faster
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.low,
         ),
       ),
     );
@@ -388,6 +388,8 @@ class SessionView extends StatelessWidget {
                       onShowMultipleChoiceDialog();
                     } else {
                       onSendQuestion();
+                      CustomSnackBar.show(context, "Questions Added.",
+                          isSuccess: true);
                     }
                   } else {
                     CustomSnackBar.show(context, "Input is empty.",
@@ -479,7 +481,30 @@ class _MultipleChoiceDialogState extends State<MultipleChoiceDialog> {
           const SizedBox(height: 16),
           TextField(
             controller: widget.questionController,
-            decoration: const InputDecoration(labelText: 'Question'),
+            decoration: InputDecoration(
+              labelText: 'Question',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+                borderSide: const BorderSide(
+                  color: Colors.grey,
+                  width: 1.0,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+                borderSide: const BorderSide(
+                  color: Colors.grey,
+                  width: 1.0,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+                borderSide: const BorderSide(
+                  color: Colors.blue,
+                  width: 2.0,
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           ...optionControllers.map(
@@ -487,7 +512,30 @@ class _MultipleChoiceDialogState extends State<MultipleChoiceDialog> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: TextField(
                 controller: controller,
-                decoration: const InputDecoration(labelText: 'Option'),
+                decoration: InputDecoration(
+                  labelText: 'Option',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: const BorderSide(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: const BorderSide(
+                      color: Colors.grey,
+                      width: 1.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: const BorderSide(
+                      color: Colors.blue,
+                      width: 2.0,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -528,68 +576,6 @@ class _MultipleChoiceDialogState extends State<MultipleChoiceDialog> {
             },
             style: AppStyles.elevatedButtonStyle,
             child: const Text('Send', style: AppStyles.buttonText),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class StickyQuestionsDialog extends StatelessWidget {
-  final List<String> stickyQuestions;
-  final Animation<double> fadeAnimation;
-  final Function(String) onRemoveQuestion;
-
-  const StickyQuestionsDialog({
-    super.key,
-    required this.stickyQuestions,
-    required this.fadeAnimation,
-    required this.onRemoveQuestion,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.5,
-      ),
-      padding: AppStyles.defaultPadding,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Sticky Questions', style: AppStyles.dialogTitle),
-          const SizedBox(height: 16),
-          Expanded(
-            child: stickyQuestions.isEmpty
-                ? const Center(
-                    child: Text('No sticky questions yet',
-                        style: TextStyle(color: Colors.grey)),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: stickyQuestions.length,
-                    itemBuilder: (context, index) {
-                      final question = stickyQuestions[index];
-                      return FadeTransition(
-                        opacity: fadeAnimation,
-                        child: ListTile(
-                          title: Text(question,
-                              style: const TextStyle(fontSize: 16)),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => onRemoveQuestion(question),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: AppStyles.elevatedButtonStyle,
-            child: const Text('Close', style: AppStyles.buttonText),
           ),
         ],
       ),
