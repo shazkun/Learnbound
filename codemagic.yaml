@@ -24,10 +24,3 @@ workflows:
 
     artifacts:
       - build/ios/ipa/*.ipa
-
-    code_signing:
-      certificates:
-        - certificate: ios_distribution.p12
-          password: $CERTIFICATE_PASSWORD
-      provisioning_profiles:
-        - ios_app.mobileprovision
