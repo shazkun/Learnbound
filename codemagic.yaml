@@ -18,13 +18,14 @@ workflows:
           flutter pub get
       - name: Build iOS release and generate ipa
         script: |
-          flutter build ipa --no-codesign
-      - name: Debug: Show IPA path
-        script: |
-          echo "Checking build/ios/ipa folder..."
-          ls -lh build/ios/ipa || echo "Folder not found"
-          echo "Checking build/ios folder..."
-          ls -lh build/ios || echo "Folder not found"
+          set -e  # Exit on error
+          flutter build ipa --no-codesign --verbose
+          echo "Listing contents of build/ios/ipa directory:"
+          ls -la build/ios/ipa || echo "Directory build/ios/ipa does not exist or is empty"
+          if [ ! -f "build/ios/ipa/*.ipa" ]; then
+            echo "Error: No .ipa file found in build/ios/ipa"
+            exit 1
+          fi
 
     artifacts:
       - build/ios/ipa/*.ipa
