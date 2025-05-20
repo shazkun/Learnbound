@@ -26,7 +26,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     if (pickedFile != null) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.updateProfilePicture(pickedFile.path);
+      bool success = await userProvider.updateProfilePicture(pickedFile.path);
+
+      if (success) {
+        CustomSnackBar.show(context, 'Profile picture updated successfully.');
+        Navigator.of(context).pop();
+      } else {
+        CustomSnackBar.show(context, 'Failed to update profile picture.');
+      }
     }
   }
 
@@ -40,6 +47,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         'Profile picture deleted successfully.',
         isSuccess: true,
       );
+      Navigator.of(context).pop();
     } else {
       CustomSnackBar.show(
         context,
@@ -279,62 +287,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
-  void showAbout() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'LearnBound',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: const Color(0xFFD7C19C),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Version: 1.2.2',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'LearnBound is your smart study companion app to help students learn effectively.',
-                style: TextStyle(fontSize: 15, color: Colors.grey[700]),
-              ),
-              SizedBox(height: 15),
-              Text(
-                'Contact:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                'support@learnbound.com',
-                style: TextStyle(color: const Color(0xFFD7C19C)),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.black,
-                textStyle: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -358,17 +310,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   context: context,
                   builder: (BuildContext context) {
                     return AlertDialog(
-                      title: Text('Profile Options'),
-                      content:
-                          Text('Choose an action for your profile picture:'),
+                      title: Text('Options'),
+                      content: Text(
+                          'You can change or delete your profile picture.'),
                       actions: [
                         TextButton(
                           onPressed: _changeProfilePicture,
-                          child: Text('Change Profile'),
+                          child: Text('Change'),
                         ),
                         TextButton(
                           onPressed: _deleteProfilePicture,
-                          child: Text('Delete Profile'),
+                          child: Text('Delete'),
                         ),
                       ],
                     );
@@ -438,21 +390,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showAbout(); // Ensure this function accepts BuildContext if needed
-        },
-        hoverColor: Colors.grey,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        highlightElevation: 0,
-        child: Icon(
-          Icons.info_outlined,
-          size: 32,
-          color: Colors.black,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }

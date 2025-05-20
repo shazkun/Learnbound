@@ -1,8 +1,9 @@
 import 'package:animate_do/animate_do.dart';
+
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:learnbound/models/question.dart';
 import 'package:learnbound/screen/home_screen.dart';
+import 'package:learnbound/screen/quiz/audio_handler.dart';
 import 'package:learnbound/screen/quiz/quiz_stats.dart';
 import 'package:learnbound/util/back_dialog.dart';
 import 'package:learnbound/util/design/appbar.dart';
@@ -29,15 +30,14 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
   int score = 0;
   bool isReviewMode = false;
   String? errorMessage;
-  bool isSoundEnabled = true;
-  bool isSoundPlaying = false;
 
   List<bool> answeredCorrectly = [];
   List<Map<String, dynamic>> userAnswers = [];
 
   final TextEditingController shortAnswerController = TextEditingController();
-  final AudioPlayer _bgMusicPlayer = AudioPlayer(); // just_audio AudioPlayer
-  final AudioPlayer _sfxPlayer = AudioPlayer(); // just_audio AudioPlayer
+  final AudioService _audioService = AudioService(); // Initialize AudioService
+
+  String reviewFilter = 'all';
 
   @override
   void initState() {
@@ -51,71 +51,14 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
     answeredCorrectly = List.filled(widget.questions.length, false);
     resetAnswer();
 
-    playBackgroundMusic();
-  }
-
-  Future<void> playBackgroundMusic() async {
-    try {
-      // Set loop mode for background music
-      await _bgMusicPlayer.setLoopMode(LoopMode.all);
-      setState(() {
-        isSoundPlaying = !isSoundPlaying;
-      });
-
-      if (!isReviewMode) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        await _bgMusicPlayer.setAsset('assets/audio/quiz-bg.mp3');
-        if (isSoundEnabled) {
-          await _bgMusicPlayer.play();
-        }
-      } else if (isReviewMode) {
-        await _bgMusicPlayer.stop();
-        await Future.delayed(const Duration(milliseconds: 700));
-        await _bgMusicPlayer.setAsset('assets/audio/lobby.mp3');
-        if (isSoundEnabled) {
-          await _bgMusicPlayer.play();
-        }
-      } else {
-        await stopBackgroundMusic();
-      }
-    } catch (e) {
-      // Handle errors (e.g., asset not found)
-      debugPrint('Error playing background music: $e');
-    }
-  }
-
-  Future<void> stopBackgroundMusic() async {
-    try {
-      await _bgMusicPlayer.stop();
-      setState(() {
-        isSoundPlaying = false;
-      });
-    } catch (e) {
-      debugPrint('Error stopping background music: $e');
-    }
-  }
-
-  Future<void> pauseBackgroundMusic() async {
-    try {
-      await _bgMusicPlayer.pause();
-    } catch (e) {
-      debugPrint('Error pausing background music: $e');
-    }
-  }
-
-  Future<void> playSfx(String fileName) async {
-    try {
-      await _sfxPlayer.setAsset('assets/$fileName');
-      await _sfxPlayer.play();
-    } catch (e) {
-      debugPrint('Error playing SFX: $e');
-    }
+    Future.delayed(Duration(seconds: 1), () {
+      _audioService.playBackgroundMusic();
+    });
   }
 
   @override
   void dispose() {
-    _bgMusicPlayer.dispose(); // Dispose just_audio player
-    _sfxPlayer.dispose(); // Dispose just_audio player
+    _audioService.dispose(); // Dispose audio service
     shortAnswerController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -178,19 +121,17 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
       }
     });
 
-    if (isSoundEnabled) {
-      await pauseBackgroundMusic();
+    if (_audioService.isSoundEnabled) {
+      await _audioService.pauseBackgroundMusic();
 
       if (isCorrect) {
-        await playSfx('audio/correct.mp3');
+        await _audioService.playSfx('assets/audio/correct.mp3');
       } else {
-        await playSfx('audio/incorrect.mp3');
+        await _audioService.playSfx('assets/audio/incorrect.mp3');
       }
 
       await Future.delayed(const Duration(milliseconds: 700));
-      if (isSoundEnabled) {
-        await _bgMusicPlayer.play();
-      }
+      await _audioService.resumeBackgroundMusic();
     }
   }
 
@@ -209,7 +150,6 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
         });
       } else {
         goToStatisticsScreen();
-        _bgMusicPlayer.stop();
       }
     } else {
       if (currentQuestionIndex < widget.questions.length - 1) {
@@ -242,7 +182,7 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
       currentQuestionIndex = 0;
       loadUserAnswer();
     });
-    playBackgroundMusic(); // Update music for review mode
+    // _audioService.playBackgroundMusic(); // Update music for review mode
   }
 
   void loadUserAnswer() {
@@ -271,9 +211,8 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
 
   void goToStatisticsScreen() {
     if (!mounted) return;
-    stopBackgroundMusic();
-    _sfxPlayer.stop();
-    playSfx("audio/finish.mp3");
+    _audioService.stopBackgroundMusic();
+    // _audioService.playSfx("assets/audio/finish.mp3");
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -288,15 +227,8 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
 
   void toggleSound() {
     setState(() {
-      isSoundEnabled = !isSoundEnabled;
-    });
-
-    if (isSoundEnabled) {
-      playBackgroundMusic();
-    } else {
-      pauseBackgroundMusic();
-      _sfxPlayer.stop();
-    }
+      _audioService.toggleSound();
+    }); // Update UI to reflect sound state
   }
 
   @override
@@ -325,10 +257,16 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
     }
 
     final question = widget.questions[currentQuestionIndex];
+    final filteredIndexes =
+        List.generate(widget.questions.length, (i) => i).where((i) {
+      if (reviewFilter == 'correct') return answeredCorrectly[i];
+      if (reviewFilter == 'wrong') return !answeredCorrectly[i];
+      return true; // 'all'
+    }).toList();
 
     return WillPopScope(
       onWillPop: () async {
-        stopBackgroundMusic();
+        _audioService.stopBackgroundMusic();
         return CustomExitDialog.show(context);
       },
       child: Scaffold(
@@ -343,11 +281,14 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
           actions: [
             IconButton(
               icon: Icon(
-                isSoundEnabled ? Icons.volume_up : Icons.volume_off,
+                _audioService.isSoundEnabled
+                    ? Icons.volume_up
+                    : Icons.volume_off,
                 color: Colors.black,
               ),
               onPressed: toggleSound,
-              tooltip: isSoundEnabled ? 'Mute Sound' : 'Unmute Sound',
+              tooltip:
+                  _audioService.isSoundEnabled ? 'Mute Sound' : 'Unmute Sound',
             ),
           ],
         ),
@@ -483,15 +424,53 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
                   ),
                 ),
               ] else ...[
+                ToggleButtons(
+                  borderRadius: BorderRadius.circular(20), // round edges here
+                  isSelected: [
+                    reviewFilter == 'all',
+                    reviewFilter == 'correct',
+                    reviewFilter == 'wrong'
+                  ],
+                  onPressed: (index) {
+                    setState(() {
+                      if (index == 0)
+                        reviewFilter = 'all';
+                      else if (index == 1)
+                        reviewFilter = 'correct';
+                      else
+                        reviewFilter = 'wrong';
+                    });
+                  },
+                  children: const [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('All'),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('Correct'),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('Wrong'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: widget.questions.length,
+                  // itemCount: widget.questions.length,
+                  // itemBuilder: (context, index) {
+                  //   final question = widget.questions[index];
+                  //   final answer = userAnswers[index];
+                  //   final isAnsweredCorrectly = answeredCorrectly[index];
+                  itemCount: filteredIndexes.length,
                   itemBuilder: (context, index) {
-                    final question = widget.questions[index];
-                    final answer = userAnswers[index];
-                    final isAnsweredCorrectly =
-                        answeredCorrectly[index] ?? false;
+                    final actualIndex = filteredIndexes[index];
+                    final question = widget.questions[actualIndex];
+                    final answer = userAnswers[actualIndex];
+                    final isAnsweredCorrectly = answeredCorrectly[actualIndex];
 
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -545,21 +524,25 @@ class _QuizTakingScreenState extends State<QuizTakingScreen>
                     );
                   },
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: goToStatisticsScreen,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 12),
-                  ),
-                  child: const Text('Finish',
-                      style: TextStyle(color: Colors.white)),
-                ),
               ],
             ],
           ),
         ),
+
+        floatingActionButton: isReviewMode
+            ? FloatingActionButton(
+                onPressed: goToStatisticsScreen,
+                backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
+                heroTag: 'finishButton',
+                tooltip: 'Result',
+                child: const Icon(
+                  Icons.bar_chart,
+                  color: Colors.black,
+                ),
+              )
+            : null, // Don't show anything if condition is false
+
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
     );
   }

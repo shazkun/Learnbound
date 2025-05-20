@@ -101,6 +101,102 @@ class _HomeScreenWidget extends State<HomeScreen> {
     }
   }
 
+  void showAbout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              'LearnBound',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Version: 1.0.0',
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'LearnBound is your smart study companion app to help students learn effectively.',
+                  style: TextStyle(fontSize: 15, color: Colors.grey[700]),
+                ),
+                SizedBox(height: 50),
+                Text(
+                  'Contact:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'seanwiltonr@gmail.com',
+                      style: TextStyle(color: Color(0xFFD7C19C)),
+                    ),
+                    Text(
+                      'rjosepheusebio@gmail.com',
+                      style: TextStyle(color: Color(0xFFD7C19C)),
+                    ),
+                    Text(
+                      'rjamesramos@gmail.com',
+                      style: TextStyle(color: Color(0xFFD7C19C)),
+                    ),
+                  ],
+                )
+              ],
+            ),
+            actions: []);
+      },
+    );
+  }
+
+  Widget _buildButton(BuildContext context, String text,
+      {required VoidCallback onPressed, Widget? icon}) {
+    return SizedBox(
+      width: 200,
+      height: 50.0,
+      child: Tooltip(
+        message: 'Click to $text',
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFD3AC70),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+          ),
+          onPressed: onPressed,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (icon != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: icon,
+                ),
+              Center(
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const double imagePaddingBottom = 20.0;
@@ -125,43 +221,39 @@ class _HomeScreenWidget extends State<HomeScreen> {
           surfaceTintColor: Colors.transparent,
         ),
         drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
+          child: Column(
             children: <Widget>[
               DrawerHeader(
                 decoration: BoxDecoration(color: Color(0xFFD7C19C)),
-                child: Column(
-                  children: [
-                    SizedBox(height: 20),
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.grey[200],
-                      child: ClipOval(
-                        child: user.profilePicture != null &&
-                                user.profilePicture!.isNotEmpty
-                            ? Image.file(
-                                File(user.profilePicture!),
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Image.asset(
-                                    'assets/defaultprofile.png',
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                  );
-                                },
-                              )
-                            : Image.asset(
-                                'assets/defaultprofile.png',
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
-                      ),
+                child: Center(
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.grey[200],
+                    child: ClipOval(
+                      child: user.profilePicture != null &&
+                              user.profilePicture!.isNotEmpty
+                          ? Image.file(
+                              File(user.profilePicture!),
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/defaultprofile.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              'assets/defaultprofile.png',
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
                     ),
-                  ],
+                  ),
                 ),
               ),
               ListTile(
@@ -171,7 +263,8 @@ class _HomeScreenWidget extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => ProfileSettingsScreen()),
+                      builder: (context) => ProfileSettingsScreen(),
+                    ),
                   );
                 },
               ),
@@ -181,7 +274,9 @@ class _HomeScreenWidget extends State<HomeScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SessionLogScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => SessionLogScreen(),
+                    ),
                   );
                 },
               ),
@@ -190,6 +285,12 @@ class _HomeScreenWidget extends State<HomeScreen> {
                 title: Text('Logout'),
                 onTap: _logout,
               ),
+              Spacer(),
+              Divider(),
+              ListTile(
+                  leading: Icon(Icons.info_outline),
+                  title: Text('About'),
+                  onTap: () => showAbout()),
             ],
           ),
         ),
@@ -269,43 +370,6 @@ class _HomeScreenWidget extends State<HomeScreen> {
               ),
             );
           },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildButton(BuildContext context, String text,
-      {required VoidCallback onPressed, Widget? icon}) {
-    return SizedBox(
-      width: 200,
-      height: 50.0,
-      child: Tooltip(
-        message: 'Click to $text',
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD3AC70),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
-          onPressed: onPressed,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (icon != null)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: icon,
-                ),
-              Center(
-                child: Text(
-                  text,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

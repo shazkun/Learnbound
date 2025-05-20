@@ -235,31 +235,54 @@ class SessionView extends StatelessWidget {
   }
 
   Widget _buildImageThumbnail(String base64Image, BuildContext context) {
-    Uint8List decodedImage = base64Decode(base64Image);
+    Uint8List decodedImage;
+
+    try {
+      decodedImage = base64Decode(base64Image);
+    } catch (_) {
+      decodedImage = Uint8List(0);
+    }
+
+    Widget errorWidget = Container(
+      width: 100,
+      height: 100,
+      color: Colors.grey[300],
+      child: const Icon(Icons.question_mark, size: 40, color: Colors.black54),
+    );
+
     return GestureDetector(
-      onTap: () => showDialog(
-        context: context,
-        builder: (_) => Dialog(
-          shape: AppStyles.dialogShape,
-          child: ClipRRect(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (_) => Dialog(
+            shape: AppStyles.dialogShape,
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Image.memory(
-                decodedImage,
-                gaplessPlayback: true,
-                filterQuality: FilterQuality.low,
-              )),
-        ),
-      ),
+              child: decodedImage.isEmpty
+                  ? errorWidget
+                  : Image.memory(
+                      decodedImage,
+                      gaplessPlayback: true,
+                      filterQuality: FilterQuality.low,
+                      errorBuilder: (_, __, ___) => errorWidget,
+                    ),
+            ),
+          ),
+        );
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.memory(
-          decodedImage,
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-          gaplessPlayback: true,
-          filterQuality: FilterQuality.low,
-        ),
+        child: decodedImage.isEmpty
+            ? errorWidget
+            : Image.memory(
+                decodedImage,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                filterQuality: FilterQuality.low,
+                errorBuilder: (_, __, ___) => errorWidget,
+              ),
       ),
     );
   }

@@ -27,6 +27,40 @@ class StatisticsScreen extends StatelessWidget {
     return Scaffold(
       appBar: _buildAppBar(context),
       body: _buildBody(context, validatedScore, percentage),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Left bottom FAB
+          Padding(
+            padding: const EdgeInsets.only(left: 30.0),
+            child: FloatingActionButton(
+              backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
+              onPressed: () => Navigator.pop(context),
+              heroTag: 'review-Button',
+              tooltip: 'Review',
+              child: Icon(Icons.reviews, color: Colors.black),
+            ),
+          ),
+
+          // Right bottom FAB
+          Padding(
+            padding: const EdgeInsets.only(right: 30.0),
+            child: FloatingActionButton(
+                backgroundColor: const Color.fromRGBO(211, 172, 112, 1.0),
+                tooltip: 'Finish',
+                heroTag: 'finish-Button',
+                onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                    ),
+                child: Icon(
+                  Icons.done,
+                  color: Colors.black,
+                )),
+          ),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -56,12 +90,11 @@ class StatisticsScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTitle(context),
-          const SizedBox(height: 8),
+          // _buildTitle(context),
+          // const SizedBox(height: 8),
           _buildScoreCard(context, validatedScore, percentage),
           const SizedBox(height: 16),
           const SizedBox(height: 10),
-          _buildActionButtons(context),
         ],
       ),
     );
@@ -79,93 +112,139 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  /// Builds the score card displaying score and percentage.
   Widget _buildScoreCard(
       BuildContext context, int validatedScore, String percentage) {
+    // Convert percentage string to double for CircularProgressIndicator
+    double progressValue = double.tryParse(percentage) ?? 0.0;
+    progressValue = progressValue / 100; // Convert to 0.0–1.0 range
+
     return Card(
-      color: Colors.white,
-      elevation: 8,
+      elevation: 12, // Increased elevation for deeper shadow
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        side:
+            BorderSide(color: Colors.grey.shade200, width: 1), // Subtle border
       ),
-      child: Padding(
-        padding: EdgeInsets.all(Theme.of(context).padding.primary),
-        child: Column(
-          children: [
-            Text(
-              'Score: $validatedScore/$totalQuestions',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade50, Colors.white], // Soft gradient
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(Theme.of(context).padding.primary),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Score badge with icon
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      color: Theme.of(context).primaryColor,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Score: $validatedScore/$totalQuestions',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                            fontSize: 20,
+                          ),
+                      semanticsLabel:
+                          'Score: $validatedScore out of $totalQuestions',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Percentage circle with animation
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade300,
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: TweenAnimationBuilder(
+                      tween: Tween<double>(begin: 0, end: progressValue),
+                      duration: const Duration(milliseconds: 800),
+                      builder: (context, value, child) {
+                        return CircularProgressIndicator(
+                          value: value,
+                          strokeWidth: 10,
+                          backgroundColor: Colors.grey.shade200,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).primaryColor,
+                          ),
+                          semanticsLabel: 'Percentage: $percentage percent',
+                        );
+                      },
+                    ),
                   ),
-              semanticsLabel: 'Score: $validatedScore out of $totalQuestions',
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Percentage: $percentage%',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black,
+                  Text(
+                    '$percentage%',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          fontSize: 24,
+                        ),
                   ),
-              semanticsLabel: 'Percentage: $percentage percent',
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Motivational text based on percentage
+              Text(
+                _getMotivationalText(progressValue),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade700,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// Builds the row of action buttons (Exit and Review).
-  Widget _buildActionButtons(BuildContext context) {
-    const buttonColor = Color.fromRGBO(211, 172, 112, 1.0);
-    return Row(
-      children: [
-        _buildButton(
-          context: context,
-          text: 'Exit',
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-          ),
-          color: buttonColor,
-        ),
-        const SizedBox(width: 16),
-        _buildButton(
-          context: context,
-          text: 'Review',
-          onPressed: () => Navigator.pop(context),
-          color: buttonColor,
-        ),
-      ],
-    );
-  }
-
-  /// Builds a single elevated button with consistent styling.
-  Widget _buildButton({
-    required BuildContext context,
-    required String text,
-    required VoidCallback onPressed,
-    required Color color,
-  }) {
-    return Expanded(
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          textStyle: Theme.of(context).textTheme.labelLarge,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          elevation: 6,
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.black),
-        ),
-      ),
-    );
+// Helper method for motivational text
+  String _getMotivationalText(double progressValue) {
+    if (progressValue >= 0.9) {
+      return 'Outstanding performance!';
+    } else if (progressValue >= 0.7) {
+      return 'Great job, keep it up!';
+    } else if (progressValue >= 0.5) {
+      return 'Solid effort, you can do even better!';
+    } else {
+      return 'Keep practicing, you’ve got this!';
+    }
   }
 }
 
