@@ -63,7 +63,7 @@ flutter:
     - assets/audio/finish.mp3
 
     #FILES
-    - googleapp.txt
+    # - googleapp.txt
 
   fonts:
     - family: Poppins
