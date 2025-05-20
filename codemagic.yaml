@@ -19,6 +19,12 @@ workflows:
       - name: Build iOS release and generate ipa
         script: |
           flutter build ipa --no-codesign
+      - name: Debug: Show IPA path
+        script: |
+          echo "Checking build/ios/ipa folder..."
+          ls -lh build/ios/ipa || echo "Folder not found"
+          echo "Checking build/ios folder..."
+          ls -lh build/ios || echo "Folder not found"
 
     artifacts:
       - build/ios/ipa/*.ipa
