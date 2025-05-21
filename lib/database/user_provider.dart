@@ -99,31 +99,31 @@ class UserProvider with ChangeNotifier {
         .toString();
   }
 
-  Future<String?> loadEmail() async {
-    String content = await rootBundle.loadString('googleapp.txt');
-    List<String> lines = content.split('\n');
+  // Future<String?> loadEmail() async {
+  //   String content = await rootBundle.loadString('googleapp.txt');
+  //   List<String> lines = content.split('\n');
 
-    for (var line in lines) {
-      if (line.startsWith('email:')) {
-        return line.split(':')[1].trim(); // return 'test'
-      }
-    }
+  //   for (var line in lines) {
+  //     if (line.startsWith('email:')) {
+  //       return line.split(':')[1].trim(); // return 'test'
+  //     }
+  //   }
 
-    return null; // if not found
-  }
+  //   return null; // if not found
+  // }
 
-  Future<String?> loadPass() async {
-    String content = await rootBundle.loadString('googleapp.txt');
-    List<String> lines = content.split('\n');
+  // Future<String?> loadPass() async {
+  //   String content = await rootBundle.loadString('googleapp.txt');
+  //   List<String> lines = content.split('\n');
 
-    for (var line in lines) {
-      if (line.startsWith('pass:')) {
-        return line.split(':')[1].trim(); // return 'test'
-      }
-    }
+  //   for (var line in lines) {
+  //     if (line.startsWith('pass:')) {
+  //       return line.split(':')[1].trim(); // return 'test'
+  //     }
+  //   }
 
-    return null; // if not found
-  }
+  //   return null; // if not found
+  // }
 
   /// Send reset code to email (you still need PHP/hosting to send the actual email)
   Future<String?> sendResetCode(String email) async {
@@ -149,25 +149,25 @@ class UserProvider with ChangeNotifier {
     await _dbHelper.setResetTime(email, now);
 
     // 📧 SMTP Email send
-    final String? username = await loadEmail();
-    final String? password = await loadPass();
+    // final String? username = await loadEmail();
+    // final String? password = await loadPass();
 
-    if (username == null || password == null) {
-      return 'email is disabled please contact the developer';
-    }
+    // if (username == null || password == null) {
+    //   return 'email is disabled please contact the developer';
+    // }
 
-    final smtpServer = gmail(username, password);
+    // final smtpServer = gmail(username, password);
 
-    final message = Message()
-      ..from = Address(username, 'Learnbound')
-      ..recipients.add(email)
-      ..subject = 'Password Reset Code'
-      ..text = 'Your password reset code is: $code'
-      ..html = '<p>Your password reset code is: <strong>$code</strong></p>';
+    // final message = Message()
+    //   ..from = Address(username, 'Learnbound')
+    //   ..recipients.add(email)
+    //   ..subject = 'Password Reset Code'
+    //   ..text = 'Your password reset code is: $code'
+    //   ..html = '<p>Your password reset code is: <strong>$code</strong></p>';
 
     try {
-      final sendReport = await send(message, smtpServer);
-      print('Message sent: ${sendReport.toString()}');
+      // final sendReport = await send(message, smtpServer);
+      // print('Message sent: ${sendReport.toString()}');
       notifyListeners();
       return code;
     } catch (e) {

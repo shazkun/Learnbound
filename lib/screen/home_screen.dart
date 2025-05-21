@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:learnbound/database/user_provider.dart';
@@ -98,6 +99,37 @@ class _HomeScreenWidget extends State<HomeScreen> {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => LoginScreen()));
       }
+    }
+  }
+
+  void showChangelogFromGitHub() async {
+    final url =
+        'https://raw.githubusercontent.com/your-username/your-repo/main/CHANGELOG.md';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      String changelogText = response.body;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Changelog'),
+          content: SingleChildScrollView(
+            child: Text(changelogText),
+          ),
+          actions: [],
+        ),
+      );
+    } else {
+      // error handling
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Error'),
+          content: Text('Unable to load changelog.'),
+        ),
+      );
     }
   }
 
@@ -287,6 +319,10 @@ class _HomeScreenWidget extends State<HomeScreen> {
               ),
               Spacer(),
               Divider(),
+              ListTile(
+                  leading: Icon(Icons.build),
+                  title: Text('Changelog'),
+                  onTap: () => showChangelogFromGitHub()),
               ListTile(
                   leading: Icon(Icons.info_outline),
                   title: Text('About'),
