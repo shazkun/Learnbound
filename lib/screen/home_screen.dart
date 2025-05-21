@@ -104,7 +104,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
   void showChangelogFromGitHub() async {
     final url =
-        'https://raw.githubusercontent.com/your-username/your-repo/main/CHANGELOG.md';
+        'https://raw.githubusercontent.com/shazkun/Learnbound/refs/heads/main/CHANGELOG.md';
 
     final response = await http.get(Uri.parse(url));
 
