@@ -294,34 +294,64 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     required Color color,
     required VoidCallback? onPressed,
   }) {
-    return SizedBox(
-      width: 180, // Matches the button width in the image
-      height: 80, // Increased height to accommodate the vertical layout
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-                8), // Rounded corners as seen in the image
-          ),
-        ),
-        onPressed: onPressed,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            icon, // Icon centered at the top
-            const SizedBox(height: 4), // Small spacing between icon and label
-            Text(
-              label,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double screenWidth = MediaQuery.of(context).size.width;
+        final double screenHeight = MediaQuery.of(context).size.height;
 
-              style: const TextStyle(fontSize: 14, color: Colors.black),
-              textAlign: TextAlign.center, // Ensure text is centered
+        final double buttonWidth =
+            (constraints.maxWidth * 0.95).clamp(160, 320);
+        final double buttonHeight = (screenHeight * 0.18).clamp(60, 100);
+        final double fontSize = (screenWidth * 0.045).clamp(16, 20);
+        final double padding = (screenWidth * 0.03).clamp(12, 20);
+        final double spacing = (screenWidth * 0.02).clamp(8, 16);
+
+        return SizedBox(
+          width: buttonWidth,
+          height: buttonHeight,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.black,
+              padding: EdgeInsets.symmetric(
+                horizontal: padding,
+                vertical: padding * 0.8,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(padding * 0.8),
+              ),
+              textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontSize: fontSize,
+                    color: Colors.black,
+                  ),
             ),
-          ],
-        ),
-      ),
+            onPressed: onPressed,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: icon,
+                ),
+                SizedBox(width: spacing),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontSize: fontSize,
+                          color: Colors.black,
+                        ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -330,120 +360,153 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
 
+    // Responsive sizing based on screen width and height
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double padding =
+        (screenWidth * 0.04).clamp(16, 24); // Adjusted for larger screens
+    final double avatarRadius =
+        (screenWidth * 0.12).clamp(50, 100); // Larger avatar range
+    final double imageSize = avatarRadius * 2;
+    final double spacing =
+        (screenHeight * 0.015).clamp(10, 16); // Increased spacing
+
     return Scaffold(
       appBar: AppBarCustom(
         showBackButton: true,
         titleText: 'Profile',
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(40),
+        padding: EdgeInsets.all(padding),
         child: Center(
-          child: Container(
-            padding: EdgeInsets.all(100),
-            decoration: BoxDecoration(
-              color: AppColors.bgGrey200,
-              borderRadius: BorderRadius.all(Radius.circular(16)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 800, // Increased for fullscreen monitors
+              minWidth: 320, // Slightly increased for small screens
             ),
-            child: Column(
-              children: [
-                GestureDetector(
-                  onTap: () => showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text('Options'),
-                        content: Text(
-                            'You can change or delete your profile picture.'),
-                        actions: [
-                          TextButton(
-                            onPressed: _changeProfilePicture,
-                            child: Text('Change'),
+            child: Container(
+              padding: EdgeInsets.all(padding * 1.5),
+              decoration: BoxDecoration(
+                color: AppColors.bgGrey200,
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text('Options',
+                              style: Theme.of(context).textTheme.titleMedium),
+                          content: Text(
+                            'You can change or delete your profile picture.',
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                          TextButton(
-                            onPressed: _deleteProfilePicture,
-                            child: Text('Delete'),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  child: CircleAvatar(
-                    radius: 70, // bigger radius
-                    backgroundColor: Colors.grey[200],
-                    child: ClipOval(
-                      child: user?.profilePicture != null &&
-                              user!.profilePicture!.isNotEmpty
-                          ? Image.file(
-                              File(user.profilePicture!),
-                              width: 140, // bigger width
-                              height: 140, // bigger height
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/defaultprofile.png',
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.cover,
-                                );
-                              },
-                            )
-                          : Image.asset(
-                              'assets/defaultprofile.png',
-                              width: 140,
-                              height: 140,
-                              fit: BoxFit.cover,
+                          actions: [
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                TextButton(
+                                  onPressed: _changeProfilePicture,
+                                  child: Text('Change'),
+                                ),
+                                TextButton(
+                                  onPressed: _deleteProfilePicture,
+                                  child: Text('Delete'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: Text('Cancel'),
+                                ),
+                              ],
                             ),
+                          ],
+                        );
+                      },
+                    ),
+                    child: CircleAvatar(
+                      radius: avatarRadius,
+                      backgroundColor: Colors.grey[200],
+                      child: ClipOval(
+                        child: user?.profilePicture != null &&
+                                user!.profilePicture!.isNotEmpty
+                            ? Image.file(
+                                File(user.profilePicture!),
+                                width: imageSize,
+                                height: imageSize,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/defaultprofile.png',
+                                    width: imageSize,
+                                    height: imageSize,
+                                    fit: BoxFit.cover,
+                                  );
+                                },
+                              )
+                            : Image.asset(
+                                'assets/defaultprofile.png',
+                                width: imageSize,
+                                height: imageSize,
+                                fit: BoxFit.cover,
+                              ),
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  user?.username ?? "Name",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                SizedBox(height: 20),
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 30),
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      buildButton(
+                  SizedBox(height: spacing),
+                  Text(
+                    user?.username ?? "Name",
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: (screenWidth * 0.045)
+                              .clamp(18, 22), // Slightly larger
+                        ),
+                  ),
+                  SizedBox(height: spacing * 1.5),
+                  Container(
+                    margin: EdgeInsets.symmetric(
+                        horizontal: (screenWidth * 0.05).clamp(20, 40)),
+                    padding: EdgeInsets.all(padding),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        buildButton(
                           icon: Iconify(
                             Mdi.rename_box,
-                            size: 25,
+                            size: (screenWidth * 0.05)
+                                .clamp(20, 28), // Dynamic icon size
                           ),
                           label: 'Change nickname',
                           color: AppColors.learnBound,
-                          onPressed: () {
-                            return _showChangeUsername(context);
-                          }),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      buildButton(
+                          onPressed: () => _showChangeUsername(context),
+                        ),
+                        SizedBox(height: spacing * 1.5),
+                        buildButton(
                           icon: Iconify(
                             Mdi.lock,
-                            size: 25,
+                            size: (screenWidth * 0.05).clamp(20, 28),
                           ),
                           label: 'Change password',
                           color: AppColors.learnBound,
-                          onPressed: () {
-                            return _showChangePasswordDialog(context);
-                          })
-                    ],
+                          onPressed: () => _showChangePasswordDialog(context),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: 40),
-                Text(
-                  '© BTVTED-CP-TUPC',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                  SizedBox(height: spacing * 3),
+                  Text(
+                    '© BTVTED-CP-TUPC',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: (screenWidth * 0.035).clamp(12, 16),
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
