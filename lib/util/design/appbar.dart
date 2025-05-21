@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learnbound/models/user.dart';
+import 'package:learnbound/util/design/colors.dart';
 import 'package:learnbound/util/design/wave.dart';
 
 class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
@@ -18,7 +19,7 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = true,
     this.titleText = "Student",
     this.titleColor = Colors.black,
-    this.backgroundColor = const Color(0xFFD7C19C),
+    this.backgroundColor = AppColors.learnBound,
     this.actions, // <-- include in constructor
   });
 

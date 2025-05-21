@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:learnbound/util/design/appbar.dart';
+import 'package:learnbound/util/design/colors.dart';
 import 'package:provider/provider.dart';
 
 import '../util/design/snackbar.dart';
@@ -106,7 +107,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text('Cancel'),
         ),
-        ElevatedButton(
+        TextButton(
           onPressed: () async {
             final newUsername = usernameController.text.trim();
             if (newUsername.isNotEmpty && newUsername.length <= 12) {
@@ -196,7 +197,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text('Cancel'),
                 ),
-                ElevatedButton(
+                TextButton(
                   onPressed: () async {
                     final current = currentPasswordController.text;
                     final newPass = newPasswordController.text;
@@ -287,6 +288,43 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  Widget buildButton({
+    required Widget icon,
+    required String label,
+    required Color color,
+    required VoidCallback? onPressed,
+  }) {
+    return SizedBox(
+      width: 180, // Matches the button width in the image
+      height: 80, // Increased height to accommodate the vertical layout
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+                8), // Rounded corners as seen in the image
+          ),
+        ),
+        onPressed: onPressed,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            icon, // Icon centered at the top
+            const SizedBox(height: 4), // Small spacing between icon and label
+            Text(
+              label,
+
+              style: const TextStyle(fontSize: 14, color: Colors.black),
+              textAlign: TextAlign.center, // Ensure text is centered
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -298,95 +336,115 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         titleText: 'Profile',
       ),
       body: SingleChildScrollView(
-        child: Container(
-          color: Colors.white,
-          padding:
-              EdgeInsets.only(bottom: 20), // Add padding to avoid FAB overlap
-          child: Column(
-            children: [
-              SizedBox(height: 20),
-              GestureDetector(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Options'),
-                      content: Text(
-                          'You can change or delete your profile picture.'),
-                      actions: [
-                        TextButton(
-                          onPressed: _changeProfilePicture,
-                          child: Text('Change'),
-                        ),
-                        TextButton(
-                          onPressed: _deleteProfilePicture,
-                          child: Text('Delete'),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey[200],
-                  child: ClipOval(
-                    child: user?.profilePicture != null &&
-                            user!.profilePicture!.isNotEmpty
-                        ? Image.file(
-                            File(user.profilePicture!),
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/defaultprofile.png',
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          )
-                        : Image.asset(
-                            'assets/defaultprofile.png',
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
+        padding: EdgeInsets.all(40),
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(100),
+            decoration: BoxDecoration(
+              color: AppColors.bgGrey200,
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+            ),
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Options'),
+                        content: Text(
+                            'You can change or delete your profile picture.'),
+                        actions: [
+                          TextButton(
+                            onPressed: _changeProfilePicture,
+                            child: Text('Change'),
                           ),
+                          TextButton(
+                            onPressed: _deleteProfilePicture,
+                            child: Text('Delete'),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  child: CircleAvatar(
+                    radius: 70, // bigger radius
+                    backgroundColor: Colors.grey[200],
+                    child: ClipOval(
+                      child: user?.profilePicture != null &&
+                              user!.profilePicture!.isNotEmpty
+                          ? Image.file(
+                              File(user.profilePicture!),
+                              width: 140, // bigger width
+                              height: 140, // bigger height
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/defaultprofile.png',
+                                  width: 140,
+                                  height: 140,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              'assets/defaultprofile.png',
+                              width: 140,
+                              height: 140,
+                              fit: BoxFit.cover,
+                            ),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                user?.username ?? "Name",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              SizedBox(height: 20),
-              Card(
-                margin: EdgeInsets.symmetric(horizontal: 30),
-                color: Color(0xFFEBE1C8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                SizedBox(height: 10),
+                Text(
+                  user?.username ?? "Name",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: Iconify(Mdi.rename_box),
-                      title: Text('Change username'),
-                      onTap: () {
-                        _showChangeUsername(context);
-                      },
-                    ),
-                    ListTile(
-                      leading: Icon(Icons.lock),
-                      title: Text('Change password'),
-                      onTap: () => _showChangePasswordDialog(context),
-                    ),
-                  ],
+                SizedBox(height: 20),
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 30),
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      buildButton(
+                          icon: Iconify(
+                            Mdi.rename_box,
+                            size: 25,
+                          ),
+                          label: 'Change nickname',
+                          color: AppColors.learnBound,
+                          onPressed: () {
+                            return _showChangeUsername(context);
+                          }),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      buildButton(
+                          icon: Iconify(
+                            Mdi.lock,
+                            size: 25,
+                          ),
+                          label: 'Change password',
+                          color: AppColors.learnBound,
+                          onPressed: () {
+                            return _showChangePasswordDialog(context);
+                          })
+                    ],
+                  ),
                 ),
-              ),
-              // Add extra space at the bottom to ensure all content is accessible
-              SizedBox(height: 80),
-            ],
+                SizedBox(height: 40),
+                Text(
+                  '© BTVTED-CP-TUPC',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

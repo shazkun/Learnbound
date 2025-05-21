@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:learnbound/screen/home_screen.dart';
+import 'package:learnbound/util/design/colors.dart';
 
 import '../../util/back_dialog.dart';
 import '../../util/design/appbar.dart';
@@ -127,11 +128,7 @@ class StatisticsScreen extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade50, Colors.white], // Soft gradient
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: AppColors.bgGrey200,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Padding(

@@ -12,6 +12,7 @@ import 'package:learnbound/screen/quiz/quiz_server.dart';
 import 'package:learnbound/screen/quiz/quiz_take.dart';
 import 'package:learnbound/util/back_dialog.dart';
 import 'package:learnbound/util/design/appbar.dart';
+import 'package:learnbound/util/design/colors.dart';
 import 'package:learnbound/util/design/snackbar.dart';
 import 'package:learnbound/util/server.dart';
 import 'package:path_provider/path_provider.dart';
@@ -98,9 +99,16 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void randomizeQuestions() {
-    setState(() {
-      questions.shuffle();
-    });
+    if (questions.length > 1) {
+      setState(() {
+        questions.shuffle();
+      });
+      CustomSnackBar.show(context, 'Randomize successful.', isSuccess: true);
+    } else {
+      CustomSnackBar.show(
+          context, 'Randomize only if question is greater than one.',
+          backgroundColor: AppColors.warning, isSuccess: false);
+    }
   }
 
   Future<String> getPresetsDirectoryPath() async {
@@ -214,7 +222,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               CustomSnackBar.show(
                                 context,
                                 'Please enter a valid file name',
-                                backgroundColor: Colors.orange,
+                                backgroundColor: AppColors.warning,
                                 icon: Icons.warning,
                                 iconColor: Colors.white,
                                 textColor: Colors.white,
@@ -249,7 +257,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               CustomSnackBar.show(
                                 context,
                                 'Preset saved as $fileName.json',
-                                backgroundColor: Colors.green,
+                                isSuccess: true,
                                 icon: Icons.save,
                                 iconColor: Colors.white,
                                 textColor: Colors.white,
@@ -750,17 +758,31 @@ class _QuizScreenState extends State<QuizScreen> {
     required VoidCallback? onPressed,
   }) {
     return SizedBox(
-      width: 180,
-      child: ElevatedButton.icon(
-        icon: icon,
-        label: Text(label),
+      width: 120, // Matches the button width in the image
+      height: 80, // Increased height to accommodate the vertical layout
+      child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          textStyle: const TextStyle(fontSize: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+                8), // Rounded corners as seen in the image
+          ),
         ),
         onPressed: onPressed,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            icon, // Icon centered at the top
+            const SizedBox(height: 4), // Small spacing between icon and label
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14),
+              textAlign: TextAlign.center, // Ensure text is centered
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -785,108 +807,121 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                'Admin Controls',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  buildButton(
-                    icon: Iconify(
-                      isBroadcasting ? Mdi.stop_circle : Mdi.cast,
-                      size: 24,
-                      color: Colors.white,
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    // border: Border(
+                    //   top: BorderSide(color: AppColors.learnBound, width: 10),
+                    // ),
+                    // borderRadius: BorderRadius.only(
+                    //   bottomLeft: Radius.circular(20),
+                    //   bottomRight: Radius.circular(20),
+                    // ),
+                    borderRadius: BorderRadius.all(Radius.circular(16))),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Admin Controls',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
-                    label:
-                        isBroadcasting ? 'Broadcast' : 'Broadcast',
-                    color: isBroadcasting ? Colors.red : Colors.amber,
-                    onPressed: toggleBroadcast,
-                  ),
-                  buildButton(
-                    icon: const Iconify(Mdi.connection,
-                        size: 24, color: Colors.white),
-                    label: 'Connect',
-                    color: Colors.blue,
-                    onPressed: _showServerList,
-                  ),
-                  buildButton(
-                    icon: const Iconify(Mdi.plus_circle,
-                        size: 24, color: Colors.white),
-                    label: 'Add',
-                    color: Colors.deepPurple,
-                    onPressed: _showCreateQuizDialog,
-                  ),
-                  buildButton(
-                    icon: const Iconify(Mdi.upload,
-                        size: 24, color: Colors.white),
-                    label: 'Import',
-                    color: Colors.deepPurple,
-                    onPressed: importQuestions,
-                  ),
-                  buildButton(
-                    icon:
-                        const Iconify(Mdi.clear, size: 24, color: Colors.white),
-                    label: 'Clear',
-                    color: Colors.teal,
-                    onPressed: questions.isNotEmpty
-                        ? () => setState(() {
-                              questions.clear();
-                              CustomSnackBar.show(
-                                  context, "Questions cleared.");
-                            })
-                        : null,
-                  ),
-                  buildButton(
-                    icon: const Iconify(Mdi.shuffle,
-                        size: 24, color: Colors.white),
-                    label: 'Randomize',
-                    color: Colors.orange,
-                    onPressed: questions.isNotEmpty ? randomizeQuestions : null,
-                  ),
-                  buildButton(
-                    icon: const Iconify(Mdi.content_save,
-                        size: 24, color: Colors.white),
-                    label: 'Save',
-                    color: Colors.teal,
-                    onPressed:
-                        questions.isNotEmpty ? () => savePreset(context) : null,
-                  ),
-                  buildButton(
-                    icon: const Iconify(Mdi.folder_open,
-                        size: 24, color: Colors.white),
-                    label: 'Load',
-                    color: Colors.orange,
-                    onPressed: _showLoadPresetDialog,
-                  ),
-                  buildButton(
-                    icon: const Iconify(Mdi.play_circle,
-                        size: 24, color: Colors.white),
-                    label: 'Start',
-                    color: Colors.green,
-                    onPressed: questions.isNotEmpty ? _showQuizDialog : null,
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Wrap(
+                      runAlignment: WrapAlignment.center,
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        buildButton(
+                          icon: Iconify(
+                            isBroadcasting ? Mdi.stop_circle : Mdi.cast,
+                            size: 24,
+                            color: Colors.white,
+                          ),
+                          label: isBroadcasting ? 'Broadcast' : 'Broadcast',
+                          color: isBroadcasting ? Colors.red : Colors.amber,
+                          onPressed: toggleBroadcast,
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.connection,
+                              size: 24, color: Colors.white),
+                          label: 'Connect',
+                          color: Colors.blue,
+                          onPressed: _showServerList,
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.plus_circle,
+                              size: 24, color: Colors.white),
+                          label: 'Add',
+                          color: Colors.deepPurple,
+                          onPressed: _showCreateQuizDialog,
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.upload,
+                              size: 24, color: Colors.white),
+                          label: 'Import',
+                          color: Colors.deepPurple,
+                          onPressed: () async => await importQuestions(),
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.clear,
+                              size: 24, color: Colors.white),
+                          label: 'Clear',
+                          color: Colors.teal,
+                          onPressed: questions.isNotEmpty
+                              ? () => setState(() {
+                                    questions.clear();
+                                    CustomSnackBar.show(
+                                        context, "Questions cleared.");
+                                  })
+                              : null,
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.shuffle,
+                              size: 24, color: Colors.white),
+                          label: 'Randomize',
+                          color: Colors.orange,
+                          onPressed:
+                              questions.isNotEmpty ? randomizeQuestions : null,
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.content_save,
+                              size: 24, color: Colors.white),
+                          label: 'Save',
+                          color: Colors.teal,
+                          onPressed: questions.isNotEmpty
+                              ? () => savePreset(context)
+                              : null,
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.folder_open,
+                              size: 24, color: Colors.white),
+                          label: 'Load',
+                          color: Colors.orange,
+                          onPressed: _showLoadPresetDialog,
+                        ),
+                        buildButton(
+                          icon: const Iconify(Mdi.play_circle,
+                              size: 24, color: Colors.white),
+                          label: 'Start',
+                          color: Colors.green,
+                          onPressed:
+                              questions.isNotEmpty ? _showQuizDialog : null,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Quiz Questions',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
               const SizedBox(height: 16),
               Container(
                 height: 500,
@@ -896,24 +931,39 @@ class _QuizScreenState extends State<QuizScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.blueGrey, width: 2),
                   borderRadius: BorderRadius.circular(12),
-                  color: const Color(0xFFD7C19C),
+                  color: AppColors.learnBound,
                 ),
-                child: questions.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No questions added yet.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      )
-                    : QuestionList(
-                        questions: questions,
-                        onEdit: (index) => editQuestion(index),
-                        onDelete: (index) => deleteQuestion(index),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Question List',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: questions.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No questions added yet.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            )
+                          : QuestionList(
+                              questions: questions,
+                              onEdit: (index) => editQuestion(index),
+                              onDelete: (index) => deleteQuestion(index),
+                            ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

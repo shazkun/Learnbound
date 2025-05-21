@@ -1,7 +1,6 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
-
-import '../../models/question.dart';
+import 'package:learnbound/models/question.dart';
 
 class QuestionList extends StatefulWidget {
   final List<Question> questions;
@@ -198,7 +197,9 @@ class _QuestionListState extends State<QuestionList> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isEmpty ? 'No question text provided.' : question.text,
+            isEmpty
+                ? 'No question text provided.'
+                : 'Question: ${question.text}',
             style: TextStyle(
               fontSize: 16,
               color: isEmpty ? Colors.red : Colors.black,

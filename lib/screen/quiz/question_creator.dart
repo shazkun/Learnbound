@@ -1,7 +1,5 @@
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
-
-import '../../models/question.dart';
+import 'package:learnbound/models/question.dart';
 
 class QuestionForm extends StatefulWidget {
   final Function(Question) onAddOrUpdate;
@@ -204,174 +202,169 @@ class _QuestionFormState extends State<QuestionForm> {
 
   @override
   Widget build(BuildContext context) {
-    return FadeInDown(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.questionToEdit != null ? 'Edit Question' : 'Add Question',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+              ),
+            ),
+            SizedBox(height: 16),
+            TextField(
+              maxLength: 100,
+              controller: _questionController,
+              decoration: InputDecoration(
+                labelText: 'Question',
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+              maxLines: 2,
+            ),
+            SizedBox(height: 16),
+            DropdownButtonFormField<QuestionType>(
+              value: _selectedType,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: 'Question Type',
+                border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+              items: QuestionType.values
+                  .map((type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(type
+                            .toString()
+                            .split('.')
+                            .last
+                            .replaceAll('selectMultiple', 'Select Multiple')),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedType = value!;
+                  _optionControllers =
+                      List.generate(4, (_) => TextEditingController());
+                  _correctOptions =
+                      List<bool>.from([false, false, false, false]);
+                });
+              },
+            ),
+            SizedBox(height: 16),
+            if (_selectedType == QuestionType.shortAnswer)
+              TextField(
+                maxLength: 100,
+                controller: _answerController,
+                decoration: InputDecoration(
+                  labelText: 'Correct Answer',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                ),
+              ),
+            if (_selectedType != QuestionType.shortAnswer) ...[
               Text(
-                widget.questionToEdit != null
-                    ? 'Edit Question'
-                    : 'Add Question',
+                'Options (at least 2 required)',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                   color: Colors.deepPurple,
                 ),
               ),
-              SizedBox(height: 16),
-              TextField(
-                maxLength: 100,
-                controller: _questionController,
-                decoration: InputDecoration(
-                  labelText: 'Question',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                ),
-                maxLines: 2,
-              ),
-              SizedBox(height: 16),
-              DropdownButtonFormField<QuestionType>(
-                value: _selectedType,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: 'Question Type',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                ),
-                items: QuestionType.values
-                    .map((type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type
-                              .toString()
-                              .split('.')
-                              .last
-                              .replaceAll('selectMultiple', 'Select Multiple')),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedType = value!;
-                    _optionControllers =
-                        List.generate(4, (_) => TextEditingController());
-                    _correctOptions =
-                        List<bool>.from([false, false, false, false]);
-                  });
-                },
-              ),
-              SizedBox(height: 16),
-              if (_selectedType == QuestionType.shortAnswer)
-                TextField(
-                  maxLength: 100,
-                  controller: _answerController,
-                  decoration: InputDecoration(
-                    labelText: 'Correct Answer',
-                    border: OutlineInputBorder(),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                  ),
-                ),
-              if (_selectedType != QuestionType.shortAnswer) ...[
-                Text(
-                  'Options (at least 2 required)',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.deepPurple,
-                  ),
-                ),
-                SizedBox(height: 8),
-                ...List.generate(
-                  _optionControllers.length,
-                  (index) => Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _optionControllers[index],
-                            decoration: InputDecoration(
-                              labelText: 'Option ${index + 1}',
-                              border: OutlineInputBorder(),
-                              filled: true,
-                              fillColor: Colors.grey[100],
-                            ),
+              SizedBox(height: 8),
+              ...List.generate(
+                _optionControllers.length,
+                (index) => Padding(
+                  padding: EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _optionControllers[index],
+                          decoration: InputDecoration(
+                            labelText: 'Option ${index + 1}',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                            fillColor: Colors.grey[100],
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Checkbox(
-                          value: _correctOptions[index],
-                          onChanged: (value) {
-                            setState(() {
-                              _correctOptions[index] = value!;
-                            });
-                          },
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.delete,
-                            color: _optionControllers.length > 2
-                                ? Colors.red
-                                : Colors.grey,
-                          ),
-                          onPressed: _optionControllers.length > 2
-                              ? () => deleteOption(index)
-                              : null,
-                          tooltip: 'Delete Option',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    icon: Icon(Icons.add_circle, color: Colors.deepPurple),
-                    onPressed: addOption,
-                    tooltip: 'Add Option',
-                  ),
-                ),
-              ],
-              SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (widget.questionToEdit == null)
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.clear),
-                      label: Text('Clear'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey,
-                        foregroundColor: Colors.white,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
-                      onPressed: clearForm,
-                    ),
-                  SizedBox(width: 16),
+                      SizedBox(width: 8),
+                      Checkbox(
+                        value: _correctOptions[index],
+                        onChanged: (value) {
+                          setState(() {
+                            _correctOptions[index] = value!;
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.delete,
+                          color: _optionControllers.length > 2
+                              ? Colors.red
+                              : Colors.grey,
+                        ),
+                        onPressed: _optionControllers.length > 2
+                            ? () => deleteOption(index)
+                            : null,
+                        tooltip: 'Delete Option',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: Icon(Icons.add_circle, color: Colors.deepPurple),
+                  onPressed: addOption,
+                  tooltip: 'Add Option',
+                ),
+              ),
+            ],
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (widget.questionToEdit == null)
                   ElevatedButton.icon(
-                    icon: Icon(
-                        widget.questionToEdit != null ? Icons.edit : Icons.add),
-                    label: Text(widget.questionToEdit != null
-                        ? 'Update Question'
-                        : 'Add Question'),
+                    icon: Icon(Icons.clear),
+                    label: Text('Clear'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
+                      backgroundColor: Colors.grey,
                       foregroundColor: Colors.white,
                       padding:
                           EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     ),
-                    onPressed: addOrUpdateQuestion,
+                    onPressed: clearForm,
                   ),
-                ],
-              ),
-            ],
-          ),
+                SizedBox(width: 16),
+                ElevatedButton.icon(
+                  icon: Icon(
+                      widget.questionToEdit != null ? Icons.edit : Icons.add),
+                  label: Text(widget.questionToEdit != null
+                      ? 'Update Question'
+                      : 'Add Question'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  onPressed: addOrUpdateQuestion,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
