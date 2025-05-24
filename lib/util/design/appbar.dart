@@ -40,12 +40,15 @@ class AppBarCustom extends StatelessWidget implements PreferredSizeWidget {
                     height: 24,
                     width: 24,
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (onBackPressed != null) {
-                      onBackPressed!().then((shouldPop) {
-                        if (shouldPop) Navigator.pop(context);
-                      });
-                    } else {
+                      final shouldPop = await onBackPressed!();
+                      if (shouldPop &&
+                          context.mounted &&
+                          Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                    } else if (context.mounted && Navigator.canPop(context)) {
                       Navigator.pop(context);
                     }
                   },

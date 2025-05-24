@@ -13,7 +13,7 @@ class RegisterFunctions {
   final TextEditingController confirmPasswordController =
       TextEditingController();
   String? profilePicture;
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  late final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   final RegExp emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
   final RegExp usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');

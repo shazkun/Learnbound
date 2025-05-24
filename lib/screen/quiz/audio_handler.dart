@@ -3,14 +3,14 @@ import 'package:just_audio/just_audio.dart';
 import 'dart:io' show Platform;
 
 class AudioService with WidgetsBindingObserver {
-  final AudioPlayer _bgMusicPlayer = AudioPlayer();
-  final AudioPlayer _sfxPlayer = AudioPlayer();
+  AudioPlayer bgMusicPlayer = AudioPlayer();
+  AudioPlayer sfxPlayer = AudioPlayer();
   bool isSoundEnabled = true;
   bool isSoundPlaying = false;
 
   AudioService() {
     WidgetsBinding.instance.addObserver(this);
-    _bgMusicPlayer
+    bgMusicPlayer
         .setLoopMode(LoopMode.one); // Set loop mode for background music
   }
 
@@ -19,12 +19,12 @@ class AudioService with WidgetsBindingObserver {
       final path = 'assets/audio/quiz-bg.mp3';
 
       if (isSoundEnabled) {
-        await _bgMusicPlayer.setAsset(
+        await bgMusicPlayer.setAsset(
           path,
           preload: !Platform
               .isWindows, // Disable preload on Windows to avoid buffering issues
         );
-        await _bgMusicPlayer.play();
+        await bgMusicPlayer.play();
         isSoundPlaying = true;
       }
     } catch (e) {
@@ -35,7 +35,7 @@ class AudioService with WidgetsBindingObserver {
 
   Future<void> stopBackgroundMusic() async {
     try {
-      await _bgMusicPlayer.stop();
+      await bgMusicPlayer.stop();
       isSoundPlaying = false;
     } catch (e) {
       debugPrint('Error stopping background music: $e');
@@ -44,7 +44,7 @@ class AudioService with WidgetsBindingObserver {
 
   Future<void> pauseBackgroundMusic() async {
     try {
-      await _bgMusicPlayer.pause();
+      await bgMusicPlayer.pause();
     } catch (e) {
       debugPrint('Error pausing background music: $e');
     }
@@ -53,7 +53,7 @@ class AudioService with WidgetsBindingObserver {
   Future<void> resumeBackgroundMusic() async {
     try {
       if (isSoundEnabled && isSoundPlaying) {
-        await _bgMusicPlayer.play();
+        await bgMusicPlayer.play();
       }
     } catch (e) {
       debugPrint('Error resuming background music: $e');
@@ -63,11 +63,11 @@ class AudioService with WidgetsBindingObserver {
   Future<void> playSfx(String fileName) async {
     try {
       if (isSoundEnabled) {
-        await _sfxPlayer.setAsset(
+        await sfxPlayer.setAsset(
           fileName,
           preload: !Platform.isWindows, // Disable preload on Windows
         );
-        await _sfxPlayer.play();
+        await sfxPlayer.play();
       }
     } catch (e) {
       debugPrint('Error playing SFX: $e');
@@ -78,7 +78,7 @@ class AudioService with WidgetsBindingObserver {
     isSoundEnabled = !isSoundEnabled;
     if (!isSoundEnabled) {
       pauseBackgroundMusic();
-      _sfxPlayer.stop();
+      sfxPlayer.stop();
     } else {
       resumeBackgroundMusic();
     }
@@ -101,8 +101,8 @@ class AudioService with WidgetsBindingObserver {
 
   void dispose() {
     try {
-      _bgMusicPlayer.dispose();
-      _sfxPlayer.dispose();
+      bgMusicPlayer.dispose();
+      sfxPlayer.dispose();
       WidgetsBinding.instance.removeObserver(this);
     } catch (e) {
       debugPrint('Error disposing audio service: $e');

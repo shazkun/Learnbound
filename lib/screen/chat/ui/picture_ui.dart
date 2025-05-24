@@ -11,7 +11,6 @@ class PictureUI extends StatelessWidget {
   final Animation<double> fadeAnimation;
   final TextEditingController messageController;
   final bool isStarted;
-  final Function(String) onSendMessage;
   final VoidCallback onWaitSnackBar;
 
   final List<String> questions;
@@ -29,7 +28,6 @@ class PictureUI extends StatelessWidget {
     required this.fadeAnimation,
     required this.messageController,
     required this.isStarted,
-    required this.onSendMessage,
     required this.onWaitSnackBar,
     required this.questions,
     required this.multipleChoiceQuestions,

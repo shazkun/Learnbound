@@ -28,7 +28,11 @@ class CustomExitDialog {
                 ),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () async {
+                  if (context.mounted) {
+                    Navigator.pop(context, true);
+                  }
+                },
                 child: const Text(
                   'Exit',
                   style: TextStyle(color: Colors.red),

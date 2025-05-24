@@ -15,7 +15,7 @@ class ServerList extends StatefulWidget {
 
 class _ServerListState extends State<ServerList>
     with SingleTickerProviderStateMixin {
-  final Set<String> _serverList = {};
+  final Set<String> _serverList = {'127.0.0.1'};
   RawDatagramSocket? _udpSocket;
   final int _udpPort = 4040;
   bool _isListening = false;

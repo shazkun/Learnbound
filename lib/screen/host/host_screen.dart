@@ -24,24 +24,32 @@ class HostScreen extends StatefulWidget {
 
 class _HostScreenState extends State<HostScreen>
     with SingleTickerProviderStateMixin {
-  List<String> _clients = [];
-  List<Map<String, dynamic>> _messages = [];
-  final _stickyQuestions = <String>[];
-  final _multipleChoiceResponses = <String, Map<String, int>>{};
-  ServerSocket? _serverSocket;
-  final _questionController = TextEditingController();
-  final _clientNicknames = <Socket, String>{};
-  final _connectedClients = <Socket>[];
-  final _participants = <String, int>{};
-  final _clientStreams = <Socket, StreamController<String>>{};
-  final _broadcast = BroadcastServer();
-  final _participantConnectionTimes = <String, DateTime>{};
-  String _lobbyState = "lobby";
-  String _selectedMode = "Chat";
-  late DateTime _sessionStartTime;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  final StringBuffer dataBuffer = StringBuffer();
+  List<String> _clients = []; // List of client IDs/names (likely legacy)
+  final _clientNicknames = <Socket, String>{}; // Mapping sockets to nicknames
+  final _connectedClients = <Socket>[]; // Currently connected clients
+  final _clientStreams =
+      <Socket, StreamController<String>>{}; // Streams for individual clients
+  final _participants =
+      <String, int>{}; // Participant activity (e.g. response count)
+  final _participantConnectionTimes =
+      <String, DateTime>{}; // Connection timestamps
+
+  List<Map<String, dynamic>> _messages = []; // Chat/message logs
+  final _questionController = TextEditingController(); // Input for questions
+  final _stickyQuestions = <String>[]; // Pinned/sticky questions
+  final _multipleChoiceResponses = <String, Map<String, int>>{}; // MCQ answers
+
+  ServerSocket? _serverSocket; // The TCP server socket
+  final _broadcast = BroadcastServer(); // Broadcast handler
+  final StringBuffer dataBuffer =
+      StringBuffer(); // Buffer for incoming raw data
+
+  String _lobbyState = "lobby"; // Lobby or active session
+  String _selectedMode = "Chat"; // Mode: Chat, Drawing, MCQ, etc.
+  late DateTime _sessionStartTime; // When session started
+
+  late AnimationController _animationController; // Animation controller
+  late Animation<double> _fadeAnimation; // Fade animation
 
   @override
   void initState() {
@@ -87,6 +95,7 @@ class _HostScreenState extends State<HostScreen>
 
   void _handleClientConnection(Socket client) {
     final clientId = '${client.remoteAddress.address}:${client.remotePort}';
+    final timestamp = DateTime.now().toUtc().toIso8601String();
     _connectedClients.add(client);
     setState(() {
       _clients = [..._clients, clientId];
@@ -123,30 +132,36 @@ class _HostScreenState extends State<HostScreen>
             return;
           }
 
-          final timestamp = DateTime.now().toUtc().toIso8601String();
-
           if (message.startsWith("Question:")) {
             final question = message.substring(9);
             _addMessage(question, nickname, timestamp);
-          } else if (_selectedMode == "Picture" || _selectedMode == "Drawing") {
+            return;
+          }
+          if (_selectedMode == "Chat") {
+            _addMessage(message, nickname, timestamp);
+          }
+
+          if (_selectedMode == "Picture") {
             dataBuffer.write(utf8.decode(data));
             if (dataBuffer.toString().endsWith('\n')) {
               String imageData = dataBuffer.toString().trim();
-
-              setState(() {
-                _messages = [
-                  ..._messages,
-                  {
-                    'nickname': nickname,
-                    'image': imageData,
-                    'isImage': true,
-                    'timestamp': timestamp,
-                  }
-                ];
-              });
+              addPictureMessage(nickname, imageData, timestamp);
               dataBuffer.clear();
             }
-          } else if (_selectedMode == "Multiple Choice" &&
+            return;
+          }
+
+          if (_selectedMode == "Drawing") {
+            dataBuffer.write(utf8.decode(data));
+            if (dataBuffer.toString().endsWith('\n')) {
+              String imageData = dataBuffer.toString().trim();
+              addDrawingMessage(nickname, imageData, timestamp);
+              dataBuffer.clear();
+            }
+            return;
+          }
+
+          if (_selectedMode == "Multiple Choice" &&
               message.startsWith("Answer:")) {
             final answerData = message.substring(7).split("|");
             if (answerData.length == 3) {
@@ -162,8 +177,7 @@ class _HostScreenState extends State<HostScreen>
 
               setState(() {});
             }
-          } else if (_selectedMode == "Chat") {
-            _addMessage(message, nickname, timestamp);
+            return;
           }
         } catch (e) {
           print('Error decoding client data: $e');
@@ -192,7 +206,38 @@ class _HostScreenState extends State<HostScreen>
         isSuccess: false, backgroundColor: Colors.white12);
   }
 
+  void addDrawingMessage(String nickname, String imageData, String timestamp) {
+    return setState(() {
+      _messages = [
+        ..._messages,
+        {
+          'nickname': nickname,
+          'image': imageData,
+          'isImage': true,
+          'isDrawing': true,
+          'timestamp': timestamp,
+        }
+      ];
+    });
+  }
+
+  void addPictureMessage(String nickname, String imageData, String timestamp) {
+    return setState(() {
+      _messages = [
+        ..._messages,
+        {
+          'nickname': nickname,
+          'image': imageData,
+          'isImage': true,
+          'isDrawing': false,
+          'timestamp': timestamp,
+        }
+      ];
+    });
+  }
+
   void _addSystemMessage(String text) {
+    if (!mounted) return;
     final timestamp = DateTime.now().toUtc().toIso8601String();
     setState(() {
       _messages = [
@@ -208,6 +253,7 @@ class _HostScreenState extends State<HostScreen>
   }
 
   void _addMessage(String text, String nickname, String timestamp) {
+    if (!mounted) return;
     setState(() {
       _messages = [
         ..._messages,
@@ -222,6 +268,7 @@ class _HostScreenState extends State<HostScreen>
   }
 
   void _sendStickyQuestion(String question) {
+    if (!mounted) return;
     final trimmedQuestion = question.trim();
     if (trimmedQuestion.isEmpty) return;
     final encodedMessage = utf8.encode("Question:$trimmedQuestion");
@@ -234,6 +281,7 @@ class _HostScreenState extends State<HostScreen>
   }
 
   void _removeStickyQuestion(String question) {
+    if (!mounted) return;
     final questionToRemove = question.trim();
     final isMultipleChoice = questionToRemove.endsWith(" (Multiple Choice)");
     final broadcastQuestion = isMultipleChoice
@@ -307,7 +355,7 @@ class _HostScreenState extends State<HostScreen>
           child: ModeSelectorDialog(
             onModeSelected: (mode) {
               setState(() {
-                _messages = [];
+                // _messages = [];
                 _multipleChoiceResponses.clear();
                 _selectedMode = mode;
                 for (var client in _connectedClients) {
@@ -373,12 +421,11 @@ class _HostScreenState extends State<HostScreen>
             'mode': _selectedMode,
           },
           'messages': _messages.map((msg) {
-            final newMsg = Map.fromEntries(msg.entries.where((entry) {
-              if (entry.key == 'image' || entry.key == 'isImage') return false;
+            final newMsg = Map.fromEntries(msg.entries.map((entry) {
               if (entry.value is bool) {
-                entry = MapEntry(entry.key, entry.value.toString());
+                return MapEntry(entry.key, entry.value);
               }
-              return true;
+              return entry;
             }));
             return newMsg;
           }).toList(),
@@ -394,7 +441,7 @@ class _HostScreenState extends State<HostScreen>
             .replaceAll('-', '')
             .split('.')
             .first;
-        final file = File('${tempDir.path}/session_$timestamp.json');
+        final file = File('${tempDir.path}/sessionhost_$timestamp.json');
         await file.writeAsString(jsonEncode(log), flush: true);
         print('Session log saved to ${file.path}');
       }
@@ -403,21 +450,30 @@ class _HostScreenState extends State<HostScreen>
     }
   }
 
+  Future<void> _cleanupClients() async {
+    for (var client in _connectedClients) {
+      try {
+        client.add(utf8.encode("Host Disconnected"));
+        await client.flush();
+        await client.close();
+      } catch (e) {
+        print("Error closing client: $e");
+      }
+    }
+  }
+
   @override
   void dispose() {
-    for (var client in _connectedClients) {
-      client.add(utf8.encode("Host Disconnected"));
-      client.flush();
-      client.close();
-    }
+    _cleanupClients();
+
     _serverSocket?.close();
     _broadcast.stopBroadcast();
-    _saveSessionLog();
     _questionController.dispose();
     _animationController.dispose();
     for (var controller in _clientStreams.values) {
       controller.close();
     }
+
     super.dispose();
   }
 

@@ -34,6 +34,8 @@ dependencies:
   mailer: ^6.4.1
   # showcaseview: ^4.0.1
   http: ^1.4.0
+  mockito: ^5.4.6
+  build_runner: ^2.4.15
 
 flutter_launcher_icons:
   android: true

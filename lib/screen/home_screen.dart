@@ -7,9 +7,12 @@ import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:learnbound/database/user_provider.dart';
 import 'package:learnbound/screen/auth/login/login_screen.dart';
 import 'package:learnbound/screen/chat/chat_screen.dart';
+import 'package:learnbound/screen/chat/logs_student.dart';
+
 import 'package:learnbound/screen/host/host_screen.dart';
 import 'package:learnbound/screen/log_screen.dart';
 import 'package:learnbound/screen/quiz/quiz_main.dart';
+import 'package:learnbound/util/design/colors.dart';
 import 'package:learnbound/util/design/wave.dart';
 import 'package:provider/provider.dart';
 
@@ -239,6 +242,7 @@ class _HomeScreenWidget extends State<HomeScreen> {
 
     if (user == null) {
       return const Scaffold(
+        key: Key('HomeScreen'),
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -249,85 +253,112 @@ class _HomeScreenWidget extends State<HomeScreen> {
         return false;
       },
       child: Scaffold(
+        key: const Key('HomeScreen'),
         appBar: AppBar(
           surfaceTintColor: Colors.transparent,
         ),
         drawer: Drawer(
-          child: Column(
-            children: <Widget>[
-              DrawerHeader(
-                decoration: BoxDecoration(color: Color(0xFFD7C19C)),
-                child: Center(
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.grey[200],
-                    child: ClipOval(
-                      child: user.profilePicture != null &&
-                              user.profilePicture!.isNotEmpty
-                          ? Image.file(
-                              File(user.profilePicture!),
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/defaultprofile.png',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                );
-                              },
-                            )
-                          : Image.asset(
-                              'assets/defaultprofile.png',
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                DrawerHeader(
+                  margin: EdgeInsets.zero,
+                  padding: EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    color: AppColors
+                        .learnBound, // Make transparent because container already colored
+                  ), // Remove default padding (optional)
+                  child: Center(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        double avatarRadius = constraints.maxHeight * 0.4;
+                        avatarRadius = avatarRadius > 50 ? 50 : avatarRadius;
+                        return CircleAvatar(
+                          radius: avatarRadius,
+                          backgroundColor:
+                              Colors.grey[200], // This stays for avatar bg
+                          child: ClipOval(
+                            child: user.profilePicture != null &&
+                                    user.profilePicture!.isNotEmpty
+                                ? Image.file(
+                                    File(user.profilePicture!),
+                                    width: avatarRadius * 2,
+                                    height: avatarRadius * 2,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/defaultprofile.png',
+                                        width: avatarRadius * 2,
+                                        height: avatarRadius * 2,
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  )
+                                : Image.asset(
+                                    'assets/defaultprofile.png',
+                                    width: avatarRadius * 2,
+                                    height: avatarRadius * 2,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
-              ),
-              ListTile(
-                leading: Icon(Icons.person),
-                title: Text('Profile'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfileSettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.history),
-                title: Text('Logs'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SessionLogScreen(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.exit_to_app),
-                title: Text('Logout'),
-                onTap: _logout,
-              ),
-              Spacer(),
-              Divider(),
-              ListTile(
+
+                // Use Expanded + ListView to make the rest scrollable
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      ListTile(
+                        leading: Icon(Icons.person),
+                        title: Text('Profile'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProfileSettingsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.history),
+                        title: Text('Logs'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SessionLogScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.exit_to_app),
+                        title: Text('Logout'),
+                        onTap: _logout,
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(),
+
+                // Fixed footer stays pinned at the bottom
+                ListTile(
                   leading: Icon(Icons.build),
                   title: Text('Changelog'),
-                  onTap: () => showChangelogFromGitHub()),
-              ListTile(
+                  onTap: () => showChangelogFromGitHub(),
+                ),
+                ListTile(
                   leading: Icon(Icons.info_outline),
                   title: Text('About'),
-                  onTap: () => showAbout()),
-            ],
+                  onTap: () => showAbout(),
+                ),
+              ],
+            ),
           ),
         ),
         body: LayoutBuilder(

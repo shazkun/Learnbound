@@ -12,6 +12,7 @@ import 'package:learnbound/screen/drawing_screen.dart';
 import 'package:learnbound/screen/multi_server.dart';
 import 'package:learnbound/util/back_dialog.dart';
 import 'package:learnbound/util/design/snackbar.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'chat_app_bar.dart';
@@ -156,9 +157,6 @@ class _ChatScreenState extends State<ChatScreen>
               _currentMode = "Chat";
               _isStarted = true;
             });
-          } else if (message.startsWith("Image:")) {
-            messageQueue.add({'text': message.substring(6), 'isImage': true});
-            if (messageQueue.length == 1) processNextMessage();
           } else {
             messageQueue.add({'text': message, 'isImage': false});
             if (messageQueue.length == 1) processNextMessage();
@@ -197,10 +195,71 @@ class _ChatScreenState extends State<ChatScreen>
     }
   }
 
+  Future<void> _saveSessionLog() async {
+    try {
+      if (_isStarted) {
+        final endTime = DateTime.now().toUtc();
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final user = userProvider.user;
+
+        final participantsLog = [
+          {
+            'nickname': user?.username ?? 'Unknown',
+            'connection_duration_seconds': endTime
+                .difference(DateTime.now().subtract(Duration(minutes: 1)))
+                .inSeconds,
+          }
+        ];
+
+        final log = {
+          'session': {
+            'start_time': DateTime.now()
+                .subtract(Duration(minutes: 1))
+                .toIso8601String(), // Placeholder for actual start time
+            'end_time': endTime.toIso8601String(),
+            'mode': _currentMode,
+          },
+          'messages': _messages.map((msg) {
+            final newMsg = Map.fromEntries(msg.entries.map((entry) {
+              if (entry.value is bool) {
+                return MapEntry(entry.key, entry.value);
+              } else if (entry.key == 'image' && entry.value is File) {
+                return MapEntry(entry.key, (entry.value as File).path);
+              }
+              return MapEntry(entry.key, entry.value);
+            }));
+            return newMsg;
+          }).toList(),
+          'questions': _questions,
+          'multiple_choice_questions': _multipleChoiceQuestions,
+          'selected_answers': _selectedAnswers,
+          'confirmed_answers': _confirmedAnswers.toList(),
+          'participants': participantsLog,
+        };
+
+        final tempDir = await getTemporaryDirectory();
+        final timestamp = endTime
+            .toIso8601String()
+            .replaceAll(':', '')
+            .replaceAll('-', '')
+            .split('.')
+            .first;
+        final file = File('${tempDir.path}/sessionchat_$timestamp.json');
+        await file.writeAsString(jsonEncode(log), flush: true);
+        debugPrint('Session log saved to ${file.path}');
+      }
+    } catch (e) {
+      debugPrint('Error saving session log: $e');
+    }
+  }
+
   void _sendMessage(String message) {
     if (_clientSocket != null) {
       _clientSocket!.add(utf8.encode(message));
       setState(() => _messages.add({'text': message, 'isImage': false}));
+      for (int i = 0; i < _messages.length; i++) {
+        print({_messages[i]});
+      }
       _messageController.clear();
     }
   }
@@ -217,9 +276,12 @@ class _ChatScreenState extends State<ChatScreen>
         _clientSocket!.add(utf8.encode('$base64Image\n'));
         await _clientSocket!.flush();
       }
-      setState(() => _messages
-          .add({'text': 'Image sent', 'isImage': true, 'image': imageFile}));
-      print(base64Image);
+      setState(() => _messages.add({
+            'text': 'Image sent',
+            'isImage': true,
+            'image': imageFile,
+            'isDrawing': false
+          }));
 
       setState(() => _latestImagePath = imageFile.path);
     } catch (e) {
@@ -237,8 +299,12 @@ class _ChatScreenState extends State<ChatScreen>
       final base64Image = base64Encode(await imgFile.readAsBytes());
       _clientSocket!.add(utf8.encode('$base64Image\n'));
       _clientSocket!.flush();
-      setState(() => _messages.add(
-          {'nickname': user?.username, 'image': imgFile, 'isImage': true}));
+      setState(() => _messages.add({
+            'nickname': user?.username,
+            'image': imgFile,
+            'isImage': true,
+            'isDrawing': true
+          }));
     }
 
     if (drawing != null) {
@@ -277,6 +343,8 @@ class _ChatScreenState extends State<ChatScreen>
     _manualIpController.dispose();
     _manualPortController.dispose();
     _animationController.dispose();
+
+    // _messages.clear();
     super.dispose();
   }
 
@@ -298,6 +366,7 @@ class _ChatScreenState extends State<ChatScreen>
                 onPressed: () {
                   _clientSocket?.destroy();
                   _clientSocket = null;
+                  _saveSessionLog();
                   Navigator.pop(context, true);
                 },
                 child: Text('Exit', style: TextStyle(color: Colors.red)),
@@ -384,7 +453,6 @@ class _ChatScreenState extends State<ChatScreen>
           fadeAnimation: _fadeAnimation,
           messageController: _messageController,
           isStarted: _isStarted,
-          onSendMessage: _sendMessage,
           onWaitSnackBar: _showHostWaitSnackBar,
           questions: _questions,
           multipleChoiceQuestions: _multipleChoiceQuestions,
@@ -401,7 +469,6 @@ class _ChatScreenState extends State<ChatScreen>
           fadeAnimation: _fadeAnimation,
           messageController: _messageController,
           isStarted: _isStarted,
-          onSendMessage: _sendMessage,
           onWaitSnackBar: _showHostWaitSnackBar,
           clientSocket: _clientSocket,
           onStateUpdate: setState,

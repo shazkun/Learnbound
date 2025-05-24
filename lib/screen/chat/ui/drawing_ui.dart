@@ -11,7 +11,7 @@ class DrawingUI extends StatelessWidget {
   final Animation<double> fadeAnimation;
   final TextEditingController messageController;
   final bool isStarted;
-  final Function(String) onSendMessage;
+
   final VoidCallback onWaitSnackBar;
   final Socket? clientSocket;
   final void Function(VoidCallback fn) onStateUpdate;
@@ -24,7 +24,6 @@ class DrawingUI extends StatelessWidget {
     required this.fadeAnimation,
     required this.messageController,
     required this.isStarted,
-    required this.onSendMessage,
     required this.onWaitSnackBar,
     required this.clientSocket,
     required this.onStateUpdate,

@@ -757,9 +757,11 @@ class _QuizScreenState extends State<QuizScreen> {
     required Color color,
     required VoidCallback? onPressed,
   }) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return SizedBox(
-      width: 120, // Matches the button width in the image
-      height: 80, // Increased height to accommodate the vertical layout
+      width: 120,
+      height: screenHeight * 0.10,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
@@ -815,13 +817,6 @@ class _QuizScreenState extends State<QuizScreen> {
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                     color: Colors.grey[200],
-                    // border: Border(
-                    //   top: BorderSide(color: AppColors.learnBound, width: 10),
-                    // ),
-                    // borderRadius: BorderRadius.only(
-                    //   bottomLeft: Radius.circular(20),
-                    //   bottomRight: Radius.circular(20),
-                    // ),
                     borderRadius: BorderRadius.all(Radius.circular(16))),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -921,7 +916,6 @@ class _QuizScreenState extends State<QuizScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
               const SizedBox(height: 16),
               Container(
                 height: 500,

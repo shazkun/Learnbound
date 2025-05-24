@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:iconify_flutter/iconify_flutter.dart';
 import 'package:iconify_flutter/icons/mdi.dart';
 import 'package:learnbound/screen/host/host_styles.dart';
+import 'package:learnbound/util/design/colors.dart';
 import 'package:learnbound/util/design/snackbar.dart';
 import 'package:learnbound/util/design/wave.dart';
 
@@ -36,7 +37,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           elevation: 0,
           centerTitle: true,
           title: Text(
-            lobbyState == "lobby" ? 'Lobby' : '$selectedMode ',
+            lobbyState == "lobby" ? 'Lobby' : selectedMode,
             style: const TextStyle(
               color: Colors.black87,
               fontWeight: FontWeight.w700,
@@ -52,7 +53,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             onPressed: () async {
               if (await onBackPressed()) {
                 onBackSuccess?.call();
-                Navigator.pop(context);
+                if (context.mounted) {
+                  Navigator.pop(context, true);
+                }
               }
             },
           ),
@@ -353,9 +356,9 @@ class SessionView extends StatelessWidget {
                                                   fontSize: 16)),
                                           Text(
                                             "${entry.value} votes",
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                                 fontSize: 16,
-                                                color: const Color.fromRGBO(
+                                                color: Color.fromRGBO(
                                                     211, 172, 112, 1.0)),
                                           ),
                                         ],
@@ -367,23 +370,45 @@ class SessionView extends StatelessWidget {
                         );
                       },
                     )
-                  : GridView.builder(
-                      padding: AppStyles.defaultPadding,
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 150,
-                        childAspectRatio: 0.8,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      ),
-                      itemCount:
-                          messages.where((m) => m['isImage'] == true).length,
-                      itemBuilder: (context, index) => _buildImageTile(
-                          messages
+                  : selectedMode == "Picture"
+                      ? GridView.builder(
+                          padding: AppStyles.defaultPadding,
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 150,
+                            childAspectRatio: 0.8,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
+                          itemCount: messages
                               .where((m) => m['isImage'] == true)
-                              .toList()[index],
-                          context),
-                    ),
+                              .length,
+                          itemBuilder: (context, index) => _buildImageTile(
+                              messages
+                                  .where((m) => m['isImage'] == true)
+                                  .toList()[index],
+                              context),
+                        )
+                      : selectedMode == "Drawing"
+                          ? GridView.builder(
+                              padding: AppStyles.defaultPadding,
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 150,
+                                childAspectRatio: 0.8,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                              itemCount: messages
+                                  .where((m) => m['isDrawing'] == true)
+                                  .length,
+                              itemBuilder: (context, index) => _buildImageTile(
+                                  messages
+                                      .where((m) => m['isImage'] == true)
+                                      .toList()[index],
+                                  context),
+                            ) // <-- Replace with your drawing UI
+                          : const SizedBox(), // fallback
         ),
         Padding(
           padding: AppStyles.defaultPadding,
@@ -577,11 +602,9 @@ class _MultipleChoiceDialogState extends State<MultipleChoiceDialog> {
               if (question.isNotEmpty && options.length >= 2) {
                 if (hasDuplicates) {
                   // Show error message if duplicate options exist
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Options must be unique'),
-                    ),
-                  );
+
+                  CustomSnackBar.show(context, 'Options must be unique',
+                      backgroundColor: AppColors.info);
                 } else {
                   widget.onSend(question, options);
                   for (var c in optionControllers) {
@@ -590,11 +613,9 @@ class _MultipleChoiceDialogState extends State<MultipleChoiceDialog> {
                   Navigator.pop(context);
                 }
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Enter a question and at least 2 options'),
-                  ),
-                );
+                CustomSnackBar.show(
+                    context, 'Enter a question and at least 2 options',
+                    backgroundColor: AppColors.info);
               }
             },
             style: AppStyles.elevatedButtonStyle,
