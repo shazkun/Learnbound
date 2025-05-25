@@ -170,6 +170,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextField(
+                      maxLength: 30,
                       controller: fileNameController,
                       decoration: InputDecoration(
                         hintText: 'Enter preset name',
@@ -351,6 +352,10 @@ class _QuizScreenState extends State<QuizScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         child: Container(
+          constraints: BoxConstraints(
+            minWidth: 100,
+            maxWidth: 500,
+          ),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -596,12 +601,6 @@ class _QuizScreenState extends State<QuizScreen> {
           questions: questions,
           questionToEdit: questions[index],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-        ],
       ),
     );
   }
@@ -619,7 +618,6 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
         backgroundColor: Colors.white,
         content: SizedBox(
-          width: double.maxFinite,
           child: ServerList(
             onSelectServer: (serverInfo) {
               Navigator.pop(context);
@@ -730,12 +728,6 @@ class _QuizScreenState extends State<QuizScreen> {
           onEdit: editQuestion,
           questions: questions,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
-          ),
-        ],
       ),
     );
   }
@@ -832,7 +824,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     const SizedBox(height: 16),
                     Wrap(
                       runAlignment: WrapAlignment.center,
-                      spacing: 16,
+                      spacing: 12,
                       runSpacing: 16,
                       children: [
                         buildButton(

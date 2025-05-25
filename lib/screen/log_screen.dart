@@ -187,82 +187,6 @@ class _SessionLogScreenState extends State<SessionLogScreen> {
     }
   }
 
-  Future<void> _deleteLog(SessionLog log) async {
-    final logId = '${log.startTime.toIso8601String()}_${log.mode}';
-    final filePath = _logFilePaths[logId];
-    if (filePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Error: Log file not found'),
-          backgroundColor: Colors.grey[800],
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.grey[800],
-        title: const Text(
-          'Delete Session Log',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        content: const Text(
-          'Are you sure you want to delete this session log? This action cannot be undone.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.redAccent),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        final file = File(filePath);
-        await file.delete();
-        await _loadLogs();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Session log deleted'),
-            backgroundColor: Colors.grey[800],
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting log: $e'),
-            backgroundColor: Colors.grey[800],
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    }
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -298,9 +222,19 @@ class _SessionLogScreenState extends State<SessionLogScreen> {
                           builder: (context) => LogViewerScreen()),
                     );
                   },
-                  child: const Text(
-                    'Session Logs',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.change_circle, color: Colors.black),
+                      SizedBox(width: 8), // spacing between icon and text
+                      Text(
+                        'Session Logs',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -311,6 +245,7 @@ class _SessionLogScreenState extends State<SessionLogScreen> {
               onPressed: _deleteSelectedLogs,
             ),
           IconButton(
+            tooltip: 'Select delete',
             icon: const Icon(Icons.select_all),
             onPressed: () {
               if (_logs.isNotEmpty) {
@@ -359,20 +294,14 @@ class _SessionLogScreenState extends State<SessionLogScreen> {
           Expanded(
             child: _filteredLogs.isEmpty
                 ? Center(
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text(
-                          'No logs found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'No logs found',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),

@@ -186,10 +186,19 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
                 MaterialPageRoute(builder: (context) => SessionLogScreen()),
               );
             },
-            child: const Text(
-              'Student Logs',
-              style:
-                  TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.change_circle, color: Colors.black),
+                SizedBox(width: 8), // spacing between icon and text
+                Text(
+                  'Student Logs',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -200,6 +209,7 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
               onPressed: _deleteSelectedLogs,
             ),
           IconButton(
+            tooltip: 'Select delete',
             icon: Icon(_isSelectionMode ? Icons.close : Icons.select_all),
             onPressed: _toggleSelectionMode,
           ),
@@ -234,20 +244,14 @@ class _LogViewerScreenState extends State<LogViewerScreen> {
           Expanded(
             child: _filteredLogs.isEmpty
                 ? Center(
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text(
-                          'No logs found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'No logs found',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
