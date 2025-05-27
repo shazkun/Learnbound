@@ -749,11 +749,9 @@ class _QuizScreenState extends State<QuizScreen> {
     required Color color,
     required VoidCallback? onPressed,
   }) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return SizedBox(
       width: 120,
-      height: screenHeight * 0.10,
+      height: 80,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,

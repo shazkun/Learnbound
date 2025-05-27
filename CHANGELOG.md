@@ -5,3 +5,4 @@
 - Initial release of LearnBound app
 - Smart study companion features
 - Clean UI and basic offline support
+- Basic features easy to use
